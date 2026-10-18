@@ -78,6 +78,38 @@ fn stop_session(id: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn stop_project(project_dir: PathBuf) -> Result<(), String> {
+    let mut stream = connect_to_daemon()?;
+
+    write_message(&mut stream, &Request::Down { project_dir })
+        .map_err(|error| format!("Failed to send down request: {error}"))?;
+
+    let response: Response = read_message(&mut stream)
+        .map_err(|error| format!("Failed to read daemon response: {error}"))?;
+
+    match response {
+        Response::Down { .. } => Ok(()),
+        Response::Error { message } => Err(message),
+        other => Err(format!("Unexpected daemon response: {other:?}")),
+    }
+}
+
+#[tauri::command]
+fn stop_all_sessions() -> Result<(), String> {
+    let sessions = list_sessions()?;
+    let mut stream = connect_to_daemon()?;
+
+    for session in sessions {
+        if session.status == devpane_core::process::session::ProcessStatus::Running {
+            let _ = write_message(&mut stream, &Request::Stop { id: session.id.clone() });
+            let _ = read_message::<_, Response>(&mut stream);
+        }
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
 fn get_session_logs(id: String) -> Result<String, String> {
     let mut stream = connect_to_daemon()?;
 
@@ -264,6 +296,8 @@ pub fn run() {
             list_sessions,
             start_session,
             stop_session,
+            stop_project,
+            stop_all_sessions,
             get_session_logs
         ])
         .run(tauri::generate_context!())

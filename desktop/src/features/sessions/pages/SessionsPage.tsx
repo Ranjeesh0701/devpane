@@ -18,6 +18,8 @@ export function SessionsPage() {
     refresh,
     startSession,
     stopSession,
+    stopProject,
+    stopAllSessions,
   } = useSessions();
   const [search, setSearch] = useState("");
   const [showNewSession, setShowNewSession] = useState(false);
@@ -52,13 +54,26 @@ export function SessionsPage() {
           </h1>
           <p className="page-description">Your processes, all in one place.</p>
         </div>
-        <Button
-          variant="primary"
-          icon={<Icon name="plus" size={17} />}
-          onClick={() => setShowNewSession(true)}
-        >
-          New session <span className="button-shortcut">⌘ N</span>
-        </Button>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          {sessions.filter((s) => s.status === "running").length > 0 && (
+            <Button
+              variant="secondary"
+              icon={<Icon name="square" size={15} />}
+              onClick={() => void stopAllSessions()}
+              title="Stop all running processes"
+            >
+              Stop all (
+              {sessions.filter((s) => s.status === "running").length})
+            </Button>
+          )}
+          <Button
+            variant="primary"
+            icon={<Icon name="plus" size={17} />}
+            onClick={() => setShowNewSession(true)}
+          >
+            New session <span className="button-shortcut">⌘ N</span>
+          </Button>
+        </div>
       </div>
 
       <SessionStats
@@ -119,6 +134,7 @@ export function SessionsPage() {
           <SessionTable
             sessions={filteredSessions}
             onStop={stopSession}
+            onStopProject={stopProject}
             onViewLogs={setViewingSession}
           />
         )}

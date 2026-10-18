@@ -44,6 +44,19 @@ export function useSessions() {
     [refresh],
   );
 
+  const stopProject = useCallback(
+    async (projectDir: string) => {
+      await api.stopProject(projectDir);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  const stopAllSessions = useCallback(async () => {
+    await api.stopAllSessions();
+    await refresh();
+  }, [refresh]);
+
   useEffect(() => {
     void refresh();
   }, [refresh]);
@@ -56,5 +69,7 @@ export function useSessions() {
     refresh,
     startSession,
     stopSession,
+    stopProject,
+    stopAllSessions,
   };
 }

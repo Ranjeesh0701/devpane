@@ -9,6 +9,7 @@ export type ProcessSession = {
   start_time_useconds: number;
   status: ProcessStatus;
   exit_code: number | null;
+  project_dir?: string | null;
 };
 
 export type NewSessionInput = {

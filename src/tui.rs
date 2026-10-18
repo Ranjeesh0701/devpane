@@ -350,7 +350,7 @@ where
                             Span::raw("Ctrl+T: New shell • "),
                             Span::raw("Ctrl+W: Close tab • "),
                             Span::raw("Ctrl+R: Refresh • "),
-                            Span::raw("q: Quit • "),
+                            Span::raw("q / Ctrl+C: Stop & Quit • "),
                             Span::styled(
                                 format!("{} running", running_count),
                                 Style::default().fg(Color::Green),
@@ -384,7 +384,8 @@ where
                         let total_tabs = service_views.len() + shell_tabs.len();
 
                         match (key.code, key.modifiers) {
-                        // Quit: Ctrl+Q always quits; 'q' only quits on read-only service views
+                        // Quit: Ctrl+C or Ctrl+Q always quits; 'q' quits on read-only service views
+                        (KeyCode::Char('c'), KeyModifiers::CONTROL) => break,
                         (KeyCode::Char('q'), KeyModifiers::CONTROL) => break,
                         (KeyCode::Char('q'), KeyModifiers::NONE) if active_tab < service_views.len() => break,
 

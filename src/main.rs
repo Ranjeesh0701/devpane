@@ -197,7 +197,16 @@ fn run() -> Result<u8, DevboxError> {
 
                     // Services started successfully, launch TUI
                     drop(stream);
-                    tui::run(fetch_sessions).map_err(DevboxError::Tui)?;
+                    let tui_res = tui::run(fetch_sessions);
+
+                    // When exiting the TUI (via q, Ctrl+C, Ctrl+Q), cleanly stop all services in the project
+                    if let Ok(mut stop_stream) = connect_or_start(10, 50) {
+                        let down_request = Request::Down { project_dir };
+                        let _ = write_message(&mut stop_stream, &down_request);
+                        let _ = read_message::<_, Response>(&mut stop_stream);
+                    }
+
+                    tui_res.map_err(DevboxError::Tui)?;
                     return Ok(0);
                 }
                 Response::Error { message } => {
