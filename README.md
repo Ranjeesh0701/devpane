@@ -2,9 +2,13 @@
 
 **Run your stack. Stay in control.**
 
-Devpane is an interactive development process manager and terminal workspace. It makes it simple to run, observe, and interact with the multiple services powering your applications — from frontend dev servers and backend APIs to workers and background databases — both for human developers and the AI coding agents working alongside them.
+[![Built with Rust](https://img.shields.io/badge/built_with-Rust-dca282.svg?logo=rust&logoColor=white)](https://www.rust-lang.org/)
+[![Crates.io](https://img.shields.io/crates/v/devpane.svg)](https://crates.io/crates/devpane)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> **Project status:** Under active development (v0.1.0).
+Devpane is a high-performance development process manager and terminal workspace built in 100% native Rust. It delivers near-instant startup, zero runtime bloat, and minimal memory footprint — making it effortless to run, observe, and interact with the multiple services powering your applications.
+
+> **Project status:** v0.2.0 (Active development).
 
 ---
 

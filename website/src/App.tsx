@@ -204,7 +204,7 @@ function App() {
           <div className="hero-copy">
             <div className="eyebrow">
               <span className="eyebrow-dot" />
-              LOCAL PROCESS WORKSPACE
+              BUILT WITH RUST • LIGHTWEIGHT & FAST
             </div>
 
             <h1>
@@ -214,10 +214,9 @@ function App() {
             </h1>
 
             <p className="hero-description">
-              Stop juggling disconnected terminal tabs. Devpane is an interactive
-              development process manager and terminal workspace that makes it easy
-              to run, inspect, and supervise all your services — built for modern
-              developers and the AI agents coding alongside them.
+              Stop juggling disconnected terminal tabs. Devpane is a blazingly fast
+              process manager and terminal workspace built in native Rust — giving you
+              instant startup, minimal RAM usage, and full control over your development stack.
             </p>
 
             <div className="hero-actions">
@@ -231,7 +230,7 @@ function App() {
 
             <div className="hero-note">
               <span className="note-check">✓</span>
-              Interactive terminal panes, process daemon, and desktop dashboard.
+              100% Native Rust core with near-zero overhead, interactive TUI, and desktop dashboard.
             </div>
           </div>
 
