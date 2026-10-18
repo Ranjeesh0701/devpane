@@ -921,7 +921,7 @@
 /* Call to action */
 
 .get-started {
-  padding-block: 100px;
+  padding-block: 40px 100px;
 }
 
 .get-started-panel {
@@ -1676,4 +1676,159 @@
   .workflow-node-number {
     font-size: 8px;
   }
+}
+
+/* Install Widget Styles */
+
+.install-section {
+  padding-block: 60px 20px;
+}
+
+.install-box {
+  max-width: 820px;
+  margin: 0 auto;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 25px 70px rgb(0 0 0 / 25%);
+  overflow: hidden;
+}
+
+.install-os-tabs {
+  display: flex;
+  background: #14151b;
+  border-bottom: 1px solid var(--border);
+}
+
+.install-tab {
+  flex: 1;
+  padding: 14px 18px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 150ms ease;
+  border-bottom: 2px solid transparent;
+}
+
+.install-tab:hover {
+  color: var(--text);
+  background: rgb(255 255 255 / 2%);
+}
+
+.install-tab.active {
+  color: var(--text);
+  background: var(--surface);
+  border-bottom: 2px solid var(--accent);
+}
+
+.os-icon {
+  font-size: 16px;
+}
+
+.install-method-tabs {
+  display: flex;
+  padding: 12px 18px 0;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.method-tab {
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  color: var(--subtle);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.method-tab:hover {
+  color: var(--muted);
+}
+
+.method-tab.active {
+  color: var(--accent);
+  background: rgb(139 156 255 / 8%);
+  border-color: rgb(139 156 255 / 25%);
+  border-bottom-color: transparent;
+}
+
+.install-content {
+  padding: 28px 24px 32px;
+}
+
+.install-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.install-details h4 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.install-details p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.install-details code {
+  color: var(--accent);
+  font-family: monospace;
+}
+
+.install-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.install-terminal-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #101115;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  color: #e2e4ed;
+}
+
+.install-terminal-box code {
+  color: #aab5ff;
+}
+
+.copy-button {
+  background: rgb(255 255 255 / 6%);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  padding: 5px 12px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.copy-button:hover {
+  background: rgb(255 255 255 / 12%);
+  border-color: var(--accent);
 }

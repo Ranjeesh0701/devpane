@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import "./App.css";
 
 const services = [
@@ -187,13 +188,14 @@ function App() {
         <nav className="main-nav" aria-label="Main navigation">
           <a href="#features">Why Devpane</a>
           <a href="#workflow">How it works</a>
+          <a href="#install">Install</a>
           <a href="https://github.com/Ranjeesh0701/devbox" target="_blank" rel="noreferrer">
             GitHub <ArrowIcon />
           </a>
         </nav>
 
-        <a className="header-cta" href="https://github.com/Ranjeesh0701/devbox" target="_blank" rel="noreferrer">
-          Explore Devpane <ArrowIcon />
+        <a className="header-cta" href="#install">
+          Install Devpane <ArrowIcon />
         </a>
       </header>
 
@@ -323,6 +325,19 @@ function App() {
           </div>
         </section>
 
+        <section className="install-section section-container" id="install">
+          <div className="section-heading">
+            <div className="eyebrow">GET STARTED IN SECONDS</div>
+            <h2>Install Devpane on your machine.</h2>
+            <p>
+              Pre-built binaries, single-command Cargo installs, and native desktop applications
+              for macOS and Windows.
+            </p>
+          </div>
+
+          <InstallWidget />
+        </section>
+
         <section className="get-started section-container" id="get-started">
           <div className="get-started-panel">
             <div className="eyebrow">
@@ -335,11 +350,9 @@ function App() {
             </p>
             <a
               className="button button-primary"
-              href="https://github.com/Ranjeesh0701/devbox"
-              target="_blank"
-              rel="noreferrer"
+              href="#install"
             >
-              Explore on GitHub <ArrowIcon />
+              Get Started Now <ArrowIcon />
             </a>
           </div>
         </section>
@@ -355,6 +368,204 @@ function App() {
           © {new Date().getFullYear()} Devpane
         </span>
       </footer>
+    </div>
+  );
+}
+
+function InstallWidget() {
+  const [selectedOS, setSelectedOS] = useState<"macos" | "windows" | "linux">("macos");
+  const [method, setMethod] = useState<"cli" | "desktop" | "cargo">("cli");
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    if (userAgent.includes("win")) {
+      setSelectedOS("windows");
+    } else if (userAgent.includes("mac")) {
+      setSelectedOS("macos");
+    } else if (userAgent.includes("linux")) {
+      setSelectedOS("linux");
+    }
+  }, []);
+
+  const cargoCommand = "cargo install --path . --bin devpane --bin daemon";
+  const repoReleases = "https://github.com/Ranjeesh0701/devbox/releases/latest";
+
+  function copyCargo() {
+    void navigator.clipboard.writeText(cargoCommand);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="install-box">
+      {/* OS Selector Tabs */}
+      <div className="install-os-tabs">
+        <button
+          className={`install-tab ${selectedOS === "macos" ? "active" : ""}`}
+          onClick={() => setSelectedOS("macos")}
+        >
+          <span className="os-icon"></span> macOS
+        </button>
+        <button
+          className={`install-tab ${selectedOS === "windows" ? "active" : ""}`}
+          onClick={() => setSelectedOS("windows")}
+        >
+          <span className="os-icon">⊞</span> Windows
+        </button>
+        <button
+          className={`install-tab ${selectedOS === "linux" ? "active" : ""}`}
+          onClick={() => setSelectedOS("linux")}
+        >
+          <span className="os-icon">🐧</span> Linux
+        </button>
+      </div>
+
+      {/* Method Subtabs */}
+      <div className="install-method-tabs">
+        <button
+          className={`method-tab ${method === "cli" ? "active" : ""}`}
+          onClick={() => setMethod("cli")}
+        >
+          Pre-built CLI
+        </button>
+        <button
+          className={`method-tab ${method === "desktop" ? "active" : ""}`}
+          onClick={() => setMethod("desktop")}
+        >
+          Desktop App GUI
+        </button>
+        <button
+          className={`method-tab ${method === "cargo" ? "active" : ""}`}
+          onClick={() => setMethod("cargo")}
+        >
+          Cargo (Rust)
+        </button>
+      </div>
+
+      {/* Content based on method and OS */}
+      <div className="install-content">
+        {method === "cli" && (
+          <div className="install-card">
+            <div className="install-details">
+              <h4>
+                {selectedOS === "macos" && "macOS Standalone CLI (devpane + daemon)"}
+                {selectedOS === "windows" && "Windows x64 Standalone CLI (.zip)"}
+                {selectedOS === "linux" && "Linux x86_64 Standalone CLI"}
+              </h4>
+              <p>
+                Includes the <code>devpane</code> CLI and background <code>daemon</code> binary.
+                Extract and place both files anywhere in your <code>$PATH</code>.
+              </p>
+            </div>
+            <div className="install-action-row">
+              {selectedOS === "macos" && (
+                <>
+                  <a
+                    className="button button-primary"
+                    href={`${repoReleases}/download/devpane-darwin-arm64.tar.gz`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Download for Apple Silicon ↓
+                  </a>
+                  <a
+                    className="button button-secondary"
+                    href={`${repoReleases}/download/devpane-darwin-x64.tar.gz`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Download for Intel Mac ↓
+                  </a>
+                </>
+              )}
+              {selectedOS === "windows" && (
+                <a
+                  className="button button-primary"
+                  href={`${repoReleases}/download/devpane-windows-x64.zip`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Download Windows CLI (.zip) ↓
+                </a>
+              )}
+              {selectedOS === "linux" && (
+                <a
+                  className="button button-primary"
+                  href="https://github.com/Ranjeesh0701/devbox/releases"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Browse Linux Builds on GitHub ↓
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
+        {method === "desktop" && (
+          <div className="install-card">
+            <div className="install-details">
+              <h4>
+                {selectedOS === "macos" && "Devpane for macOS (.dmg installer)"}
+                {selectedOS === "windows" && "Devpane for Windows (.msi installer)"}
+                {selectedOS === "linux" && "Devpane for Linux (.AppImage / .deb)"}
+              </h4>
+              <p>
+                Native desktop interface built with Tauri and React. Inspect sessions, view live streaming
+                process output, and launch new services visually.
+              </p>
+            </div>
+            <div className="install-action-row">
+              {selectedOS === "macos" && (
+                <a
+                  className="button button-primary"
+                  href="https://github.com/Ranjeesh0701/devbox/releases"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Download macOS DMG Installer ↓
+                </a>
+              )}
+              {selectedOS === "windows" && (
+                <a
+                  className="button button-primary"
+                  href="https://github.com/Ranjeesh0701/devbox/releases"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Download Windows MSI Installer ↓
+                </a>
+              )}
+              {selectedOS === "linux" && (
+                <a
+                  className="button button-primary"
+                  href="https://github.com/Ranjeesh0701/devbox/releases"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Download Linux Packages ↓
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
+        {method === "cargo" && (
+          <div className="install-card">
+            <div className="install-details">
+              <h4>Build & Install from Source via Cargo</h4>
+              <p>Installs both <code>devpane</code> and <code>daemon</code> directly into your <code>~/.cargo/bin</code>:</p>
+            </div>
+            <div className="install-terminal-box">
+              <code>{cargoCommand}</code>
+              <button className="copy-button" onClick={copyCargo}>
+                {copied ? "Copied!" : "Copy"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
