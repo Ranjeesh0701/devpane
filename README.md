@@ -41,7 +41,7 @@ cargo install devpane
 brew install Ranjeesh0701/tap/devpane
 ```
 
-### Option 3: 1-Line Quick Install
+### Option 3: Quick Install (curl / PowerShell)
 
 **macOS & Linux**:
 ```bash

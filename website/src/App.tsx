@@ -427,7 +427,7 @@ function InstallWidget() {
           className={`method-tab ${method === "cli" ? "active" : ""}`}
           onClick={() => setMethod("cli")}
         >
-          1-Line Script
+          Quick Install
         </button>
         {selectedOS !== "windows" && (
           <button
@@ -462,12 +462,12 @@ function InstallWidget() {
                 {selectedOS === "linux" && "Linux x86_64 Standalone CLI"}
               </h4>
               <p>
-                Run the 1-line installer in your terminal to automatically download, extract,
+                Run the install command in your terminal to automatically download, extract,
                 and configure both <code>devpane</code> and <code>daemon</code> into your <code>$PATH</code>:
               </p>
             </div>
 
-            {/* 1-Line Terminal Script */}
+            {/* Terminal Install Command */}
             <div className="install-terminal-box">
               <code>
                 {selectedOS === "windows"
