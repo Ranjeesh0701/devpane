@@ -21,7 +21,7 @@ jobs:
             target: aarch64-apple-darwin
             archive_name: devpane-darwin-arm64
             bin_ext: ""
-          - os: macos-13
+          - os: macos-latest
             target: x86_64-apple-darwin
             archive_name: devpane-darwin-x64
             bin_ext: ""
