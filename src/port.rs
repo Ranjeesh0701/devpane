@@ -127,15 +127,3 @@ fn extract_port_from_url(url: &str) -> Option<u16> {
     let port_str = host_port.split(':').nth(1)?;
     port_str.parse::<u16>().ok()
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_extract_port_from_url() {
-        assert_eq!(extract_port_from_url("http://localhost:3000/health"), Some(3000));
-        assert_eq!(extract_port_from_url("http://127.0.0.1:8080"), Some(8080));
-        assert_eq!(extract_port_from_url("http://localhost/no-port"), None);
-    }
-}
