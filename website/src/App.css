@@ -1738,6 +1738,13 @@
   gap: 8px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.install-method-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .method-tab {
@@ -1750,6 +1757,8 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 120ms ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .method-tab:hover {
@@ -1765,12 +1774,15 @@
 
 .install-content {
   padding: 28px 24px 32px;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .install-card {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  max-width: 100%;
 }
 
 .install-details h4 {
@@ -1778,6 +1790,7 @@
   font-size: 16px;
   font-weight: 650;
   color: var(--text);
+  overflow-wrap: break-word;
 }
 
 .install-details p {
@@ -1785,11 +1798,13 @@
   color: var(--muted);
   font-size: 13px;
   line-height: 1.6;
+  overflow-wrap: break-word;
 }
 
 .install-details code {
   color: var(--accent);
   font-family: monospace;
+  word-break: break-all;
 }
 
 .install-action-row {
@@ -1797,38 +1812,119 @@
   flex-wrap: wrap;
   gap: 12px;
   align-items: center;
+  max-width: 100%;
 }
 
 .install-terminal-box {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   background: #101115;
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 12px 16px;
+  padding: 12px 14px;
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 12px;
   color: #e2e4ed;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .install-terminal-box code {
   color: #aab5ff;
+  min-width: 0;
+  flex: 1;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+
+.install-terminal-box code::-webkit-scrollbar {
+  height: 3px;
+}
+
+.install-terminal-box code::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 2px;
 }
 
 .copy-button {
+  flex-shrink: 0;
   background: rgb(255 255 255 / 6%);
   border: 1px solid var(--border-strong);
   color: var(--text);
-  padding: 5px 12px;
+  padding: 6px 14px;
   border-radius: 5px;
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
   transition: all 120ms ease;
+  white-space: nowrap;
 }
 
 .copy-button:hover {
   background: rgb(255 255 255 / 12%);
   border-color: var(--accent);
+}
+
+@media (max-width: 650px) {
+  .install-content {
+    padding: 20px 14px 24px;
+  }
+
+  .install-tab {
+    padding: 12px 8px;
+    font-size: 12px;
+    gap: 6px;
+  }
+
+  .install-method-tabs {
+    padding: 10px 12px 0;
+    gap: 6px;
+  }
+
+  .method-tab {
+    padding: 7px 11px;
+    font-size: 10.5px;
+  }
+
+  .install-terminal-box {
+    padding: 10px 12px;
+    font-size: 11px;
+    gap: 10px;
+  }
+
+  .copy-button {
+    padding: 5px 10px;
+    font-size: 10.5px;
+  }
+
+  .install-action-row .button {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+    padding-inline: 12px;
+    font-size: 11px;
+  }
+
+  .get-started-panel h2 {
+    font-size: clamp(24px, 6vw, 30px);
+    letter-spacing: -1px;
+  }
+}
+
+@media (max-width: 400px) {
+  .install-tab {
+    padding: 10px 4px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  .install-terminal-box {
+    padding: 8px 10px;
+    font-size: 10.5px;
+  }
 }
