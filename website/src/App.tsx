@@ -74,7 +74,7 @@ function ProcessPreview() {
           <span />
         </div>
         <span className="window-title">devpane up - interactive workspace</span>
-        <span className="window-version">v0.2.0</span>
+        <span className="window-version">v0.3.0</span>
       </div>
 
       <div className="terminal-body">
@@ -129,7 +129,7 @@ function ProcessPreview() {
           }}
         >
           <div style={{ color: "var(--subtle)" }}>[devpane:daemon] Service 'backend' started (PID 48921) • 0.8% CPU • 34.2 MB</div>
-          <div style={{ color: "#aab5ff" }}>   Compiling devpane v0.2.0 (/Workspace/devpane)</div>
+          <div style={{ color: "#aab5ff" }}>   Compiling devpane v0.3.0 (/Workspace/devpane)</div>
           <div style={{ color: "var(--success)" }}>    Finished `dev` profile in 0.82s</div>
           <div style={{ color: "#e2e4ed" }}>[server] Listening on http://127.0.0.1:8080</div>
           <div style={{ color: "#e2e4ed" }}>[server] IPC socket ready at /tmp/devpane.sock</div>
