@@ -130,7 +130,7 @@ Before contributing:
 
 ## License
 
-The project license has not yet been specified. Add a `LICENSE` file before distributing Devbox under an open-source license.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
