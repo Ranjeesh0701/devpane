@@ -44,16 +44,19 @@ cargo install --path . --bin devpane --bin daemon
 
 Ensure `~/.cargo/bin` is in your `PATH`.
 
-### Option 2: Pre-built Release Binary
+### Option 2: Pre-built Binaries & Desktop App (GitHub Releases)
 
-```bash
-cargo build --release
-```
-The optimized binaries will be in:
-- `target/release/devpane` (CLI & Workspace TUI)
-- `target/release/daemon` (Background process supervisor)
+Download the latest release for your platform from [GitHub Releases](https://github.com/Ranjeesh0701/devbox/releases):
 
-Place both binaries in any directory on your `PATH` (such as `/usr/local/bin` or `~/.local/bin`).
+- **CLI Bundles** (contains both `devpane` and `daemon`):
+  - macOS Apple Silicon: `devpane-darwin-arm64.tar.gz`
+  - macOS Intel: `devpane-darwin-x64.tar.gz`
+  - Windows x64: `devpane-windows-x64.zip`
+- **Desktop Application GUI**:
+  - macOS: `.dmg` installer
+  - Windows: `.msi` / `.exe` installer
+
+Extract the CLI bundle and move the binaries to any folder in your `PATH` (e.g. `/usr/local/bin` or `C:\Windows\System32`).
 
 ---
 
