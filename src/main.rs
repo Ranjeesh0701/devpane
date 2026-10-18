@@ -355,7 +355,12 @@ fn run() -> Result<u8, DevboxError> {
 fn get_daemon_path() -> io::Result<PathBuf> {
     let mut path = env::current_exe()?;
     path.pop();
-    path.push("daemon");
+
+    if cfg!(windows) {
+        path.push("daemon.exe");
+    } else {
+        path.push("daemon");
+    }
 
     Ok(path)
 }
