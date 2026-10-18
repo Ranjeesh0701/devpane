@@ -168,6 +168,19 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+.log-viewer-url-btn {
+  color: #38ef7d;
+  background: rgba(56, 239, 125, 0.08);
+  border-color: rgba(56, 239, 125, 0.28);
+  font-weight: 550;
+  transition: all 0.15s ease;
+}
+.log-viewer-url-btn:hover:not(:disabled) {
+  color: #ffffff;
+  background: rgba(56, 239, 125, 0.22);
+  border-color: #38ef7d;
+  box-shadow: 0 0 12px rgba(56, 239, 125, 0.2);
+}
 .log-viewer-output-wrap {
   min-height: 260px;
   flex: 1;

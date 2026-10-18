@@ -253,12 +253,21 @@ where
                     }
                 };
 
-                let title = format!(
-                    " {} - {} (PID: {}) ",
-                    view.name(),
-                    status_text,
-                    view.session.pid
-                );
+                let title = match view.detected_url() {
+                    Some(url) => format!(
+                        " {} - {} (PID: {}) | 🌐 {} ",
+                        view.name(),
+                        status_text,
+                        view.session.pid,
+                        url
+                    ),
+                    None => format!(
+                        " {} - {} (PID: {}) ",
+                        view.name(),
+                        status_text,
+                        view.session.pid
+                    ),
+                };
 
                 let content_pane = Paragraph::new(content).block(
                     Block::default()

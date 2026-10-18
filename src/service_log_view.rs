@@ -66,4 +66,25 @@ impl ServiceLogView {
     pub fn content(&self) -> &str {
         &self.log_content
     }
+
+    pub fn detected_url(&self) -> Option<String> {
+        for line in self.log_content.lines().rev() {
+            if let Some(pos) = line
+                .find("http://localhost:")
+                .or_else(|| line.find("http://127.0.0.1:"))
+                .or_else(|| line.find("https://localhost:"))
+            {
+                let tail = &line[pos..];
+                let end = tail
+                    .find(|c: char| c.is_whitespace() || c == '"' || c == '\'' || c == ')' || c == ']' || c == '>')
+                    .unwrap_or(tail.len());
+                let url = &tail[..end];
+                let clean = url.trim_end_matches(['.', ';', ',']);
+                if clean.len() >= 16 {
+                    return Some(clean.to_string());
+                }
+            }
+        }
+        None
+    }
 }

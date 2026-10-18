@@ -39,15 +39,37 @@ fn run() -> Result<u8, DevboxError> {
     if action == "--help" || action == "-h" {
         println!("Usage: devpane <command> [arguments...]");
         println!("Commands:");
+        println!("  init [--force]                    - Auto-detect project stack & generate devpane.yaml.");
+        println!("  up                                - Start all enabled services from devpane.yaml.");
+        println!("  down                              - Stop all running project services.");
         println!("  start <name> <program> [args...] - Start a process.");
         println!("  list                              - List active sessions.");
         println!("  stop <session_id>                 - Stop a process.");
         println!("  logs <session_id>                 - Show logs for a session.");
         println!("  shutdown                          - Shutdown the daemon.");
-        println!(
-            "  up                                - Start all enabled services from devpane.yaml."
-        );
         return Ok(0);
+    }
+
+    if action == "init" {
+        let force = args.any(|arg| arg == "--force" || arg == "-f");
+        let cwd = env::current_dir().map_err(DevboxError::FileOperation)?;
+        match devpane::config::init_config(&cwd, force) {
+            Ok((path, services)) => {
+                let filename = path.file_name().unwrap_or_default().to_string_lossy();
+                println!("✨ Created {} with {} service(s):\n", filename, services.len());
+                for (name, cmd) in services {
+                    println!("  • {:<12} -> {}", name, cmd);
+                }
+                println!("\nNext steps:");
+                println!("  1. Review {}", filename);
+                println!("  2. Run 'devpane up' to start your environment\n");
+                return Ok(0);
+            }
+            Err(e) => {
+                eprintln!("Error: {e}");
+                return Ok(1);
+            }
+        }
     }
 
     let request = match action.as_str() {

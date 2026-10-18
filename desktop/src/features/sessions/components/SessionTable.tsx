@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Icon } from "../../../components/ui/Icon";
 import { formatStarted } from "../utils/formatStarted";
+import { extractLocalhostUrls, openInBrowser } from "../../../lib/browser";
 import type { ProcessSession } from "../types";
 import { ProcessStatusBadge } from "../../../components/ui/ProcessStatusBadge";
 
@@ -76,6 +77,21 @@ export function SessionTable({ sessions, onStop, onViewLogs }: Props) {
               </td>
               <td>
                 <div className="row-actions">
+                  {extractLocalhostUrls(session.command).length > 0 && (
+                    <button
+                      className="row-action"
+                      aria-label={`Open ${extractLocalhostUrls(session.command)[0]} in browser`}
+                      onClick={() =>
+                        void openInBrowser(
+                          extractLocalhostUrls(session.command)[0]
+                        )
+                      }
+                      title={`Open ${extractLocalhostUrls(session.command)[0]} in browser`}
+                      style={{ color: "#38ef7d" }}
+                    >
+                      <Icon name="globe" size={16} />
+                    </button>
+                  )}
                   <button
                     className="row-action"
                     aria-label={`View logs for ${session.name}`}

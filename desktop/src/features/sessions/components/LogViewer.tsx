@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../../lib/api";
 import { Icon } from "../../../components/ui/Icon";
+import { extractLocalhostUrls, openInBrowser } from "../../../lib/browser";
 import type { ProcessSession } from "../types";
 import "./LogViewer.css";
 
@@ -15,6 +16,10 @@ export function LogViewer({ session, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const outputRef = useRef<HTMLPreElement>(null);
+
+  const detectedUrls = useMemo(() => {
+    return extractLocalhostUrls(`${logs} ${session.command}`);
+  }, [logs, session.command]);
 
   const loadLogs = useCallback(async () => {
     setLoading(true);
@@ -117,6 +122,18 @@ export function LogViewer({ session, onClose }: Props) {
             </span>
           </div>
           <div className="log-viewer-actions">
+            {detectedUrls.map((url) => (
+              <button
+                key={url}
+                className="log-viewer-tool-button log-viewer-url-btn"
+                onClick={() => void openInBrowser(url)}
+                title={`Open ${url} in default browser`}
+              >
+                <Icon name="globe" size={14} />
+                <span>{url}</span>
+                <Icon name="external" size={12} />
+              </button>
+            ))}
             <button
               className="log-viewer-tool-button"
               onClick={() => void loadLogs()}

@@ -19,9 +19,22 @@ type IconName =
   | "copy"
   | "square"
   | "loader"
-  | "close";
+  | "close"
+  | "globe"
+  | "external";
 
 const paths: Record<IconName, ReactNode> = {
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20" />
+    </>
+  ),
+  external: (
+    <>
+      <path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    </>
+  ),
   grid: (
     <>
       <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
