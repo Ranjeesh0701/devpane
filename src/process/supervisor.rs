@@ -50,10 +50,15 @@ impl ProcessSupervisor {
                 Some(Ok(Some(exit_status))) => {
                     process.session.status = ProcessStatus::Exited;
                     process.session.exit_code = exit_status.code();
+                    process.session.cpu_percent = None;
+                    process.session.memory_bytes = None;
                     process.child = None;
                 }
                 Some(Ok(None)) => {
                     process.session.status = ProcessStatus::Running;
+                    let (cpu, mem) = super::platform::get_process_metrics(process.session.pid);
+                    process.session.cpu_percent = cpu;
+                    process.session.memory_bytes = mem;
                 }
                 Some(Err(error)) => {
                     eprintln!(
@@ -64,9 +69,14 @@ impl ProcessSupervisor {
                 None => match is_same_process(&process.session) {
                     Ok(true) => {
                         process.session.status = ProcessStatus::Running;
+                        let (cpu, mem) = super::platform::get_process_metrics(process.session.pid);
+                        process.session.cpu_percent = cpu;
+                        process.session.memory_bytes = mem;
                     }
                     Ok(false) => {
                         process.session.status = ProcessStatus::Exited;
+                        process.session.cpu_percent = None;
+                        process.session.memory_bytes = None;
                     }
                     Err(error) => {
                         eprintln!("Failed to check process {}: {error}", process.session.pid);
@@ -203,6 +213,7 @@ impl ProcessSupervisor {
             }
         };
 
+        let env_files = crate::config::load_env_files(project_dir);
         let mut results = Vec::new();
 
         for name in execution_order {
@@ -228,12 +239,15 @@ impl ProcessSupervisor {
                 }
             }
 
+            let mut final_env = env_files.clone();
+            final_env.extend(service.env.clone());
+
             match self.start(
                 name.clone(),
                 service.command.clone(),
                 service.args.clone(),
                 service.cwd.clone(),
-                service.env.clone(),
+                final_env,
                 Some(project_dir.to_path_buf()),
             ) {
                 Ok(session) => {

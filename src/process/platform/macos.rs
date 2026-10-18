@@ -68,3 +68,40 @@ pub fn get_process_start_time(pid: u32) -> Result<(u64, u64), io::Error> {
 fn pid_to_i32(pid: u32) -> Result<i32, io::Error> {
     i32::try_from(pid).map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "pid out of range"))
 }
+
+pub fn get_process_metrics(pid: u32) -> (Option<f32>, Option<u64>) {
+    let Ok(pid_i32) = pid_to_i32(pid) else {
+        return (None, None);
+    };
+
+    let mut task_info: libc::proc_taskinfo = unsafe { mem::zeroed() };
+    let size = mem::size_of::<libc::proc_taskinfo>() as i32;
+
+    let result = unsafe {
+        libc::proc_pidinfo(
+            pid_i32,
+            libc::PROC_PIDTASKINFO,
+            0,
+            &mut task_info as *mut _ as *mut libc::c_void,
+            size,
+        )
+    };
+
+    let memory_bytes = if result == size {
+        Some(task_info.pti_resident_size)
+    } else {
+        None
+    };
+
+    let cpu = get_cpu_from_ps(pid);
+    (cpu, memory_bytes)
+}
+
+fn get_cpu_from_ps(pid: u32) -> Option<f32> {
+    let out = std::process::Command::new("ps")
+        .args(["-o", "%cpu=", "-p", &pid.to_string()])
+        .output()
+        .ok()?;
+    let s = String::from_utf8_lossy(&out.stdout);
+    s.trim().parse::<f32>().ok()
+}

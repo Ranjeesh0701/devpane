@@ -26,4 +26,8 @@ pub struct ProcessSession {
     pub exit_code: Option<i32>,
 
     pub project_dir: Option<PathBuf>,
+    #[serde(default)]
+    pub cpu_percent: Option<f32>,
+    #[serde(default)]
+    pub memory_bytes: Option<u64>,
 }

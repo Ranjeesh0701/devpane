@@ -10,6 +10,7 @@ pub struct ServiceLogView {
     pub log_content: String,
     pub file_position: u64,
     pub scroll_offset: usize,
+    pub search_query: Option<String>,
 }
 
 impl ServiceLogView {
@@ -20,6 +21,7 @@ impl ServiceLogView {
             log_content: String::new(),
             file_position: 0,
             scroll_offset: 0,
+            search_query: None,
         };
 
         view.update()?;
@@ -67,6 +69,44 @@ impl ServiceLogView {
 
     pub fn content(&self) -> &str {
         &self.log_content
+    }
+
+    pub fn filtered_content(&self) -> String {
+        match &self.search_query {
+            Some(query) if !query.is_empty() => {
+                let q_lower = query.to_lowercase();
+                let matching_lines: Vec<&str> = self
+                    .log_content
+                    .lines()
+                    .filter(|line| line.to_lowercase().contains(&q_lower))
+                    .collect();
+                if matching_lines.is_empty() {
+                    format!("[No lines match filter: \"{}\"]", query)
+                } else {
+                    matching_lines.join("\n")
+                }
+            }
+            _ => self.log_content.clone(),
+        }
+    }
+
+    pub fn match_count(&self) -> Option<usize> {
+        let query = self.search_query.as_deref()?;
+        if query.is_empty() {
+            return None;
+        }
+        let q_lower = query.to_lowercase();
+        Some(
+            self.log_content
+                .lines()
+                .filter(|line| line.to_lowercase().contains(&q_lower))
+                .count(),
+        )
+    }
+
+    pub fn set_search(&mut self, query: Option<String>) {
+        self.search_query = query;
+        self.scroll_offset = 0;
     }
 
     pub fn scroll_up(&mut self, lines: usize) {

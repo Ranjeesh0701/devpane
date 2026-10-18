@@ -59,6 +59,8 @@ where
     let mut shell_tabs: Vec<TerminalPane> = Vec::new();
     let mut closed_session_ids = std::collections::HashSet::<String>::new();
     let mut active_tab: usize = 0;
+    let mut is_searching = false;
+    let mut search_input = String::new();
     let mut error_message: Option<String> = None;
     let mut last_refresh = Instant::now() - Duration::from_secs(1);
 
@@ -264,7 +266,7 @@ where
             } else if active_tab < service_views.len() {
                 // Service log view
                 let view = &service_views[active_tab];
-                let content = view.content();
+                let content = view.filtered_content();
                 let total_lines = content.lines().count();
                 let viewport_height = areas[1].height.saturating_sub(2) as usize;
                 let max_scroll = total_lines.saturating_sub(viewport_height);
@@ -305,6 +307,14 @@ where
                         view.session.pid
                     ),
                 };
+
+                if let Some(count) = view.match_count() {
+                    title.push_str(&format!(
+                        "[🔍 \"{}\": {} matches] ",
+                        view.search_query.as_deref().unwrap_or(""),
+                        count
+                    ));
+                }
 
                 if view.scroll_offset > 0 {
                     title.push_str(&format!("[↑ {} lines] ", view.scroll_offset));
@@ -363,47 +373,65 @@ where
                     }).collect()
                 }
                 None => {
-                    let running_count = service_views.iter().filter(|v| matches!(v.status(), ProcessStatus::Running)).count();
-                    let exited_count = service_views.iter().filter(|v| matches!(v.status(), ProcessStatus::Exited)).count();
-
-                    // Show scroll shortcuts if viewing a shell tab
-                    let is_shell_tab = active_tab >= service_views.len();
-
-                    if is_shell_tab {
+                    if is_searching {
                         vec![Line::from(vec![
-                            Span::raw("Tab: Switch • "),
-                            Span::raw("Ctrl+T: New shell • "),
-                            Span::raw("Ctrl+W: Close tab • "),
-                            Span::styled("PgUp/PgDn: Scroll • ", Style::default().fg(Color::Cyan)),
-                            Span::styled("End: Bottom • ", Style::default().fg(Color::Cyan)),
-                            Span::raw("Ctrl+Q: Quit • "),
-                            Span::styled(
-                                format!("{} running", running_count),
-                                Style::default().fg(Color::Green),
-                            ),
-                            Span::raw(" • "),
-                            Span::styled(
-                                format!("{} exited", exited_count),
-                                Style::default().fg(Color::Red),
-                            ),
+                            Span::styled("Search: /", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                            Span::styled(&search_input, Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
+                            Span::styled("█", Style::default().fg(Color::Yellow)),
+                            Span::raw("  "),
+                            Span::styled("(Enter: Confirm • Esc: Clear • Type to filter)", Style::default().fg(Color::DarkGray)),
                         ])]
                     } else {
-                        vec![Line::from(vec![
-                            Span::raw("Tab/Shift+Tab: Switch • "),
-                            Span::raw("Ctrl+T: New shell • "),
-                            Span::raw("Ctrl+W: Close tab • "),
-                            Span::raw("Ctrl+R: Refresh • "),
-                            Span::raw("q / Ctrl+C: Stop & Quit • "),
-                            Span::styled(
-                                format!("{} running", running_count),
-                                Style::default().fg(Color::Green),
-                            ),
-                            Span::raw(" • "),
-                            Span::styled(
-                                format!("{} exited", exited_count),
-                                Style::default().fg(Color::Red),
-                            ),
-                        ])]
+                        let running_count = service_views.iter().filter(|v| matches!(v.status(), ProcessStatus::Running)).count();
+                        let exited_count = service_views.iter().filter(|v| matches!(v.status(), ProcessStatus::Exited)).count();
+
+                        // Show scroll shortcuts if viewing a shell tab
+                        let is_shell_tab = active_tab >= service_views.len();
+
+                        if is_shell_tab {
+                            vec![Line::from(vec![
+                                Span::raw("Tab: Switch • "),
+                                Span::raw("Ctrl+T: New shell • "),
+                                Span::raw("Ctrl+W: Close tab • "),
+                                Span::styled("PgUp/PgDn: Scroll • ", Style::default().fg(Color::Cyan)),
+                                Span::styled("End: Bottom • ", Style::default().fg(Color::Cyan)),
+                                Span::raw("Ctrl+Q: Quit • "),
+                                Span::styled(
+                                    format!("{} running", running_count),
+                                    Style::default().fg(Color::Green),
+                                ),
+                                Span::raw(" • "),
+                                Span::styled(
+                                    format!("{} exited", exited_count),
+                                    Style::default().fg(Color::Red),
+                                ),
+                            ])]
+                        } else {
+                            let has_filter = service_views.get(active_tab).and_then(|v| v.search_query.as_ref()).is_some();
+                            let mut shortcuts = vec![
+                                Span::raw("Tab/Shift+Tab: Switch • "),
+                                Span::styled("/: Search • ", Style::default().fg(Color::Cyan)),
+                            ];
+                            if has_filter {
+                                shortcuts.push(Span::styled("Esc: Clear filter • ", Style::default().fg(Color::Yellow)));
+                            }
+                            shortcuts.extend(vec![
+                                Span::raw("Ctrl+T: New shell • "),
+                                Span::raw("Ctrl+W: Close tab • "),
+                                Span::raw("Ctrl+R: Refresh • "),
+                                Span::raw("q / Ctrl+C: Stop & Quit • "),
+                                Span::styled(
+                                    format!("{} running", running_count),
+                                    Style::default().fg(Color::Green),
+                                ),
+                                Span::raw(" • "),
+                                Span::styled(
+                                    format!("{} exited", exited_count),
+                                    Style::default().fg(Color::Red),
+                                ),
+                            ]);
+                            vec![Line::from(shortcuts)]
+                        }
                     }
                 }
             };
@@ -424,9 +452,62 @@ where
                 }
                 Event::Key(key) => {
                     if key.kind == event::KeyEventKind::Press {
+                        // Handle search input mode
+                        if is_searching {
+                            match key.code {
+                                KeyCode::Esc => {
+                                    is_searching = false;
+                                    search_input.clear();
+                                    if active_tab < service_views.len() {
+                                        service_views[active_tab].set_search(None);
+                                    }
+                                }
+                                KeyCode::Enter => {
+                                    is_searching = false;
+                                }
+                                KeyCode::Backspace => {
+                                    search_input.pop();
+                                    if active_tab < service_views.len() {
+                                        let q = if search_input.is_empty() {
+                                            None
+                                        } else {
+                                            Some(search_input.clone())
+                                        };
+                                        service_views[active_tab].set_search(q);
+                                    }
+                                }
+                                KeyCode::Char(c) if !key.modifiers.contains(KeyModifiers::CONTROL) => {
+                                    search_input.push(c);
+                                    if active_tab < service_views.len() {
+                                        service_views[active_tab].set_search(Some(search_input.clone()));
+                                    }
+                                }
+                                _ => {}
+                            }
+                            continue;
+                        }
+
                         let total_tabs = service_views.len() + shell_tabs.len();
 
                         match (key.code, key.modifiers) {
+                        // Search in active service tab
+                        (KeyCode::Char('/'), KeyModifiers::NONE) if active_tab < service_views.len() => {
+                            is_searching = true;
+                            search_input = service_views[active_tab]
+                                .search_query
+                                .clone()
+                                .unwrap_or_default();
+                            continue;
+                        }
+
+                        // Clear search filter with Esc if active
+                        (KeyCode::Esc, KeyModifiers::NONE) if active_tab < service_views.len() => {
+                            if service_views[active_tab].search_query.is_some() {
+                                service_views[active_tab].set_search(None);
+                                search_input.clear();
+                                continue;
+                            }
+                        }
                         // Quit: Ctrl+C or Ctrl+Q always quits; 'q' quits on read-only service views
                         (KeyCode::Char('c'), KeyModifiers::CONTROL)
                         | (KeyCode::Char('\x03'), _) => break,

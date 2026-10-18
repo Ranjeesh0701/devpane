@@ -64,6 +64,50 @@ pub fn load_config(path: &Path) -> Result<DevboxConfig, Box<dyn error::Error>> {
     Ok(config)
 }
 
+/// Automatically loads variables from .env and .env.local in the specified directory.
+pub fn load_env_files(dir: &Path) -> HashMap<String, String> {
+    let mut env = HashMap::new();
+
+    // 1. Load .env
+    let env_path = dir.join(".env");
+    if let Ok(contents) = fs::read_to_string(&env_path) {
+        parse_env_file_into(&contents, &mut env);
+    }
+
+    // 2. Load .env.local (takes precedence over .env)
+    let env_local_path = dir.join(".env.local");
+    if let Ok(contents) = fs::read_to_string(&env_local_path) {
+        parse_env_file_into(&contents, &mut env);
+    }
+
+    env
+}
+
+fn parse_env_file_into(contents: &str, map: &mut HashMap<String, String>) {
+    for line in contents.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+
+        if let Some((key, val)) = trimmed.split_once('=') {
+            let key = key.trim();
+            if key.is_empty() {
+                continue;
+            }
+            let mut val = val.trim();
+            if (val.starts_with('"') && val.ends_with('"'))
+                || (val.starts_with('\'') && val.ends_with('\''))
+            {
+                if val.len() >= 2 {
+                    val = &val[1..val.len() - 1];
+                }
+            }
+            map.insert(key.to_string(), val.to_string());
+        }
+    }
+}
+
 pub fn find_config() -> Result<PathBuf, io::Error> {
     let devpane_path = std::env::current_dir()?.join("devpane.yaml");
     if devpane_path.is_file() {

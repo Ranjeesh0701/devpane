@@ -10,6 +10,8 @@ export type ProcessSession = {
   status: ProcessStatus;
   exit_code: number | null;
   project_dir?: string | null;
+  cpu_percent?: number | null;
+  memory_bytes?: number | null;
 };
 
 export type NewSessionInput = {

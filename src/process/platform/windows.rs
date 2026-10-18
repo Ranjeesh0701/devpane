@@ -125,3 +125,7 @@ pub fn get_process_start_time(pid: u32) -> Result<(u64, u64), io::Error> {
         (unix_ticks % TICKS_PER_SECOND) / 10,
     ))
 }
+
+pub fn get_process_metrics(_pid: u32) -> (Option<f32>, Option<u64>) {
+    (None, None)
+}

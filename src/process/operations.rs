@@ -57,6 +57,8 @@ pub fn start_process(
         exit_code: None,
         project_dir,
         cwd,
+        cpu_percent: None,
+        memory_bytes: None,
     };
 
     println!("Started {} with PID {}", session.name, session.pid);
