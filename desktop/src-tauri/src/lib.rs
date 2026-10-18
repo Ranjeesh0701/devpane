@@ -1,8 +1,13 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, OnceLock};
 
 use devpane_core::process::session::ProcessSession;
 use devpane_core::protocol::{Request, Response, read_message, write_message};
+
+static EMBEDDED_DAEMON_RUNNING: AtomicBool = AtomicBool::new(false);
+static EMBEDDED_SHUTDOWN: OnceLock<Arc<AtomicBool>> = OnceLock::new();
 
 #[tauri::command]
 fn list_sessions() -> Result<Vec<ProcessSession>, String> {
@@ -178,8 +183,51 @@ fn get_daemon_candidates() -> Vec<PathBuf> {
     candidates
 }
 
+#[derive(serde::Serialize)]
+struct CliStatus {
+    installed: bool,
+    path: Option<String>,
+}
+
+#[tauri::command]
+fn get_cli_status() -> CliStatus {
+    let mut check_paths = Vec::new();
+    if let Some(home) = dirs::home_dir() {
+        check_paths.push(home.join(".cargo/bin/devpane"));
+        check_paths.push(home.join(".local/bin/devpane"));
+    }
+    check_paths.push(PathBuf::from("/usr/local/bin/devpane"));
+    check_paths.push(PathBuf::from("/opt/homebrew/bin/devpane"));
+
+    for path in check_paths {
+        if path.is_file() {
+            return CliStatus {
+                installed: true,
+                path: Some(path.display().to_string()),
+            };
+        }
+    }
+
+    if let Ok(output) = Command::new("which").arg("devpane").output() {
+        if output.status.success() {
+            let path_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if !path_str.is_empty() {
+                return CliStatus {
+                    installed: true,
+                    path: Some(path_str),
+                };
+            }
+        }
+    }
+
+    CliStatus {
+        installed: false,
+        path: None,
+    }
+}
+
 fn connect_to_daemon() -> Result<devpane_core::ipc::Connection, String> {
-    // 1. Try connecting directly to existing daemon
+    // 1. Try connecting directly to existing daemon (running via CLI or previous launch)
     if let Ok(conn) = devpane_core::ipc::connect() {
         return Ok(conn);
     }
@@ -196,27 +244,28 @@ fn connect_to_daemon() -> Result<devpane_core::ipc::Connection, String> {
             .stderr(Stdio::inherit())
             .spawn();
 
-        if let Err(e) = spawn_result {
-            return Err(format!(
-                "Failed to auto-start daemon binary at {}: {}",
-                path.display(),
-                e
-            ));
+        if let Ok(_) = spawn_result {
+            if let Ok(conn) = devpane_core::ipc::connect_with_retry(20, 100) {
+                return Ok(conn);
+            }
         }
+    }
 
-        // Retry connection up to 30 times (100ms interval = 3s total)
-        return devpane_core::ipc::connect_with_retry(30, 100).map_err(|e| {
-            format!(
-                "Started daemon at {} but could not connect after 3s: {}",
-                path.display(),
-                e
-            )
+    // 3. Zero-click embedded daemon fallback: launch background daemon thread in-process!
+    if !EMBEDDED_DAEMON_RUNNING.swap(true, Ordering::SeqCst) {
+        let shutdown = Arc::new(AtomicBool::new(false));
+        let _ = EMBEDDED_SHUTDOWN.set(Arc::clone(&shutdown));
+        std::thread::spawn(move || {
+            if let Err(e) = devpane_core::daemon::run_daemon(shutdown) {
+                eprintln!("Embedded Devpane daemon error: {e}");
+            }
         });
     }
 
-    Err(
-        "Devpane daemon is not running and could not be found automatically.\n\nPlease start it using 'devpane up' or install the CLI.".to_string(),
-    )
+    // Connect to the embedded daemon
+    devpane_core::ipc::connect_with_retry(30, 100).map_err(|e| {
+        format!("Failed to auto-start Devpane daemon: {e}")
+    })
 }
 
 use tauri::{
@@ -254,6 +303,10 @@ pub fn run() {
                         }
                     }
                     "quit" => {
+                        if let Some(shutdown) = EMBEDDED_SHUTDOWN.get() {
+                            shutdown.store(true, Ordering::SeqCst);
+                            let _ = devpane_core::ipc::remove_socket();
+                        }
                         app_handle.exit(0);
                     }
                     _ => {}
@@ -284,6 +337,11 @@ pub fn run() {
 
             let _tray = tray_builder.build(app)?;
 
+            // Proactively warm up daemon connection on startup
+            std::thread::spawn(|| {
+                let _ = connect_to_daemon();
+            });
+
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -298,8 +356,17 @@ pub fn run() {
             stop_session,
             stop_project,
             stop_all_sessions,
-            get_session_logs
+            get_session_logs,
+            get_cli_status
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running Tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building Tauri application")
+        .run(|_app_handle, event| {
+            if let tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit = event {
+                if let Some(shutdown) = EMBEDDED_SHUTDOWN.get() {
+                    shutdown.store(true, Ordering::SeqCst);
+                    let _ = devpane_core::ipc::remove_socket();
+                }
+            }
+        });
 }

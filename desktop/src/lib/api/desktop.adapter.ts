@@ -19,4 +19,7 @@ export const desktopAdapter = {
   getSessionLogs(id: string): Promise<string> {
     return invoke<string>("get_session_logs", { id });
   },
+  getCliStatus(): Promise<{ installed: boolean; path: string | null }> {
+    return invoke<{ installed: boolean; path: string | null }>("get_cli_status");
+  },
 };
