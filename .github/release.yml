@@ -1,0 +1,102 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-cli:
+    name: Build CLI (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            archive_name: devpane-darwin-arm64
+            bin_ext: ""
+          - os: macos-13
+            target: x86_64-apple-darwin
+            archive_name: devpane-darwin-x64
+            bin_ext: ""
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            archive_name: devpane-windows-x64
+            bin_ext: ".exe"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build release binaries
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package archives (Unix)
+        if: matrix.os != 'windows-latest'
+        run: |
+          mkdir -p package
+          cp target/${{ matrix.target }}/release/devpane target/${{ matrix.target }}/release/daemon package/
+          tar -czvf ${{ matrix.archive_name }}.tar.gz -C package devpane daemon
+
+      - name: Package archives (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path package
+          Copy-Item target/${{ matrix.target }}/release/devpane.exe package/
+          Copy-Item target/${{ matrix.target }}/release/daemon.exe package/
+          Compress-Archive -Path package/* -DestinationPath ${{ matrix.archive_name }}.zip
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            devpane-*.tar.gz
+            devpane-*.zip
+
+  build-desktop:
+    name: Build Desktop (${{ matrix.platform }})
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install desktop dependencies
+        run: |
+          cd desktop
+          bun install
+
+      - name: Build Tauri Desktop App
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: "./desktop"
+          tagName: ${{ github.ref_name }}
+          releaseName: "Devpane ${{ github.ref_name }}"
+          releaseBody: "Automated release of Devpane CLI and Desktop application."
+          releaseDraft: false
+          prerelease: false
