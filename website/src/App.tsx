@@ -10,27 +10,27 @@ const services = [
 const features = [
   {
     number: "01",
-    icon: "⌘",
-    title: "AI Process Supervision",
-    description:
-      "Coding agents like Claude and Gemini can run devpane up and spawn services via daemon without littering your terminal.",
-    tag: "AGENT-FRIENDLY",
-  },
-  {
-    number: "02",
     icon: "⌁",
-    title: "Interactive Workspace & Panes",
+    title: "Interactive Terminal Workspace",
     description:
-      "A tmux-inspired TUI with VT100 terminal emulation. Switch tabs with Tab, spawn new shells with Ctrl+T, and scroll logs smoothly.",
+      "A tmux-inspired TUI with VT100 terminal emulation. Inspect live service logs, switch tabs with Tab, and spawn interactive shells with Ctrl+T.",
     tag: "TERMINAL WORKSPACE",
   },
   {
-    number: "03",
+    number: "02",
     icon: "▤",
     title: "Declarative devpane.yaml",
     description:
-      "Define all services, working directories, and commands once in devpane.yaml. devpane up starts everything; devpane down cleans up.",
-    tag: "ONE WORKSPACE",
+      "Configure your frontend, backend, workers, and databases in one simple YAML file. devpane up starts your entire project; devpane down cleans up.",
+    tag: "LOCAL ORCHESTRATION",
+  },
+  {
+    number: "03",
+    icon: "⌘",
+    title: "AI-Agent Ready",
+    description:
+      "Whether you start processes by hand or an AI agent runs them on your behalf, Devpane's daemon keeps process state structured and observable.",
+    tag: "AGENT-COMPATIBLE",
   },
 ];
 
@@ -202,19 +202,20 @@ function App() {
           <div className="hero-copy">
             <div className="eyebrow">
               <span className="eyebrow-dot" />
-              DEVELOPMENT IN THE AGE OF AI
+              LOCAL PROCESS WORKSPACE
             </div>
 
             <h1>
-              Let AI build.
+              Run your stack.
               <br />
               <span>Stay in control.</span>
             </h1>
 
             <p className="hero-description">
-              AI can write your code and start your servers. Devpane is built
-              to help you see what's running, inspect process output, and
-              manage your development workflow from one interactive workspace.
+              Stop juggling disconnected terminal tabs. Devpane is an interactive
+              development process manager and terminal workspace that makes it easy
+              to run, inspect, and supervise all your services — built for modern
+              developers and the AI agents coding alongside them.
             </p>
 
             <div className="hero-actions">
@@ -228,7 +229,7 @@ function App() {
 
             <div className="hero-note">
               <span className="note-check">✓</span>
-              Built around your workflow, not another AI chatbot.
+              Interactive terminal panes, process daemon, and desktop dashboard.
             </div>
           </div>
 
@@ -248,16 +249,16 @@ function App() {
 
         <section className="principles">
           <div className="section-container principles-inner">
-            <p>FROM AI-GENERATED CODE TO RUNNING SOFTWARE</p>
+            <p>FROM LOCAL SCRIPTS TO MULTI-SERVICE WORKSPACES</p>
             <div className="principle-items">
               <span>
-                <i>01</i> Build
+                <i>01</i> Launch
               </span>
               <span>
-                <i>02</i> Run
+                <i>02</i> Supervise
               </span>
               <span>
-                <i>03</i> Observe
+                <i>03</i> Interact
               </span>
             </div>
           </div>
@@ -265,11 +266,11 @@ function App() {
 
         <section className="features section-container" id="features">
           <div className="section-heading">
-            <div className="eyebrow">THE MISSING VISIBILITY LAYER</div>
-            <h2>Let your agent work. See what it runs.</h2>
+            <div className="eyebrow">THE LOCAL RUNTIME LAYER</div>
+            <h2>Full visibility over your entire stack.</h2>
             <p>
-              AI-assisted development shouldn't mean losing track of the
-              processes that power your application.
+              Whether you're developing manually or pairing with AI coding agents,
+              Devpane keeps every server, worker, and task manageable from a single pane.
             </p>
           </div>
 
@@ -295,25 +296,25 @@ function App() {
           <div className="section-container workflow-inner">
             <div className="workflow-copy">
               <div className="eyebrow">A BETTER DEVELOPMENT LOOP</div>
-              <h2>From agent instructions to application insight.</h2>
+              <h2>Built for developers. Ready for AI agents.</h2>
               <p>
-                Imagine a workflow where your coding agent can manage processes
-                through a predictable interface, while you get a clear visual
-                view of what's running and what needs your attention.
+                Run <code style={{ color: "var(--accent)" }}>devpane up</code> to launch your whole environment into interactive
+                terminal tabs. Coding agents can also invoke Devpane commands via IPC to spin up servers,
+                run migrations, and inspect logs — while you stay in full control.
               </p>
 
               <div className="workflow-benefits">
                 <div>
                   <span className="benefit-check">✓</span>
-                  <span>Consistent process management</span>
+                  <span>Interactive VT100 terminal panes & shells</span>
                 </div>
                 <div>
                   <span className="benefit-check">✓</span>
-                  <span>Visible process state and output</span>
+                  <span>Daemon-backed supervision & session persistence</span>
                 </div>
                 <div>
                   <span className="benefit-check">✓</span>
-                  <span>A human-readable workspace</span>
+                  <span>Agent-friendly IPC interface & desktop GUI</span>
                 </div>
               </div>
             </div>
@@ -325,12 +326,12 @@ function App() {
         <section className="get-started section-container" id="get-started">
           <div className="get-started-panel">
             <div className="eyebrow">
-              THE FUTURE OF DEVELOPMENT IS DIFFERENT
+              LOCAL DEVELOPMENT, SIMPLIFIED
             </div>
-            <h2>Build with AI. Understand what runs.</h2>
+            <h2>One command for your entire dev stack.</h2>
             <p>
-              Devpane is evolving to make local development processes easier to
-              manage in an AI-assisted world.
+              Define your services in devpane.yaml and run devpane up.
+              Experience clean terminal multiplexing with interactive shell tabs.
             </p>
             <a
               className="button button-primary"
