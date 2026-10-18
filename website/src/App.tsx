@@ -441,7 +441,7 @@ function InstallWidget() {
           className={`method-tab ${method === "cargo" ? "active" : ""}`}
           onClick={() => setMethod("cargo")}
         >
-          Cargo (crates.io)
+          Cargo
         </button>
         <button
           className={`method-tab ${method === "desktop" ? "active" : ""}`}
@@ -603,8 +603,8 @@ function InstallWidget() {
         {method === "cargo" && (
           <div className="install-card">
             <div className="install-details">
-              <h4>Install via Cargo (crates.io)</h4>
-              <p>Installs <code>devpane</code> directly from crates.io into your <code>~/.cargo/bin</code>:</p>
+              <h4>Install via Cargo</h4>
+              <p>Installs <code>devpane</code> directly into your <code>~/.cargo/bin</code>:</p>
             </div>
             <div className="install-terminal-box">
               <code>{cargoCommand}</code>

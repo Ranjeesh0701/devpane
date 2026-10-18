@@ -31,7 +31,7 @@ Devpane provides:
 
 ## Installation
 
-### Option 1: Cargo (crates.io)
+### Option 1: Cargo
 ```bash
 cargo install devpane
 ```
