@@ -19,18 +19,42 @@ const features = [
   },
   {
     number: "02",
-    icon: "▤",
-    title: "Declarative devpane.yaml",
+    icon: "⚡",
+    title: "Resource Metrics & Health Checks",
     description:
-      "Configure your frontend, backend, workers, and databases in one simple YAML file. devpane up starts your entire project; devpane down cleans up.",
-    tag: "LOCAL ORCHESTRATION",
+      "Real-time CPU % and RAM monitoring per process. Define depends_on startup chains with port-readiness health checks and auto port-conflict killing.",
+    tag: "METRICS & HEALTH",
   },
   {
     number: "03",
-    icon: "⌘",
-    title: "AI-Agent Ready",
+    icon: "▤",
+    title: "Declarative Config & Auto .env",
     description:
-      "Whether you start processes by hand or an AI agent runs them on your behalf, Devpane's daemon keeps process state structured and observable.",
+      "Configure your stack in devpane.yaml. Automatically loads .env and .env.local with zero external wrappers or direnv required.",
+    tag: "LOCAL ORCHESTRATION",
+  },
+  {
+    number: "04",
+    icon: "🖥",
+    title: "Zero-Click Standalone Desktop",
+    description:
+      "Native Tauri desktop app with an embedded background daemon. Open the app and it works immediately without manual CLI or terminal setup.",
+    tag: "DESKTOP DASHBOARD",
+  },
+  {
+    number: "05",
+    icon: "🔍",
+    title: "In-Pane Log Search & Filter",
+    description:
+      "Press / in any service log tab to filter log streams live with real-time match counters. Esc clears filters instantly without losing position.",
+    tag: "LOG SEARCH",
+  },
+  {
+    number: "06",
+    icon: "⌘",
+    title: "AI-Agent & IPC Ready",
+    description:
+      "Whether you manage processes manually or AI agents launch them via IPC, Devpane keeps session states structured, persisted, and observable.",
     tag: "AGENT-COMPATIBLE",
   },
 ];
@@ -58,7 +82,7 @@ function ProcessPreview() {
             <span className="agent-indicator-dot" />
             LIVE DAEMON SUPERVISOR
           </span>
-          <span className="terminal-muted">devpane.yaml loaded</span>
+          <span className="terminal-muted">devpane.yaml loaded • .env cascaded</span>
         </div>
 
         {/* Tab bar header */}
@@ -103,8 +127,8 @@ function ProcessPreview() {
             minHeight: "135px",
           }}
         >
-          <div style={{ color: "var(--subtle)" }}>[devpane:daemon] Service 'backend' started (PID 48921)</div>
-          <div style={{ color: "#aab5ff" }}>   Compiling devpane v0.1.0 (/Workspace/devpane)</div>
+          <div style={{ color: "var(--subtle)" }}>[devpane:daemon] Service 'backend' started (PID 48921) • 0.8% CPU • 34.2 MB</div>
+          <div style={{ color: "#aab5ff" }}>   Compiling devpane v0.2.0 (/Workspace/devpane)</div>
           <div style={{ color: "var(--success)" }}>    Finished `dev` profile in 0.82s</div>
           <div style={{ color: "#e2e4ed" }}>[server] Listening on http://127.0.0.1:8080</div>
           <div style={{ color: "#e2e4ed" }}>[server] IPC socket ready at /tmp/devpane.sock</div>
@@ -116,7 +140,7 @@ function ProcessPreview() {
         <div className="terminal-bottom">
           <div className="terminal-summary">
             <span className="terminal-green">● 3 running</span>
-            <span className="terminal-muted">Tab: Switch • Ctrl+T: Shell • Ctrl+Q: Quit</span>
+            <span className="terminal-muted">Tab: Switch • /: Search • Ctrl+T: Shell • Ctrl+W: Close • q: Quit</span>
           </div>
           <span className="preview-label">INTERACTIVE TUI</span>
         </div>
@@ -189,7 +213,7 @@ function App() {
           <a href="#features">Why Devpane</a>
           <a href="#workflow">How it works</a>
           <a href="#install">Install</a>
-          <a href="https://github.com/Ranjeesh0701/devbox" target="_blank" rel="noreferrer">
+          <a href="https://github.com/Ranjeesh0701/devpane" target="_blank" rel="noreferrer">
             GitHub <ArrowIcon />
           </a>
         </nav>
@@ -387,7 +411,7 @@ function InstallWidget() {
   const [copied, setCopied] = useState(false);
 
   const cargoCommand = "cargo install devpane";
-  const brewCommand = "brew install Ranjeesh0701/tap/devpane";
+  const brewCommand = "brew install Ranjeesh0701/devpane/devpane";
   const repoReleases = "https://github.com/Ranjeesh0701/devpane/releases/latest";
 
   function copyText(text: string) {
@@ -560,8 +584,9 @@ function InstallWidget() {
                 {selectedOS === "linux" && "Devpane for Linux (.AppImage / .deb)"}
               </h4>
               <p>
-                Native desktop interface built with Tauri and React. Inspect sessions, view live streaming
-                process output, and launch new services visually.
+                Zero-click standalone desktop application with an embedded background daemon.
+                No terminal or manual daemon setup required — launch the app and immediately monitor
+                real-time CPU %, RAM, and stream live logs visually.
               </p>
             </div>
             <div className="install-action-row">
