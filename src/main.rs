@@ -197,7 +197,14 @@ fn run() -> Result<u8, DevboxError> {
 
                     // Services started successfully, launch TUI
                     drop(stream);
-                    let tui_res = tui::run(fetch_sessions);
+                    let proj_dir = project_dir.clone();
+                    let tui_res = tui::run(move || {
+                        let sessions = fetch_sessions()?;
+                        Ok(sessions
+                            .into_iter()
+                            .filter(|s| s.project_dir.as_deref() == Some(&proj_dir))
+                            .collect())
+                    });
 
                     // When exiting the TUI (via q, Ctrl+C, Ctrl+Q), cleanly stop all services in the project
                     if let Ok(mut stop_stream) = connect_or_start(10, 50) {

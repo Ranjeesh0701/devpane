@@ -57,6 +57,7 @@ where
 {
     let mut service_views: Vec<ServiceLogView> = Vec::new();
     let mut shell_tabs: Vec<TerminalPane> = Vec::new();
+    let mut closed_session_ids = std::collections::HashSet::<String>::new();
     let mut active_tab: usize = 0;
     let mut error_message: Option<String> = None;
     let mut last_refresh = Instant::now() - Duration::from_secs(1);
@@ -111,9 +112,21 @@ where
                         }
                     }
 
-                    // Add new services that appeared
+                    // Remove service views whose session no longer exists in the daemon
+                    let prev_services = service_views.len();
+                    service_views.retain(|v| sessions.iter().any(|s| s.id == v.session.id));
+                    if service_views.len() < prev_services {
+                        let total = service_views.len() + shell_tabs.len();
+                        if total > 0 && active_tab >= total {
+                            active_tab = total - 1;
+                        }
+                    }
+
+                    // Add new services that appeared (and were not explicitly closed by user)
                     for session in sessions {
-                        if !service_views.iter().any(|v| v.session.id == session.id) {
+                        if !closed_session_ids.contains(&session.id)
+                            && !service_views.iter().any(|v| v.session.id == session.id)
+                        {
                             match storage::get_log_file(&session.id) {
                                 Ok(log_path) => {
                                     match ServiceLogView::new(session.clone(), log_path) {
@@ -140,9 +153,20 @@ where
             last_refresh = Instant::now();
         }
 
-        // Update shell tabs if any
-        for shell in &mut shell_tabs {
+        // Update shell tabs and auto-remove any whose process exited
+        let prev_shells = shell_tabs.len();
+        shell_tabs.retain_mut(|shell| {
             shell.update();
+            match shell.session.try_wait() {
+                Ok(Some(_)) => false, // Child process exited (e.g. exit command)
+                _ => true,
+            }
+        });
+        if shell_tabs.len() < prev_shells {
+            let total = service_views.len() + shell_tabs.len();
+            if total > 0 && active_tab >= total {
+                active_tab = total - 1;
+            }
         }
 
         // Render UI
@@ -466,11 +490,13 @@ where
                             if total_tabs > 0 {
                                 if active_tab < service_views.len() {
                                     let service_view = service_views.remove(active_tab);
+                                    let session_id = service_view.session.id.clone();
+                                    closed_session_ids.insert(session_id.clone());
                                     if let Ok(mut stop_stream) = devpane::ipc::connect() {
                                         let _ = devpane::protocol::write_message(
                                             &mut stop_stream,
                                             &devpane::protocol::Request::Stop {
-                                                id: service_view.session.id,
+                                                id: session_id,
                                             },
                                         );
                                         let _ = devpane::protocol::read_message::<_, devpane::protocol::Response>(

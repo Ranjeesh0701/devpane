@@ -38,10 +38,6 @@ impl ProcessSupervisor {
         self.processes.iter().find(|p| p.session.id == id)
     }
 
-    fn remove_process(&mut self, id: &str) {
-        self.processes.retain(|p| p.session.id != id);
-    }
-
     pub fn list(&mut self) -> Result<Vec<ProcessSession>, DevboxError> {
         for process in &mut self.processes {
             let child_result = match process.child.as_mut() {
@@ -115,36 +111,42 @@ impl ProcessSupervisor {
     }
 
     pub fn stop(&mut self, id: &str) -> Result<(), DevboxError> {
-        let Some(process) = self.find_process(id) else {
+        let Some(pos) = self.processes.iter().position(|p| p.session.id == id) else {
             return Err(DevboxError::ProcessNotFound(io::Error::new(
                 io::ErrorKind::NotFound,
                 "Process not found",
             )));
         };
 
-        if !is_same_process(&process.session).map_err(DevboxError::ProcessCheck)? {
-            return Err(DevboxError::ProcessNotFound(io::Error::new(
-                io::ErrorKind::NotFound,
-                format!(
-                    "Process with PID {} has changed since the session was created",
-                    process.session.pid
-                ),
-            )));
-        }
+        let mut managed = self.processes.remove(pos);
+        let pid = managed.session.pid;
+        let name = managed.session.name.clone();
 
-        let pid = process.session.pid;
-        let name = process.session.name.clone();
-
-        match stop_process(pid) {
-            Ok(true) => {
-                println!("Sent termination signal to {} (PID {})", name, pid);
-            }
+        match is_same_process(&managed.session) {
+            Ok(true) => match stop_process(pid) {
+                Ok(true) => {
+                    println!("Sent termination signal to {} (PID {})", name, pid);
+                }
+                Ok(false) => {
+                    println!("Process {} (PID {}) is already gone", name, pid);
+                }
+                Err(e) => return Err(DevboxError::ProcessCheck(e)),
+            },
             Ok(false) => {
-                println!("Process {} (PID {}) is already gone", name, pid);
+                println!("Process {} (PID {}) has already exited", name, pid);
             }
-            Err(e) => return Err(DevboxError::ProcessCheck(e)),
+            Err(e) => {
+                eprintln!(
+                    "Warning: could not verify process status for {} (PID {}): {}",
+                    name, pid, e
+                );
+            }
         }
-        self.remove_process(id);
+
+        if let Some(mut child) = managed.child.take() {
+            let _ = child.try_wait();
+        }
+
         self.save_sessions()?;
 
         Ok(())
@@ -170,6 +172,13 @@ impl ProcessSupervisor {
                 error: Some(format!("Failed to refresh process sessions: {error}")),
             }];
         }
+
+        // Clean up any old exited sessions for this project before starting
+        self.processes.retain(|process| {
+            !(process.session.project_dir.as_deref() == Some(project_dir)
+                && process.session.status == ProcessStatus::Exited)
+        });
+        let _ = self.save_sessions();
 
         // Index running services belonging to this project.
         let existing_services: HashMap<String, ProcessSession> = self
