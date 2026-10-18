@@ -77,11 +77,16 @@ where
             }
 
             if service_views.is_empty() {
-                error_message = Some("No services running. Start services first.".to_string());
+                error_message = Some(
+                    "No services running.\n\nTry:\n  1. Check devbox.yaml has enabled services\n  2. Run 'devbox list' to see all sessions\n  3. Press Ctrl+T to create a shell".to_string()
+                );
             }
         }
         Err(e) => {
-            error_message = Some(format!("Failed to fetch sessions: {}", e));
+            error_message = Some(format!(
+                "Failed to connect to daemon: {}\n\nTry:\n  1. Check if daemon is running: devbox list\n  2. Restart daemon: devbox shutdown && devbox up",
+                e
+            ));
         }
     }
 
@@ -145,21 +150,29 @@ where
             ])
             .split(frame.area());
 
-            // Build tab titles
-            let mut tab_titles: Vec<String> = service_views
+            // Build tab titles with colored status indicators
+            let mut tab_titles: Vec<Line> = service_views
                 .iter()
                 .map(|view| {
-                    let status_icon = match view.status() {
-                        ProcessStatus::Running => "●",
-                        ProcessStatus::Exited => "○",
+                    let (status_icon, status_color) = match view.status() {
+                        ProcessStatus::Running => ("●", Color::Green),
+                        ProcessStatus::Exited => ("○", Color::Red),
                     };
-                    format!("{} {}", status_icon, view.name())
+                    Line::from(vec![
+                        Span::styled(status_icon, Style::default().fg(status_color)),
+                        Span::raw(" "),
+                        Span::raw(view.name()),
+                    ])
                 })
                 .collect();
 
-            // Add shell tabs
+            // Add shell tabs with different icon
             for shell in shell_tabs.iter() {
-                tab_titles.push(format!("🐚 {}", shell.name));
+                tab_titles.push(Line::from(vec![
+                    Span::styled("🐚", Style::default().fg(Color::Cyan)),
+                    Span::raw(" "),
+                    Span::raw(shell.name.as_str()),
+                ]));
             }
 
             let tabs = Tabs::new(tab_titles)
@@ -169,26 +182,87 @@ where
                 .highlight_style(
                     Style::default()
                         .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
+                        .add_modifier(Modifier::BOLD)
+                        .bg(Color::DarkGray),
                 );
 
             frame.render_widget(tabs, areas[0]);
 
             // Render current tab's content
             let total_tabs = service_views.len() + shell_tabs.len();
-            if active_tab < service_views.len() {
+
+            if total_tabs == 0 {
+                // Show helpful empty state
+                let help_text = vec![
+                    Line::from(""),
+                    Line::from(Span::styled(
+                        "Welcome to Devbox!",
+                        Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+                    )),
+                    Line::from(""),
+                    Line::from("No services are currently running."),
+                    Line::from(""),
+                    Line::from(vec![
+                        Span::raw("To get started:"),
+                    ]),
+                    Line::from(vec![
+                        Span::raw("  1. Press "),
+                        Span::styled("Ctrl+T", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                        Span::raw(" to create an interactive shell"),
+                    ]),
+                    Line::from(vec![
+                        Span::raw("  2. Edit "),
+                        Span::styled("devbox.yaml", Style::default().fg(Color::Green)),
+                        Span::raw(" to define your services"),
+                    ]),
+                    Line::from(vec![
+                        Span::raw("  3. Run "),
+                        Span::styled("devbox up", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                        Span::raw(" to start services"),
+                    ]),
+                    Line::from(""),
+                    Line::from(vec![
+                        Span::raw("Press "),
+                        Span::styled("q", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+                        Span::raw(" to quit"),
+                    ]),
+                ];
+
+                let help_pane = Paragraph::new(help_text)
+                    .block(Block::default().title(" Getting Started ").borders(Borders::ALL))
+                    .alignment(ratatui::layout::Alignment::Center);
+
+                frame.render_widget(help_pane, areas[1]);
+            } else if active_tab < service_views.len() {
                 // Service log view
                 let view = &service_views[active_tab];
                 let content = view.content();
 
-                let status_text = match view.status() {
-                    ProcessStatus::Running => "Running",
-                    ProcessStatus::Exited => "Exited",
+                let (status_text, status_color) = match view.status() {
+                    ProcessStatus::Running => ("Running", Color::Green),
+                    ProcessStatus::Exited => {
+                        if let Some(code) = view.session.exit_code {
+                            if code == 0 {
+                                ("Exited (success)", Color::Yellow)
+                            } else {
+                                ("Exited (failed)", Color::Red)
+                            }
+                        } else {
+                            ("Exited", Color::Red)
+                        }
+                    }
                 };
+
+                let title = format!(
+                    " {} - {} (PID: {}) ",
+                    view.name(),
+                    status_text,
+                    view.session.pid
+                );
 
                 let content_pane = Paragraph::new(content).block(
                     Block::default()
-                        .title(format!(" {} - {} ", view.name(), status_text))
+                        .title(Span::styled(title, Style::default().fg(status_color)))
                         .borders(Borders::ALL),
                 );
 
@@ -198,9 +272,22 @@ where
                 let shell_index = active_tab - service_views.len();
                 if let Some(shell) = shell_tabs.get(shell_index) {
                     let terminal_text = shell.screen_contents();
+
+                    let mut title = format!(" {} ", shell.name);
+                    if shell.scroll_offset() > 0 {
+                        title = format!(" {} [↑ {} lines] ", shell.name, shell.scroll_offset());
+                    }
+
                     let terminal_pane = Paragraph::new(terminal_text).block(
                         Block::default()
-                            .title(format!(" {} ", shell.name))
+                            .title(Span::styled(
+                                title,
+                                if shell.scroll_offset() > 0 {
+                                    Style::default().fg(Color::Yellow)
+                                } else {
+                                    Style::default()
+                                }
+                            ))
                             .borders(Borders::ALL),
                     );
 
@@ -208,33 +295,88 @@ where
                 }
             }
 
-            // Render footer with help text
-            let footer = match &error_message {
-                Some(error) => vec![Line::from(vec![
-                    Span::styled("Error: ", Style::default().fg(Color::Red)),
-                    Span::raw(error),
-                ])],
-                None => vec![Line::from(vec![
-                    Span::raw("Tab/Shift+Tab: Switch • "),
-                    Span::raw("Ctrl+T: New shell • "),
-                    Span::raw("Ctrl+W: Close tab • "),
-                    Span::raw("Ctrl+R: Refresh • "),
-                    Span::raw("q: Quit"),
-                ])],
+            // Render footer with help text and status summary
+            let footer_lines = match &error_message {
+                Some(error) => {
+                    // Split multi-line errors for better display
+                    error.lines().map(|line| {
+                        if line.starts_with("Try:") || line.starts_with("  ") {
+                            Line::from(Span::styled(line, Style::default().fg(Color::Yellow)))
+                        } else {
+                            Line::from(vec![
+                                Span::styled("⚠ ", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+                                Span::styled(line, Style::default().fg(Color::Red)),
+                            ])
+                        }
+                    }).collect()
+                }
+                None => {
+                    let running_count = service_views.iter().filter(|v| matches!(v.status(), ProcessStatus::Running)).count();
+                    let exited_count = service_views.iter().filter(|v| matches!(v.status(), ProcessStatus::Exited)).count();
+
+                    // Show scroll shortcuts if viewing a shell tab
+                    let is_shell_tab = active_tab >= service_views.len();
+
+                    if is_shell_tab {
+                        vec![Line::from(vec![
+                            Span::raw("Tab: Switch • "),
+                            Span::raw("Ctrl+T: New shell • "),
+                            Span::styled("PgUp/PgDn: Scroll • ", Style::default().fg(Color::Cyan)),
+                            Span::styled("End: Bottom • ", Style::default().fg(Color::Cyan)),
+                            Span::raw("q: Quit • "),
+                            Span::styled(
+                                format!("{} running", running_count),
+                                Style::default().fg(Color::Green),
+                            ),
+                            Span::raw(" • "),
+                            Span::styled(
+                                format!("{} exited", exited_count),
+                                Style::default().fg(Color::Red),
+                            ),
+                        ])]
+                    } else {
+                        vec![Line::from(vec![
+                            Span::raw("Tab/Shift+Tab: Switch • "),
+                            Span::raw("Ctrl+T: New shell • "),
+                            Span::raw("Ctrl+W: Close tab • "),
+                            Span::raw("Ctrl+R: Refresh • "),
+                            Span::raw("q: Quit • "),
+                            Span::styled(
+                                format!("{} running", running_count),
+                                Style::default().fg(Color::Green),
+                            ),
+                            Span::raw(" • "),
+                            Span::styled(
+                                format!("{} exited", exited_count),
+                                Style::default().fg(Color::Red),
+                            ),
+                        ])]
+                    }
+                }
             };
 
-            frame.render_widget(Paragraph::new(footer), areas[2]);
+            frame.render_widget(Paragraph::new(footer_lines), areas[2]);
         })?;
 
         // Handle input
         if event::poll(Duration::from_millis(100))? {
-            if let Event::Key(key) = event::read()? {
-                if key.kind == event::KeyEventKind::Press {
-                    let total_tabs = service_views.len() + shell_tabs.len();
+            match event::read()? {
+                Event::Resize(cols, rows) => {
+                    // Resize all shell tabs to match new terminal size
+                    for shell in &mut shell_tabs {
+                        if let Err(e) = shell.resize(rows.saturating_sub(6), cols) {
+                            eprintln!("Failed to resize shell {}: {}", shell.name, e);
+                        }
+                    }
+                }
+                Event::Key(key) => {
+                    if key.kind == event::KeyEventKind::Press {
+                        let total_tabs = service_views.len() + shell_tabs.len();
 
-                    match (key.code, key.modifiers) {
-                        // Quit
-                        (KeyCode::Char('q'), KeyModifiers::NONE) => break,
+                        match (key.code, key.modifiers) {
+                        // Quit: Ctrl+Q always quits; 'q' only quits on read-only service views
+                        (KeyCode::Char('q'), KeyModifiers::CONTROL) => break,
+                        (KeyCode::Char('q'), KeyModifiers::NONE) if active_tab < service_views.len() => break,
 
                         // Tab navigation
                         (KeyCode::Tab, KeyModifiers::NONE) => {
@@ -258,13 +400,19 @@ where
                         (KeyCode::Char('t'), KeyModifiers::CONTROL) => {
                             let (program, args) = devbox::terminal::default_shell();
                             let shell_number = shell_tabs.len() + 1;
+
+                            // Get current terminal size
+                            let size = terminal.size()?;
+                            let rows = size.height.saturating_sub(6); // Account for tab bar and footer
+                            let cols = size.width;
+
                             match TerminalPane::new(
                                 format!("Shell {}", shell_number),
                                 program,
                                 &args,
                                 std::env::current_dir()?,
-                                24,
-                                80,
+                                rows,
+                                cols,
                             ) {
                                 Ok(pane) => {
                                     shell_tabs.push(pane);
@@ -294,6 +442,39 @@ where
                         // Force refresh (Ctrl+R)
                         (KeyCode::Char('r'), KeyModifiers::CONTROL) => {
                             last_refresh = Instant::now() - Duration::from_secs(1);
+                            continue;
+                        }
+
+                        // Scroll up (Page Up or Shift+Up)
+                        (KeyCode::PageUp, _) | (KeyCode::Up, KeyModifiers::SHIFT) => {
+                            if active_tab >= service_views.len() {
+                                let shell_index = active_tab - service_views.len();
+                                if let Some(shell) = shell_tabs.get_mut(shell_index) {
+                                    shell.scroll_up(5);
+                                }
+                            }
+                            continue;
+                        }
+
+                        // Scroll down (Page Down or Shift+Down)
+                        (KeyCode::PageDown, _) | (KeyCode::Down, KeyModifiers::SHIFT) => {
+                            if active_tab >= service_views.len() {
+                                let shell_index = active_tab - service_views.len();
+                                if let Some(shell) = shell_tabs.get_mut(shell_index) {
+                                    shell.scroll_down(5);
+                                }
+                            }
+                            continue;
+                        }
+
+                        // Scroll to bottom (End)
+                        (KeyCode::End, _) => {
+                            if active_tab >= service_views.len() {
+                                let shell_index = active_tab - service_views.len();
+                                if let Some(shell) = shell_tabs.get_mut(shell_index) {
+                                    shell.scroll_to_bottom();
+                                }
+                            }
                             continue;
                         }
 
@@ -328,6 +509,8 @@ where
                         }
                     }
                 }
+                }
+                _ => {} // Ignore other events like mouse events
             }
         }
     }

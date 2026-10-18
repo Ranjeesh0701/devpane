@@ -9,6 +9,7 @@ pub struct TerminalPane {
     pub name: String,
     pub pid: u32,
     pub cwd: PathBuf,
+    pub scroll_offset: usize,
 }
 
 impl TerminalPane {
@@ -29,6 +30,7 @@ impl TerminalPane {
             name,
             pid: 0, // TODO: get actual PID from session
             cwd,
+            scroll_offset: 0,
         })
     }
 
@@ -56,6 +58,22 @@ impl TerminalPane {
         self.session.resize(rows, cols)?;
         self.parser.set_size(rows, cols);
         Ok(())
+    }
+
+    pub fn scroll_up(&mut self, lines: usize) {
+        self.scroll_offset = self.scroll_offset.saturating_add(lines);
+    }
+
+    pub fn scroll_down(&mut self, lines: usize) {
+        self.scroll_offset = self.scroll_offset.saturating_sub(lines);
+    }
+
+    pub fn scroll_to_bottom(&mut self) {
+        self.scroll_offset = 0;
+    }
+
+    pub fn scroll_offset(&self) -> usize {
+        self.scroll_offset
     }
 }
 

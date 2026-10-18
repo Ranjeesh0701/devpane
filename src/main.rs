@@ -132,10 +132,14 @@ fn run() -> Result<u8, DevboxError> {
             }
 
             let path = find_config()
-                .map_err(DevboxError::ConfigNotFound)?
+                .map_err(|e| DevboxError::InvalidArguments(
+                    format!("Could not find devbox.yaml in current directory.\n\nTry:\n  1. Create a devbox.yaml file (see examples/)\n  2. Run 'devbox up' from the project root\n\nOriginal error: {}", e)
+                ))?
                 .canonicalize()
                 .map_err(DevboxError::FileOperation)?;
-            let config = load_config(&path).map_err(|_| DevboxError::InvalidResponse)?;
+            let config = load_config(&path).map_err(|e| DevboxError::InvalidArguments(
+                format!("Failed to parse devbox.yaml.\n\nCheck your YAML syntax:\n  - Proper indentation\n  - All required fields present\n  - Valid service definitions\n\nOriginal error: {}", e)
+            ))?;
             let project_dir = path
                 .parent()
                 .ok_or(DevboxError::InvalidResponse)?
@@ -360,16 +364,31 @@ fn connect_or_start(retries: u32, delay_ms: u64) -> Result<Connection, DevboxErr
     match ipc::connect() {
         Ok(stream) => return Ok(stream),
         Err(_) => {
-            Command::new(get_daemon_path().map_err(DevboxError::FileOperation)?)
+            let daemon_path = get_daemon_path().map_err(DevboxError::FileOperation)?;
+
+            if !daemon_path.exists() {
+                return Err(DevboxError::InvalidArguments(
+                    format!(
+                        "Daemon binary not found at: {}\n\nTry:\n  1. Build the project: cargo build\n  2. Ensure the daemon binary is in the same directory as devbox",
+                        daemon_path.display()
+                    )
+                ));
+            }
+
+            Command::new(&daemon_path)
                 .stdin(Stdio::null())
                 .stdout(Stdio::null())
                 .stderr(Stdio::inherit())
                 .spawn()
-                .map_err(DevboxError::ProcessLaunch)?;
+                .map_err(|e| DevboxError::InvalidArguments(
+                    format!("Failed to start daemon.\n\nError: {}\n\nTry:\n  1. Check if another daemon is already running\n  2. Check file permissions on {}", e, daemon_path.display())
+                ))?;
         }
     }
 
-    ipc::connect_with_retry(retries, delay_ms).map_err(DevboxError::Ipc)
+    ipc::connect_with_retry(retries, delay_ms).map_err(|e| DevboxError::InvalidArguments(
+        format!("Could not connect to daemon after {} retries.\n\nThe daemon may have failed to start.\nCheck for error messages above.\n\nOriginal error: {}", retries, e)
+    ))
 }
 
 fn fetch_sessions() -> Result<Vec<ProcessSession>, String> {
