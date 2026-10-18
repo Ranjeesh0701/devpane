@@ -13,7 +13,7 @@ type Props = {
 };
 
 function formatMemory(bytes: number | null | undefined): string {
-  if (bytes === null || bytes === undefined || bytes <= 0) return "—";
+  if (bytes === null || bytes === undefined || bytes <= 0) return "-";
   const mb = bytes / (1024 * 1024);
   if (mb >= 1024) {
     return `${(mb / 1024).toFixed(1)} GB`;
@@ -22,7 +22,7 @@ function formatMemory(bytes: number | null | undefined): string {
 }
 
 function formatCpu(cpu: number | null | undefined): string {
-  if (cpu === null || cpu === undefined) return "—";
+  if (cpu === null || cpu === undefined) return "-";
   return `${cpu.toFixed(1)}%`;
 }
 
@@ -178,12 +178,12 @@ export function SessionTable({
                     </td>
                     <td>
                       <span className="resource-cell">
-                        {session.status === "running" ? formatCpu(session.cpu_percent) : "—"}
+                        {session.status === "running" ? formatCpu(session.cpu_percent) : "-"}
                       </span>
                     </td>
                     <td>
                       <span className="resource-cell">
-                        {session.status === "running" ? formatMemory(session.memory_bytes) : "—"}
+                        {session.status === "running" ? formatMemory(session.memory_bytes) : "-"}
                       </span>
                     </td>
                     <td>

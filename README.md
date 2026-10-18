@@ -6,7 +6,7 @@
 [![Crates.io](https://img.shields.io/crates/v/devpane.svg)](https://crates.io/crates/devpane)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Devpane is a high-performance development process manager and terminal workspace built in 100% native Rust. It delivers near-instant startup, zero runtime bloat, and minimal memory footprint — making it effortless to run, observe, and interact with the multiple services powering your applications.
+Devpane is a high-performance development process manager and terminal workspace built in 100% native Rust. It delivers near-instant startup, zero runtime bloat, and minimal memory footprint - making it effortless to run, observe, and interact with the multiple services powering your applications.
 
 > **Project status:** v0.2.0 (Active development).
 
@@ -171,4 +171,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Devbox — a clearer view of the processes behind your code.**
+**Devpane - a clearer view of the processes behind your code.**

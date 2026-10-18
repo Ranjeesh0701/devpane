@@ -16,7 +16,7 @@ export function SessionStats({
 }: Props) {
   const updated = lastUpdated
     ? lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    : "—";
+    : "-";
   return (
     <div className="stats-grid">
       <article className="stat-card">
@@ -26,7 +26,7 @@ export function SessionStats({
             <Icon name="grid" size={17} />
           </span>
         </div>
-        <div className="stat-value">{loading ? "—" : count}</div>
+        <div className="stat-value">{loading ? "-" : count}</div>
         <div className="stat-foot">
           <span className="stat-foot-muted">Persisted sessions</span>
         </div>

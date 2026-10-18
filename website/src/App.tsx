@@ -72,7 +72,7 @@ function ProcessPreview() {
           <span />
           <span />
         </div>
-        <span className="window-title">devpane up — interactive workspace</span>
+        <span className="window-title">devpane up - interactive workspace</span>
         <span className="window-version">v0.2.0</span>
       </div>
 
@@ -239,7 +239,7 @@ function App() {
 
             <p className="hero-description">
               Stop juggling disconnected terminal tabs. Devpane is a blazingly fast
-              process manager and terminal workspace built in native Rust — giving you
+              process manager and terminal workspace built in native Rust - giving you
               instant startup, minimal RAM usage, and full control over your development stack.
             </p>
 
@@ -325,7 +325,7 @@ function App() {
               <p>
                 Run <code style={{ color: "var(--accent)" }}>devpane up</code> to launch your whole environment into interactive
                 terminal tabs. Coding agents can also invoke Devpane commands via IPC to spin up servers,
-                run migrations, and inspect logs — while you stay in full control.
+                run migrations, and inspect logs - while you stay in full control.
               </p>
 
               <div className="workflow-benefits">
@@ -585,7 +585,7 @@ function InstallWidget() {
               </h4>
               <p>
                 Zero-click standalone desktop application with an embedded background daemon.
-                No terminal or manual daemon setup required — launch the app and immediately monitor
+                No terminal or manual daemon setup required - launch the app and immediately monitor
                 real-time CPU %, RAM, and stream live logs visually.
               </p>
             </div>
