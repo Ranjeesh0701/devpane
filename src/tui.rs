@@ -27,7 +27,7 @@ where
     enable_raw_mode()?;
 
     let mut stdout = io::stdout();
-    if let Err(error) = execute!(stdout, EnterAlternateScreen) {
+    if let Err(error) = execute!(stdout, EnterAlternateScreen, event::EnableMouseCapture) {
         let _ = disable_raw_mode();
         return Err(error.into());
     }
@@ -38,7 +38,11 @@ where
     let result = run_app(&mut terminal, &mut fetch_sessions);
 
     disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+    let _ = execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        event::DisableMouseCapture
+    );
     terminal.show_cursor()?;
 
     result
@@ -237,6 +241,15 @@ where
                 // Service log view
                 let view = &service_views[active_tab];
                 let content = view.content();
+                let total_lines = content.lines().count();
+                let viewport_height = areas[1].height.saturating_sub(2) as usize;
+                let max_scroll = total_lines.saturating_sub(viewport_height);
+
+                let scroll_y = if view.scroll_offset == 0 {
+                    max_scroll
+                } else {
+                    max_scroll.saturating_sub(view.scroll_offset)
+                };
 
                 let (status_text, status_color) = match view.status() {
                     ProcessStatus::Running => ("Running", Color::Green),
@@ -253,7 +266,7 @@ where
                     }
                 };
 
-                let title = match view.detected_url() {
+                let mut title = match view.detected_url() {
                     Some(url) => format!(
                         " {} - {} (PID: {}) | 🌐 {} ",
                         view.name(),
@@ -269,11 +282,17 @@ where
                     ),
                 };
 
-                let content_pane = Paragraph::new(content).block(
-                    Block::default()
-                        .title(Span::styled(title, Style::default().fg(status_color)))
-                        .borders(Borders::ALL),
-                );
+                if view.scroll_offset > 0 {
+                    title.push_str(&format!("[↑ {} lines] ", view.scroll_offset));
+                }
+
+                let content_pane = Paragraph::new(content)
+                    .scroll((scroll_y as u16, 0))
+                    .block(
+                        Block::default()
+                            .title(Span::styled(title, Style::default().fg(status_color)))
+                            .borders(Borders::ALL),
+                    );
 
                 frame.render_widget(content_pane, areas[1]);
             } else if active_tab < total_tabs {
@@ -385,8 +404,10 @@ where
 
                         match (key.code, key.modifiers) {
                         // Quit: Ctrl+C or Ctrl+Q always quits; 'q' quits on read-only service views
-                        (KeyCode::Char('c'), KeyModifiers::CONTROL) => break,
-                        (KeyCode::Char('q'), KeyModifiers::CONTROL) => break,
+                        (KeyCode::Char('c'), KeyModifiers::CONTROL)
+                        | (KeyCode::Char('\x03'), _) => break,
+                        (KeyCode::Char('q'), KeyModifiers::CONTROL)
+                        | (KeyCode::Char('\x11'), _) => break,
                         (KeyCode::Char('q'), KeyModifiers::NONE) if active_tab < service_views.len() => break,
 
                         // Tab navigation
@@ -408,7 +429,8 @@ where
                         }
 
                         // New shell tab (Ctrl+T)
-                        (KeyCode::Char('t'), KeyModifiers::CONTROL) => {
+                        (KeyCode::Char('t'), KeyModifiers::CONTROL)
+                        | (KeyCode::Char('\x14'), _) => {
                             let (program, args) = devpane::terminal::default_shell();
                             let shell_number = shell_tabs.len() + 1;
 
@@ -436,51 +458,88 @@ where
                             continue;
                         }
 
-                        // Close tab (Ctrl+W) - only for shells
-                        (KeyCode::Char('w'), KeyModifiers::CONTROL) => {
-                            if active_tab >= service_views.len() {
-                                let shell_index = active_tab - service_views.len();
-                                if shell_index < shell_tabs.len() {
-                                    shell_tabs.remove(shell_index);
-                                    if active_tab > 0 {
-                                        active_tab -= 1;
+                        // Close tab (Ctrl+W) - closes service tab (stops service) or closes shell tab
+                        (KeyCode::Char('w'), KeyModifiers::CONTROL)
+                        | (KeyCode::Char('W'), KeyModifiers::CONTROL)
+                        | (KeyCode::Char('\x17'), _) => {
+                            let total_tabs = service_views.len() + shell_tabs.len();
+                            if total_tabs > 0 {
+                                if active_tab < service_views.len() {
+                                    let service_view = service_views.remove(active_tab);
+                                    if let Ok(mut stop_stream) = devpane::ipc::connect() {
+                                        let _ = devpane::protocol::write_message(
+                                            &mut stop_stream,
+                                            &devpane::protocol::Request::Stop {
+                                                id: service_view.session.id,
+                                            },
+                                        );
+                                        let _ = devpane::protocol::read_message::<_, devpane::protocol::Response>(
+                                            &mut stop_stream,
+                                        );
                                     }
+                                } else {
+                                    let shell_index = active_tab - service_views.len();
+                                    if shell_index < shell_tabs.len() {
+                                        shell_tabs.remove(shell_index);
+                                    }
+                                }
+
+                                let new_total = service_views.len() + shell_tabs.len();
+                                if new_total == 0 {
+                                    break;
+                                } else if active_tab >= new_total {
+                                    active_tab = new_total - 1;
                                 }
                             }
                             continue;
                         }
 
                         // Force refresh (Ctrl+R)
-                        (KeyCode::Char('r'), KeyModifiers::CONTROL) => {
+                        (KeyCode::Char('r'), KeyModifiers::CONTROL)
+                        | (KeyCode::Char('\x12'), _) => {
                             last_refresh = Instant::now() - Duration::from_secs(1);
                             continue;
                         }
 
-                        // Scroll up (Page Up or Shift+Up)
+                        // Scroll up (Page Up, Shift+Up, or Up arrow on service view)
                         (KeyCode::PageUp, _) | (KeyCode::Up, KeyModifiers::SHIFT) => {
-                            if active_tab >= service_views.len() {
+                            if active_tab < service_views.len() {
+                                service_views[active_tab].scroll_up(10);
+                            } else {
                                 let shell_index = active_tab - service_views.len();
                                 if let Some(shell) = shell_tabs.get_mut(shell_index) {
-                                    shell.scroll_up(5);
+                                    shell.scroll_up(10);
                                 }
                             }
                             continue;
                         }
+                        (KeyCode::Up, KeyModifiers::NONE) if active_tab < service_views.len() => {
+                            service_views[active_tab].scroll_up(1);
+                            continue;
+                        }
 
-                        // Scroll down (Page Down or Shift+Down)
+                        // Scroll down (Page Down, Shift+Down, or Down arrow on service view)
                         (KeyCode::PageDown, _) | (KeyCode::Down, KeyModifiers::SHIFT) => {
-                            if active_tab >= service_views.len() {
+                            if active_tab < service_views.len() {
+                                service_views[active_tab].scroll_down(10);
+                            } else {
                                 let shell_index = active_tab - service_views.len();
                                 if let Some(shell) = shell_tabs.get_mut(shell_index) {
-                                    shell.scroll_down(5);
+                                    shell.scroll_down(10);
                                 }
                             }
+                            continue;
+                        }
+                        (KeyCode::Down, KeyModifiers::NONE) if active_tab < service_views.len() => {
+                            service_views[active_tab].scroll_down(1);
                             continue;
                         }
 
                         // Scroll to bottom (End)
                         (KeyCode::End, _) => {
-                            if active_tab >= service_views.len() {
+                            if active_tab < service_views.len() {
+                                service_views[active_tab].scroll_to_bottom();
+                            } else {
                                 let shell_index = active_tab - service_views.len();
                                 if let Some(shell) = shell_tabs.get_mut(shell_index) {
                                     shell.scroll_to_bottom();
@@ -521,7 +580,32 @@ where
                     }
                 }
                 }
-                _ => {} // Ignore other events like mouse events
+                Event::Mouse(mouse_event) => {
+                    match mouse_event.kind {
+                        event::MouseEventKind::ScrollUp => {
+                            if active_tab < service_views.len() {
+                                service_views[active_tab].scroll_up(3);
+                            } else {
+                                let shell_index = active_tab - service_views.len();
+                                if let Some(shell) = shell_tabs.get_mut(shell_index) {
+                                    shell.scroll_up(3);
+                                }
+                            }
+                        }
+                        event::MouseEventKind::ScrollDown => {
+                            if active_tab < service_views.len() {
+                                service_views[active_tab].scroll_down(3);
+                            } else {
+                                let shell_index = active_tab - service_views.len();
+                                if let Some(shell) = shell_tabs.get_mut(shell_index) {
+                                    shell.scroll_down(3);
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                _ => {}
             }
         }
     }

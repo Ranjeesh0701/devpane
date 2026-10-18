@@ -62,14 +62,17 @@ impl TerminalPane {
 
     pub fn scroll_up(&mut self, lines: usize) {
         self.scroll_offset = self.scroll_offset.saturating_add(lines);
+        self.parser.set_scrollback(self.scroll_offset);
     }
 
     pub fn scroll_down(&mut self, lines: usize) {
         self.scroll_offset = self.scroll_offset.saturating_sub(lines);
+        self.parser.set_scrollback(self.scroll_offset);
     }
 
     pub fn scroll_to_bottom(&mut self) {
         self.scroll_offset = 0;
+        self.parser.set_scrollback(0);
     }
 
     pub fn scroll_offset(&self) -> usize {

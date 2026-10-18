@@ -9,6 +9,7 @@ pub struct ServiceLogView {
     pub log_path: PathBuf,
     pub log_content: String,
     pub file_position: u64,
+    pub scroll_offset: usize,
 }
 
 impl ServiceLogView {
@@ -18,6 +19,7 @@ impl ServiceLogView {
             log_path,
             log_content: String::new(),
             file_position: 0,
+            scroll_offset: 0,
         };
 
         view.update()?;
@@ -65,6 +67,18 @@ impl ServiceLogView {
 
     pub fn content(&self) -> &str {
         &self.log_content
+    }
+
+    pub fn scroll_up(&mut self, lines: usize) {
+        self.scroll_offset = self.scroll_offset.saturating_add(lines);
+    }
+
+    pub fn scroll_down(&mut self, lines: usize) {
+        self.scroll_offset = self.scroll_offset.saturating_sub(lines);
+    }
+
+    pub fn scroll_to_bottom(&mut self) {
+        self.scroll_offset = 0;
     }
 
     pub fn detected_url(&self) -> Option<String> {
