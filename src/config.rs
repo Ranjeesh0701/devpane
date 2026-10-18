@@ -39,14 +39,18 @@ pub fn load_config(path: &Path) -> Result<DevboxConfig, Box<dyn error::Error>> {
 }
 
 pub fn find_config() -> Result<PathBuf, io::Error> {
-    let path = std::env::current_dir()?.join("devbox.yaml");
-
-    if !path.is_file() {
-        return Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            "devbox.yaml not found in the current directory",
-        ));
+    let devpane_path = std::env::current_dir()?.join("devpane.yaml");
+    if devpane_path.is_file() {
+        return Ok(devpane_path);
     }
 
-    Ok(path)
+    let devbox_path = std::env::current_dir()?.join("devbox.yaml");
+    if devbox_path.is_file() {
+        return Ok(devbox_path);
+    }
+
+    Err(io::Error::new(
+        io::ErrorKind::NotFound,
+        "devpane.yaml (or devbox.yaml) not found in the current directory",
+    ))
 }

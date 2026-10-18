@@ -75,7 +75,7 @@ export function SessionsPage() {
               All sessions{" "}
               <span className="section-count">{sessions.length}</span>
             </h2>
-            <p>Processes managed by your Devbox daemon</p>
+            <p>Processes managed by your Devpane daemon</p>
           </div>
           <Button
             icon={
@@ -126,7 +126,7 @@ export function SessionsPage() {
 
       <footer className="page-footer">
         <span>
-          Devbox Desktop <span className="footer-version">v0.1.0</span>
+          Devpane Desktop <span className="footer-version">v0.1.0</span>
         </span>
         <span>
           <span className="footer-status-dot" /> Local-first process management

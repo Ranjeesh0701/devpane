@@ -23,7 +23,7 @@ export function Sidebar({
           <Icon name="terminal" size={21} />
         </div>
         <div className="brand-copy">
-          <span className="brand-name">devbox</span>
+          <span className="brand-name">devpane</span>
           <span className="brand-caption">PROCESS WORKSPACE</span>
         </div>
         <button

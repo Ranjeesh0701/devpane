@@ -15,10 +15,10 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Tabs},
 };
 
-use devbox::process::session::{ProcessSession, ProcessStatus};
-use devbox::service_log_view::ServiceLogView;
-use devbox::storage;
-use devbox::workspace::TerminalPane;
+use devpane::process::session::{ProcessSession, ProcessStatus};
+use devpane::service_log_view::ServiceLogView;
+use devpane::storage;
+use devpane::workspace::TerminalPane;
 
 pub fn run<F>(mut fetch_sessions: F) -> Result<(), Box<dyn std::error::Error>>
 where
@@ -399,7 +399,7 @@ where
 
                         // New shell tab (Ctrl+T)
                         (KeyCode::Char('t'), KeyModifiers::CONTROL) => {
-                            let (program, args) = devbox::terminal::default_shell();
+                            let (program, args) = devpane::terminal::default_shell();
                             let shell_number = shell_tabs.len() + 1;
 
                             // Get current terminal size

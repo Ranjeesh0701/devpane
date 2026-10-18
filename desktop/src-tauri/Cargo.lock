@@ -865,7 +865,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "devbox"
+name = "devpane"
 version = "0.1.0"
 dependencies = [
  "crossterm",
@@ -883,10 +883,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "devbox-desktop"
+name = "devpane-desktop"
 version = "0.1.0"
 dependencies = [
- "devbox",
+ "devpane",
  "serde",
  "serde_json",
  "tauri",

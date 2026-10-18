@@ -9,7 +9,7 @@ use std::io;
 use std::thread;
 use std::time::Duration;
 
-const SOCKET_NAME: &str = "devbox";
+const SOCKET_NAME: &str = "devpane";
 
 fn socket_name() -> io::Result<interprocess::local_socket::Name<'static>> {
     SOCKET_NAME.to_ns_name::<GenericNamespaced>()

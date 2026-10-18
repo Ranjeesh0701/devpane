@@ -6,10 +6,10 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-use devbox::ipc;
-use devbox::process::supervisor::ProcessSupervisor;
-use devbox::protocol::{Request, Response, read_message, write_message};
-use devbox::storage::ensure_storage_directory;
+use devpane::ipc;
+use devpane::process::supervisor::ProcessSupervisor;
+use devpane::protocol::{Request, Response, read_message, write_message};
+use devpane::storage::ensure_storage_directory;
 
 fn main() -> io::Result<()> {
     let shutdown = Arc::new(AtomicBool::new(false));
@@ -27,7 +27,7 @@ fn main() -> io::Result<()> {
             format!("Failed to create directory: {}", e),
         )
     })?;
-    let temp_file = storage_directory.join(devbox::storage::SESSIONS_TMP);
+    let temp_file = storage_directory.join(devpane::storage::SESSIONS_TMP);
 
     if temp_file.exists() {
         fs::remove_file(&temp_file)?;
@@ -103,10 +103,10 @@ fn handle_client(
         };
 
         match result {
-            Ok(path) => {
+            Ok(ref path) => {
                 if let Err(error) = logs(
                     &mut stream,
-                    &path,
+                    path,
                     *follow,
                     || {
                         let mut supervisor = supervisor

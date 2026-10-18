@@ -2,10 +2,10 @@ use std::collections::HashMap;
 use std::os::unix::net::UnixStream;
 use std::path::PathBuf;
 
-use devbox_core::process::session::ProcessSession;
-use devbox_core::protocol::{Request, Response, read_message, write_message};
+use devpane_core::process::session::ProcessSession;
+use devpane_core::protocol::{Request, Response, read_message, write_message};
 
-const DEVBOX_SOCKET: &str = "/tmp/devbox.sock";
+const DEVPANE_SOCKET: &str = "/tmp/devpane.sock";
 
 #[tauri::command]
 fn list_sessions() -> Result<Vec<ProcessSession>, String> {
@@ -105,8 +105,8 @@ fn get_session_logs(id: String) -> Result<String, String> {
 }
 
 fn connect_to_daemon() -> Result<UnixStream, String> {
-    UnixStream::connect(DEVBOX_SOCKET).map_err(|error| {
-        format!("Could not connect to Devbox daemon at {DEVBOX_SOCKET}. Is it running? {error}")
+    UnixStream::connect(DEVPANE_SOCKET).map_err(|error| {
+        format!("Could not connect to Devpane daemon at {DEVPANE_SOCKET}. Is it running? {error}")
     })
 }
 

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use super::error::DevboxError;
 use super::process::session::ProcessSession;
 
-pub const DIR_NAME: &str = "devbox";
+pub const DIR_NAME: &str = "devpane";
 pub const SESSIONS: &str = "sessions.json";
 pub const SESSIONS_TMP: &str = "sessions.json.tmp";
 

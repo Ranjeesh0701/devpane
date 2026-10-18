@@ -2,7 +2,7 @@ use std::path::Path;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use devbox::terminal::TerminalSession;
+use devpane::terminal::TerminalSession;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = TerminalSession::spawn(
@@ -21,8 +21,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     while Instant::now() < deadline {
         match terminal.try_read_output() {
-            Ok(bytes) => {
-                let text = String::from_utf8_lossy(&bytes);
+            Ok(ref bytes) => {
+                let text = String::from_utf8_lossy(bytes);
                 print!("{text}");
                 output.push_str(&text);
 

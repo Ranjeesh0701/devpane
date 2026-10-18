@@ -7,7 +7,7 @@ use std::path::Path;
 use std::thread;
 use std::time::Duration;
 
-const SOCKET_PATH: &str = "/tmp/devbox.sock";
+const SOCKET_PATH: &str = "/tmp/devpane.sock";
 
 impl ReadWrite for UnixStream {
     fn set_read_timeout(&self, timeout: Option<Duration>) -> io::Result<()> {

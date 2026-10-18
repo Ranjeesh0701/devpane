@@ -13,7 +13,7 @@ const features = [
     icon: "⌘",
     title: "AI Process Supervision",
     description:
-      "Coding agents like Claude and Gemini can run devbox up and spawn services via daemon without littering your terminal.",
+      "Coding agents like Claude and Gemini can run devpane up and spawn services via daemon without littering your terminal.",
     tag: "AGENT-FRIENDLY",
   },
   {
@@ -27,9 +27,9 @@ const features = [
   {
     number: "03",
     icon: "▤",
-    title: "Declarative devbox.yaml",
+    title: "Declarative devpane.yaml",
     description:
-      "Define all services, working directories, and commands once in devbox.yaml. devbox up starts everything; devbox down cleans up.",
+      "Define all services, working directories, and commands once in devpane.yaml. devpane up starts everything; devpane down cleans up.",
     tag: "ONE WORKSPACE",
   },
 ];
@@ -47,7 +47,7 @@ function ProcessPreview() {
           <span />
           <span />
         </div>
-        <span className="window-title">devbox up — interactive workspace</span>
+        <span className="window-title">devpane up — interactive workspace</span>
         <span className="window-version">v0.1.0</span>
       </div>
 
@@ -57,7 +57,7 @@ function ProcessPreview() {
             <span className="agent-indicator-dot" />
             LIVE DAEMON SUPERVISOR
           </span>
-          <span className="terminal-muted">devbox.yaml loaded</span>
+          <span className="terminal-muted">devpane.yaml loaded</span>
         </div>
 
         {/* Tab bar header */}
@@ -102,11 +102,11 @@ function ProcessPreview() {
             minHeight: "135px",
           }}
         >
-          <div style={{ color: "var(--subtle)" }}>[devbox:daemon] Service 'backend' started (PID 48921)</div>
-          <div style={{ color: "#aab5ff" }}>   Compiling devbox v0.1.0 (/Workspace/devbox)</div>
+          <div style={{ color: "var(--subtle)" }}>[devpane:daemon] Service 'backend' started (PID 48921)</div>
+          <div style={{ color: "#aab5ff" }}>   Compiling devpane v0.1.0 (/Workspace/devpane)</div>
           <div style={{ color: "var(--success)" }}>    Finished `dev` profile in 0.82s</div>
           <div style={{ color: "#e2e4ed" }}>[server] Listening on http://127.0.0.1:8080</div>
-          <div style={{ color: "#e2e4ed" }}>[server] IPC socket ready at /tmp/devbox.sock</div>
+          <div style={{ color: "#e2e4ed" }}>[server] IPC socket ready at /tmp/devpane.sock</div>
           <div style={{ color: "#55d6a2" }}>
             [server] Connected to 2 service watchers <span className="cursor" />
           </div>
@@ -148,7 +148,7 @@ function WorkflowDiagram() {
           <span>d</span>
         </div>
         <div className="workflow-node-copy">
-          <strong>Devbox</strong>
+          <strong>Devpane</strong>
           <span>Runs and tracks development processes</span>
         </div>
         <span className="workflow-node-number">02</span>
@@ -179,13 +179,13 @@ function App() {
   return (
     <div className="site-shell">
       <header className="site-header">
-        <a className="brand" href="#home" aria-label="Devbox home">
+        <a className="brand" href="#home" aria-label="Devpane home">
           <span className="brand-mark">d</span>
-          <span>devbox</span>
+          <span>devpane</span>
         </a>
 
         <nav className="main-nav" aria-label="Main navigation">
-          <a href="#features">Why Devbox</a>
+          <a href="#features">Why Devpane</a>
           <a href="#workflow">How it works</a>
           <a href="https://github.com/Ranjeesh0701/devbox" target="_blank" rel="noreferrer">
             GitHub <ArrowIcon />
@@ -193,7 +193,7 @@ function App() {
         </nav>
 
         <a className="header-cta" href="https://github.com/Ranjeesh0701/devbox" target="_blank" rel="noreferrer">
-          Explore Devbox <ArrowIcon />
+          Explore Devpane <ArrowIcon />
         </a>
       </header>
 
@@ -212,9 +212,9 @@ function App() {
             </h1>
 
             <p className="hero-description">
-              AI can write your code and start your servers. Devbox is being
-              built to help you see what's running, inspect process output, and
-              manage your development workflow from one place.
+              AI can write your code and start your servers. Devpane is built
+              to help you see what's running, inspect process output, and
+              manage your development workflow from one interactive workspace.
             </p>
 
             <div className="hero-actions">
@@ -222,7 +222,7 @@ function App() {
                 See how it works <ArrowIcon />
               </a>
               <a className="button button-secondary" href="#features">
-                Why Devbox <span aria-hidden="true">↓</span>
+                Why Devpane <span aria-hidden="true">↓</span>
               </a>
             </div>
 
@@ -329,7 +329,7 @@ function App() {
             </div>
             <h2>Build with AI. Understand what runs.</h2>
             <p>
-              Devbox is evolving to make local development processes easier to
+              Devpane is evolving to make local development processes easier to
               manage in an AI-assisted world.
             </p>
             <a
@@ -347,11 +347,11 @@ function App() {
       <footer className="site-footer">
         <a className="brand footer-brand" href="#home">
           <span className="brand-mark">d</span>
-          <span>devbox</span>
+          <span>devpane</span>
         </a>
         <p>A clearer view of the processes behind your code.</p>
         <span className="footer-copyright">
-          © {new Date().getFullYear()} Devbox
+          © {new Date().getFullYear()} Devpane
         </span>
       </footer>
     </div>

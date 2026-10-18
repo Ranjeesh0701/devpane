@@ -6,12 +6,12 @@ use std::io;
 use std::path::PathBuf;
 use std::process::{Command, ExitCode, Stdio};
 
-use devbox::config::{find_config, load_config};
-use devbox::error::DevboxError;
-use devbox::ipc;
-use devbox::ipc::Connection;
-use devbox::process::session::{ProcessSession, ProcessStatus};
-use devbox::protocol::{Request, Response, read_message, write_message};
+use devpane::config::{find_config, load_config};
+use devpane::error::DevboxError;
+use devpane::ipc;
+use devpane::ipc::Connection;
+use devpane::process::session::{ProcessSession, ProcessStatus};
+use devpane::protocol::{Request, Response, read_message, write_message};
 
 fn main() -> ExitCode {
     match run() {
@@ -31,13 +31,13 @@ fn run() -> Result<u8, DevboxError> {
         Some(a) => a,
         None => {
             return Err(DevboxError::InvalidArguments(
-                "No action specified. Usage: devbox <command> [arguments...]".to_string(),
+                "No action specified. Usage: devpane <command> [arguments...]".to_string(),
             ));
         }
     };
 
     if action == "--help" || action == "-h" {
-        println!("Usage: devbox <command> [arguments...]");
+        println!("Usage: devpane <command> [arguments...]");
         println!("Commands:");
         println!("  start <name> <program> [args...] - Start a process.");
         println!("  list                              - List active sessions.");
@@ -45,7 +45,7 @@ fn run() -> Result<u8, DevboxError> {
         println!("  logs <session_id>                 - Show logs for a session.");
         println!("  shutdown                          - Shutdown the daemon.");
         println!(
-            "  up                                - Start all enabled services from devbox.yaml."
+            "  up                                - Start all enabled services from devpane.yaml."
         );
         return Ok(0);
     }
@@ -133,12 +133,12 @@ fn run() -> Result<u8, DevboxError> {
 
             let path = find_config()
                 .map_err(|e| DevboxError::InvalidArguments(
-                    format!("Could not find devbox.yaml in current directory.\n\nTry:\n  1. Create a devbox.yaml file (see examples/)\n  2. Run 'devbox up' from the project root\n\nOriginal error: {}", e)
+                    format!("Could not find devpane.yaml (or devbox.yaml) in current directory.\n\nTry:\n  1. Create a devpane.yaml file (see examples/)\n  2. Run 'devpane up' from the project root\n\nOriginal error: {}", e)
                 ))?
                 .canonicalize()
                 .map_err(DevboxError::FileOperation)?;
             let config = load_config(&path).map_err(|e| DevboxError::InvalidArguments(
-                format!("Failed to parse devbox.yaml.\n\nCheck your YAML syntax:\n  - Proper indentation\n  - All required fields present\n  - Valid service definitions\n\nOriginal error: {}", e)
+                format!("Failed to parse config file.\n\nCheck your YAML syntax:\n  - Proper indentation\n  - All required fields present\n  - Valid service definitions\n\nOriginal error: {}", e)
             ))?;
             let project_dir = path
                 .parent()
@@ -369,7 +369,7 @@ fn connect_or_start(retries: u32, delay_ms: u64) -> Result<Connection, DevboxErr
             if !daemon_path.exists() {
                 return Err(DevboxError::InvalidArguments(
                     format!(
-                        "Daemon binary not found at: {}\n\nTry:\n  1. Build the project: cargo build\n  2. Ensure the daemon binary is in the same directory as devbox",
+                        "Daemon binary not found at: {}\n\nTry:\n  1. Build the project: cargo build\n  2. Ensure the daemon binary is in the same directory as devpane",
                         daemon_path.display()
                     )
                 ));
