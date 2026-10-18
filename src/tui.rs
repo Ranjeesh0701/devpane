@@ -321,9 +321,10 @@ where
                         vec![Line::from(vec![
                             Span::raw("Tab: Switch • "),
                             Span::raw("Ctrl+T: New shell • "),
+                            Span::raw("Ctrl+W: Close tab • "),
                             Span::styled("PgUp/PgDn: Scroll • ", Style::default().fg(Color::Cyan)),
                             Span::styled("End: Bottom • ", Style::default().fg(Color::Cyan)),
-                            Span::raw("q: Quit • "),
+                            Span::raw("Ctrl+Q: Quit • "),
                             Span::styled(
                                 format!("{} running", running_count),
                                 Style::default().fg(Color::Green),

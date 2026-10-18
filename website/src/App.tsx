@@ -1,49 +1,35 @@
 import "./App.css";
 
-const processes = [
-  {
-    name: "frontend",
-    command: "bun run dev",
-    status: "running",
-    detail: "Web application",
-  },
-  {
-    name: "backend",
-    command: "cargo run",
-    status: "running",
-    detail: "API server",
-  },
-  {
-    name: "tests",
-    command: "bun run test",
-    status: "stopped",
-    detail: "Last run · exited",
-  },
+const services = [
+  { name: "backend", status: "running", command: "cargo run", active: true },
+  { name: "frontend", status: "running", command: "bun run dev", active: false },
+  { name: "worker", status: "running", command: "bun run worker", active: false },
+  { name: "Shell 1", status: "interactive", command: "zsh", active: false },
 ] as const;
 
 const features = [
   {
     number: "01",
     icon: "⌘",
-    title: "Built for AI workflows",
+    title: "AI Process Supervision",
     description:
-      "Give coding agents a consistent way to start and manage development processes instead of juggling terminal sessions.",
+      "Coding agents like Claude and Gemini can run devbox up and spawn services via daemon without littering your terminal.",
     tag: "AGENT-FRIENDLY",
   },
   {
     number: "02",
     icon: "⌁",
-    title: "See what is actually running",
+    title: "Interactive Workspace & Panes",
     description:
-      "View process status, inspect output, and understand when a server or task stops without searching through terminal tabs.",
-    tag: "VISUAL CONTROL",
+      "A tmux-inspired TUI with VT100 terminal emulation. Switch tabs with Tab, spawn new shells with Ctrl+T, and scroll logs smoothly.",
+    tag: "TERMINAL WORKSPACE",
   },
   {
     number: "03",
     icon: "▤",
-    title: "One shared view",
+    title: "Declarative devbox.yaml",
     description:
-      "Keep your frontend, backend, workers, and other development processes visible in one workspace for you and your tools.",
+      "Define all services, working directories, and commands once in devbox.yaml. devbox up starts everything; devbox down cleans up.",
     tag: "ONE WORKSPACE",
   },
 ];
@@ -61,54 +47,77 @@ function ProcessPreview() {
           <span />
           <span />
         </div>
-        <span className="window-title">devbox — local workspace</span>
-        <span className="window-version">PREVIEW</span>
+        <span className="window-title">devbox up — interactive workspace</span>
+        <span className="window-version">v0.1.0</span>
       </div>
 
       <div className="terminal-body">
         <div className="terminal-context">
           <span className="agent-indicator">
             <span className="agent-indicator-dot" />
-            AI-ASSISTED WORKFLOW
+            LIVE DAEMON SUPERVISOR
           </span>
-          <span className="terminal-muted">Local processes</span>
+          <span className="terminal-muted">devbox.yaml loaded</span>
         </div>
 
-        <div className="terminal-command">
-          <span className="prompt-symbol">❯</span>
-          <span>devbox list</span>
-        </div>
-
-        <div className="terminal-intro">
-          <span className="terminal-accent">devbox</span>
-          <span className="terminal-muted"> / sessions</span>
-        </div>
-
-        <div className="terminal-table">
-          <div className="terminal-table-header">
-            <span>PROCESS</span>
-            <span>COMMAND</span>
-            <span>STATUS</span>
-          </div>
-
-          {processes.map((process) => (
-            <div className="terminal-process-row" key={process.name}>
-              <span className="terminal-process-name">{process.name}</span>
-              <code>{process.command}</code>
-              <span className={`terminal-status ${process.status}`}>
-                <span className="status-dot" />
-                {process.status === "running" ? "Running" : "Stopped"}
+        {/* Tab bar header */}
+        <div style={{ display: "flex", gap: "6px", margin: "14px 0 10px", flexWrap: "wrap" }}>
+          {services.map((svc) => (
+            <span
+              key={svc.name}
+              style={{
+                padding: "3px 9px",
+                borderRadius: "4px",
+                fontSize: "10px",
+                fontFamily: "monospace",
+                background: svc.active ? "rgb(139 156 255 / 22%)" : "rgb(255 255 255 / 4%)",
+                border: svc.active ? "1px solid rgb(139 156 255 / 40%)" : "1px solid transparent",
+                color: svc.active ? "#c9d2ff" : "#888c9f",
+                fontWeight: svc.active ? 600 : 400,
+              }}
+            >
+              <span
+                style={{
+                  color: svc.status === "running" ? "var(--success)" : "#888c9f",
+                  marginRight: "5px",
+                }}
+              >
+                ●
               </span>
-            </div>
+              {svc.name}
+            </span>
           ))}
+        </div>
+
+        {/* Live log pane emulation */}
+        <div
+          style={{
+            background: "#101115",
+            border: "1px solid var(--border)",
+            borderRadius: "6px",
+            padding: "12px",
+            fontFamily: "monospace",
+            fontSize: "11px",
+            lineHeight: 1.6,
+            minHeight: "135px",
+          }}
+        >
+          <div style={{ color: "var(--subtle)" }}>[devbox:daemon] Service 'backend' started (PID 48921)</div>
+          <div style={{ color: "#aab5ff" }}>   Compiling devbox v0.1.0 (/Workspace/devbox)</div>
+          <div style={{ color: "var(--success)" }}>    Finished `dev` profile in 0.82s</div>
+          <div style={{ color: "#e2e4ed" }}>[server] Listening on http://127.0.0.1:8080</div>
+          <div style={{ color: "#e2e4ed" }}>[server] IPC socket ready at /tmp/devbox.sock</div>
+          <div style={{ color: "#55d6a2" }}>
+            [server] Connected to 2 service watchers <span className="cursor" />
+          </div>
         </div>
 
         <div className="terminal-bottom">
           <div className="terminal-summary">
-            <span className="terminal-green">● 2 running</span>
-            <span className="terminal-muted">1 stopped</span>
+            <span className="terminal-green">● 3 running</span>
+            <span className="terminal-muted">Tab: Switch • Ctrl+T: Shell • Ctrl+Q: Quit</span>
           </div>
-          <span className="preview-label">ILLUSTRATIVE PREVIEW</span>
+          <span className="preview-label">INTERACTIVE TUI</span>
         </div>
       </div>
     </div>
@@ -178,12 +187,12 @@ function App() {
         <nav className="main-nav" aria-label="Main navigation">
           <a href="#features">Why Devbox</a>
           <a href="#workflow">How it works</a>
-          <a href="https://github.com/" target="_blank" rel="noreferrer">
+          <a href="https://github.com/Ranjeesh0701/devbox" target="_blank" rel="noreferrer">
             GitHub <ArrowIcon />
           </a>
         </nav>
 
-        <a className="header-cta" href="#get-started">
+        <a className="header-cta" href="https://github.com/Ranjeesh0701/devbox" target="_blank" rel="noreferrer">
           Explore Devbox <ArrowIcon />
         </a>
       </header>
@@ -325,15 +334,12 @@ function App() {
             </p>
             <a
               className="button button-primary"
-              href="https://github.com/"
+              href="https://github.com/Ranjeesh0701/devbox"
               target="_blank"
               rel="noreferrer"
             >
-              Explore the project <ArrowIcon />
+              Explore on GitHub <ArrowIcon />
             </a>
-            <span className="get-started-note">
-              Replace this link with the actual Devbox repository URL.
-            </span>
           </div>
         </section>
       </main>

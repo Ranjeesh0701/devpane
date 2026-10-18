@@ -33,8 +33,15 @@ export function LogViewer({ session, onClose }: Props) {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     void loadLogs();
+
+    // Auto-refresh logs every 1.5 seconds while open if process is running
+    const interval = window.setInterval(() => {
+      void loadLogs();
+    }, 1500);
+
     return () => {
       document.body.style.overflow = previousOverflow;
+      window.clearInterval(interval);
     };
   }, [loadLogs]);
 
