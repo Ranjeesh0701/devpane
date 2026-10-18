@@ -27,22 +27,21 @@ Devpane provides:
 
 ---
 
-## Installation
+### Option 1: 1-Line Quick Install (Recommended)
 
-### Option 1: Install from Source (Recommended for now)
-
-Make sure you have [Rust & Cargo](https://www.rust-lang.org/tools/install) installed:
-
+**macOS & Linux**:
 ```bash
-# Clone the repository
-git clone https://github.com/Ranjeesh0701/devbox.git devpane
-cd devpane
-
-# Install both the CLI and daemon into ~/.cargo/bin
-cargo install --path . --bin devpane --bin daemon
+curl -fsSL https://raw.githubusercontent.com/Ranjeesh0701/devbox/main/scripts/install.sh | sh
 ```
 
-Ensure `~/.cargo/bin` is in your `PATH`.
+**Windows (PowerShell as Administrator or User)**:
+```powershell
+irm https://raw.githubusercontent.com/Ranjeesh0701/devbox/main/scripts/install.ps1 | iex
+```
+
+This automatically downloads the latest release, extracts both `devpane` and `daemon`, and configures them into your `PATH`.
+
+---
 
 ### Option 2: Pre-built Binaries & Desktop App (GitHub Releases)
 

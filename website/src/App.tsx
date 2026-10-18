@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "./App.css";
 
 const services = [
@@ -372,21 +372,20 @@ function App() {
   );
 }
 
+function getInitialOS(): "macos" | "windows" | "linux" {
+  if (typeof window !== "undefined" && window.navigator) {
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    if (userAgent.includes("win")) return "windows";
+    if (userAgent.includes("mac")) return "macos";
+    if (userAgent.includes("linux")) return "linux";
+  }
+  return "macos";
+}
+
 function InstallWidget() {
-  const [selectedOS, setSelectedOS] = useState<"macos" | "windows" | "linux">("macos");
+  const [selectedOS, setSelectedOS] = useState<"macos" | "windows" | "linux">(getInitialOS);
   const [method, setMethod] = useState<"cli" | "desktop" | "cargo">("cli");
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    if (userAgent.includes("win")) {
-      setSelectedOS("windows");
-    } else if (userAgent.includes("mac")) {
-      setSelectedOS("macos");
-    } else if (userAgent.includes("linux")) {
-      setSelectedOS("linux");
-    }
-  }, []);
 
   const cargoCommand = "cargo install --path . --bin devpane --bin daemon";
   const repoReleases = "https://github.com/Ranjeesh0701/devbox/releases/latest";
@@ -450,14 +449,42 @@ function InstallWidget() {
             <div className="install-details">
               <h4>
                 {selectedOS === "macos" && "macOS Standalone CLI (devpane + daemon)"}
-                {selectedOS === "windows" && "Windows x64 Standalone CLI (.zip)"}
+                {selectedOS === "windows" && "Windows Standalone CLI (devpane.exe + daemon.exe)"}
                 {selectedOS === "linux" && "Linux x86_64 Standalone CLI"}
               </h4>
               <p>
-                Includes the <code>devpane</code> CLI and background <code>daemon</code> binary.
-                Extract and place both files anywhere in your <code>$PATH</code>.
+                Run the 1-line installer in your terminal to automatically download, extract,
+                and configure both <code>devpane</code> and <code>daemon</code> into your <code>$PATH</code>:
               </p>
             </div>
+
+            {/* 1-Line Terminal Script */}
+            <div className="install-terminal-box">
+              <code>
+                {selectedOS === "windows"
+                  ? "irm https://raw.githubusercontent.com/Ranjeesh0701/devbox/main/scripts/install.ps1 | iex"
+                  : "curl -fsSL https://raw.githubusercontent.com/Ranjeesh0701/devbox/main/scripts/install.sh | sh"}
+              </code>
+              <button
+                className="copy-button"
+                onClick={() => {
+                  const cmd =
+                    selectedOS === "windows"
+                      ? "irm https://raw.githubusercontent.com/Ranjeesh0701/devbox/main/scripts/install.ps1 | iex"
+                      : "curl -fsSL https://raw.githubusercontent.com/Ranjeesh0701/devbox/main/scripts/install.sh | sh";
+                  void navigator.clipboard.writeText(cmd);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+              >
+                {copied ? "Copied!" : "Copy"}
+              </button>
+            </div>
+
+            <div style={{ marginTop: "10px", fontSize: "11px", color: "var(--subtle)" }}>
+              Or download the pre-built binaries directly:
+            </div>
+
             <div className="install-action-row">
               {selectedOS === "macos" && (
                 <>
@@ -467,7 +494,7 @@ function InstallWidget() {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Download for Apple Silicon ↓
+                    Download Apple Silicon (.tar.gz) ↓
                   </a>
                   <a
                     className="button button-secondary"
@@ -475,7 +502,7 @@ function InstallWidget() {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Download for Intel Mac ↓
+                    Download Intel Mac (.tar.gz) ↓
                   </a>
                 </>
               )}
@@ -486,7 +513,7 @@ function InstallWidget() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Download Windows CLI (.zip) ↓
+                  Download Windows x64 (.zip) ↓
                 </a>
               )}
               {selectedOS === "linux" && (
@@ -496,7 +523,7 @@ function InstallWidget() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Browse Linux Builds on GitHub ↓
+                  Browse Linux Releases on GitHub ↓
                 </a>
               )}
             </div>
