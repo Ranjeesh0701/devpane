@@ -24,28 +24,38 @@ Devpane provides:
 3. **Daemon-Backed Process Supervision**: Runs a background daemon so processes stay alive, logs are persisted, and state is preserved across CLI invocations.
 4. **AI-Agent Ready**: Coding agents (Claude, Gemini, Cursor) can manage development services cleanly through structured IPC without hijacking your interactive terminal.
 5. **Cross-Platform**: Built for macOS and Windows (supporting Windows Named Pipes, CMD, and PowerShell).
+6. **Dependency Orchestration & Health Checks**: Order services with `depends_on` and poll TCP/HTTP health checks before launching dependent services.
+7. **Smart Port Conflict Killer**: Automatically identifies and frees occupied ports so you never deal with `EADDRINUSE` errors again.
 
 ---
 
-### Option 1: 1-Line Quick Install (Recommended)
+## Installation
+
+### Option 1: Cargo (crates.io)
+```bash
+cargo install devpane
+```
+
+### Option 2: Homebrew (macOS & Linux)
+```bash
+brew install Ranjeesh0701/tap/devpane
+```
+
+### Option 3: 1-Line Quick Install
 
 **macOS & Linux**:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Ranjeesh0701/devbox/main/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/Ranjeesh0701/devpane/main/scripts/install.sh | sh
 ```
 
-**Windows (PowerShell as Administrator or User)**:
+**Windows (PowerShell)**:
 ```powershell
-irm https://raw.githubusercontent.com/Ranjeesh0701/devbox/main/scripts/install.ps1 | iex
+irm https://raw.githubusercontent.com/Ranjeesh0701/devpane/main/scripts/install.ps1 | iex
 ```
 
-This automatically downloads the latest release, extracts both `devpane` and `daemon`, and configures them into your `PATH`.
+### Option 4: Pre-built Binaries & Desktop App (GitHub Releases)
 
----
-
-### Option 2: Pre-built Binaries & Desktop App (GitHub Releases)
-
-Download the latest release for your platform from [GitHub Releases](https://github.com/Ranjeesh0701/devbox/releases):
+Download the latest release for your platform from [GitHub Releases](https://github.com/Ranjeesh0701/devpane/releases):
 
 - **CLI Bundles** (contains both `devpane` and `daemon`):
   - macOS Apple Silicon: `devpane-darwin-arm64.tar.gz`
@@ -61,20 +71,42 @@ Extract the CLI bundle and move the binaries to any folder in your `PATH` (e.g. 
 
 ## Quick Start
 
-### 1. Create a `devpane.yaml` in your project
+### 1. Initialize or configure `devpane.yaml`
+
+Auto-detect from your repository:
+```bash
+devpane init
+```
+
+Or define your stack with dependencies, ports, and health checks:
 
 ```yaml
 version: 1
 services:
+  db:
+    enabled: true
+    command: postgres
+    port: 5432
+    health_check:
+      port: 5432
+      timeout_secs: 15
+
   backend:
     enabled: true
     command: cargo run
-    working_dir: .
+    port: 8080
+    depends_on:
+      - db
+    health_check:
+      http: "http://localhost:8080/health"
 
   frontend:
     enabled: true
     command: bun run dev
+    port: 5173
     working_dir: ./website
+    depends_on:
+      - backend
 ```
 
 ### 2. Launch the workspace
@@ -102,6 +134,7 @@ devpane down
 
 | Command | Description |
 |---|---|
+| `devpane init` | Automatically generate a `devpane.yaml` by detecting project frameworks |
 | `devpane up` | Start all enabled services from `devpane.yaml` and open the workspace |
 | `devpane down` | Stop all services associated with the current project directory |
 | `devpane list` | List all active process sessions, PIDs, and statuses |

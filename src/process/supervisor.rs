@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::process::Child;
+use std::time::Duration;
 
 use super::operations::{is_same_process, start_process, stop_process};
 use super::session::{ProcessSession, ProcessStatus};
@@ -191,12 +192,22 @@ impl ProcessSupervisor {
             .map(|process| (process.session.name.clone(), process.session.clone()))
             .collect();
 
+        let execution_order = match sort_services_by_dependencies(&services) {
+            Ok(order) => order,
+            Err(err) => {
+                return vec![ServiceStartResult {
+                    name: "*".to_string(),
+                    session: None,
+                    error: Some(err),
+                }];
+            }
+        };
+
         let mut results = Vec::new();
 
-        let mut services: Vec<_> = services.into_iter().collect();
-        services.sort_by(|a, b| a.0.cmp(&b.0));
+        for name in execution_order {
+            let service = services.get(&name).unwrap();
 
-        for (name, service) in services {
             // Skip services that are already running.
             if let Some(session) = existing_services.get(&name) {
                 results.push(ServiceStartResult {
@@ -207,18 +218,51 @@ impl ProcessSupervisor {
                 continue;
             }
 
+            // Smart Port Conflict Resolution: If port is occupied, free it
+            let target_port = service
+                .port
+                .or_else(|| service.health_check.as_ref().and_then(|h| h.port));
+            if let Some(port) = target_port {
+                if let Err(e) = crate::port::free_port_if_occupied(port) {
+                    eprintln!("Warning: failed to check port {port} for service '{name}': {e}");
+                }
+            }
+
             match self.start(
                 name.clone(),
-                service.command,
-                service.args,
-                service.cwd,
-                service.env,
+                service.command.clone(),
+                service.args.clone(),
+                service.cwd.clone(),
+                service.env.clone(),
                 Some(project_dir.to_path_buf()),
             ) {
                 Ok(session) => {
+                    let session_clone = session.clone();
+
+                    // Health check waiting before launching dependent services
+                    if let Some(ref hc) = service.health_check {
+                        let timeout = Duration::from_secs(hc.timeout_secs);
+                        let interval = Duration::from_millis(hc.interval_ms);
+                        let check_port = hc.port.or(service.port);
+                        if let Err(hc_err) = crate::port::wait_for_health(
+                            check_port,
+                            hc.http.as_deref(),
+                            timeout,
+                            interval,
+                        ) {
+                            eprintln!(
+                                "Warning: health check for service '{name}' did not succeed: {hc_err}"
+                            );
+                        }
+                    } else if let Some(port) = service.port {
+                        let timeout = Duration::from_secs(10);
+                        let interval = Duration::from_millis(150);
+                        let _ = crate::port::wait_for_health(Some(port), None, timeout, interval);
+                    }
+
                     results.push(ServiceStartResult {
                         name,
-                        session: Some(session.clone()),
+                        session: Some(session_clone),
                         error: None,
                     });
                 }
@@ -284,3 +328,114 @@ impl ProcessSupervisor {
         Ok(())
     }
 }
+
+/// Sort services in dependency order using topological sorting.
+pub fn sort_services_by_dependencies(
+    services: &HashMap<String, ServiceConfig>,
+) -> Result<Vec<String>, String> {
+    let mut order = Vec::new();
+    let mut visited: HashMap<String, bool> = HashMap::new(); // false = visiting (in stack), true = visited
+
+    fn visit(
+        name: &str,
+        services: &HashMap<String, ServiceConfig>,
+        visited: &mut HashMap<String, bool>,
+        order: &mut Vec<String>,
+    ) -> Result<(), String> {
+        match visited.get(name) {
+            Some(true) => return Ok(()),
+            Some(false) => {
+                return Err(format!(
+                    "Cyclic dependency detected involving service '{}'",
+                    name
+                ));
+            }
+            None => {}
+        }
+
+        visited.insert(name.to_string(), false);
+
+        if let Some(config) = services.get(name) {
+            for dep in &config.depends_on {
+                if !services.contains_key(dep) {
+                    return Err(format!(
+                        "Service '{}' depends on unknown service '{}'",
+                        name, dep
+                    ));
+                }
+                visit(dep, services, visited, order)?;
+            }
+        }
+
+        visited.insert(name.to_string(), true);
+        order.push(name.to_string());
+        Ok(())
+    }
+
+    let mut names: Vec<_> = services.keys().cloned().collect();
+    names.sort(); // Deterministic ordering
+
+    for name in names {
+        if !visited.contains_key(&name) {
+            visit(&name, services, &mut visited, &mut order)?;
+        }
+    }
+
+    Ok(order)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn dummy_service(depends_on: Vec<&str>) -> ServiceConfig {
+        ServiceConfig {
+            enabled: true,
+            command: "echo".to_string(),
+            args: vec![],
+            cwd: PathBuf::from("."),
+            env: HashMap::new(),
+            depends_on: depends_on.into_iter().map(String::from).collect(),
+            port: None,
+            health_check: None,
+        }
+    }
+
+    #[test]
+    fn test_topological_sort_linear() {
+        let mut services = HashMap::new();
+        services.insert("db".to_string(), dummy_service(vec![]));
+        services.insert("api".to_string(), dummy_service(vec!["db"]));
+        services.insert("frontend".to_string(), dummy_service(vec!["api"]));
+
+        let order = sort_services_by_dependencies(&services).unwrap();
+        let db_idx = order.iter().position(|s| s == "db").unwrap();
+        let api_idx = order.iter().position(|s| s == "api").unwrap();
+        let fe_idx = order.iter().position(|s| s == "frontend").unwrap();
+
+        assert!(db_idx < api_idx);
+        assert!(api_idx < fe_idx);
+    }
+
+    #[test]
+    fn test_topological_sort_cycle_error() {
+        let mut services = HashMap::new();
+        services.insert("a".to_string(), dummy_service(vec!["b"]));
+        services.insert("b".to_string(), dummy_service(vec!["a"]));
+
+        let result = sort_services_by_dependencies(&services);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Cyclic dependency"));
+    }
+
+    #[test]
+    fn test_topological_sort_missing_dependency() {
+        let mut services = HashMap::new();
+        services.insert("api".to_string(), dummy_service(vec!["redis"]));
+
+        let result = sort_services_by_dependencies(&services);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("depends on unknown service 'redis'"));
+    }
+}
+

@@ -6,6 +6,26 @@ use std::io;
 use std::path::Path;
 use std::path::PathBuf;
 
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+pub struct HealthCheckConfig {
+    #[serde(default)]
+    pub port: Option<u16>,
+    #[serde(default)]
+    pub http: Option<String>,
+    #[serde(default = "default_timeout_secs")]
+    pub timeout_secs: u64,
+    #[serde(default = "default_interval_ms")]
+    pub interval_ms: u64,
+}
+
+fn default_timeout_secs() -> u64 {
+    30
+}
+
+fn default_interval_ms() -> u64 {
+    250
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ServiceConfig {
     pub enabled: bool,
@@ -16,6 +36,12 @@ pub struct ServiceConfig {
     pub cwd: PathBuf,
     #[serde(default)]
     pub env: HashMap<String, String>,
+    #[serde(default)]
+    pub depends_on: Vec<String>,
+    #[serde(default)]
+    pub port: Option<u16>,
+    #[serde(default)]
+    pub health_check: Option<HealthCheckConfig>,
 }
 
 #[derive(Debug, Deserialize)]

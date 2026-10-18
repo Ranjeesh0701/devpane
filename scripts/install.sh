@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-REPO="Ranjeesh0701/devbox"
+REPO="Ranjeesh0701/devpane"
 INSTALL_DIR="/usr/local/bin"
 
 # Detect OS

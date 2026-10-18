@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$Repo = "Ranjeesh0701/devbox"
+$Repo = "Ranjeesh0701/devpane"
 $InstallDir = "$env:LOCALAPPDATA\Programs\devpane"
 $ArchiveName = "devpane-windows-x64.zip"
 $DownloadUrl = "https://github.com/$Repo/releases/latest/download/$ArchiveName"

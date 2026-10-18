@@ -49,7 +49,7 @@ function ProcessPreview() {
           <span />
         </div>
         <span className="window-title">devpane up — interactive workspace</span>
-        <span className="window-version">v0.1.0</span>
+        <span className="window-version">v0.2.0</span>
       </div>
 
       <div className="terminal-body">
@@ -384,14 +384,15 @@ function getInitialOS(): "macos" | "windows" | "linux" {
 
 function InstallWidget() {
   const [selectedOS, setSelectedOS] = useState<"macos" | "windows" | "linux">(getInitialOS);
-  const [method, setMethod] = useState<"cli" | "desktop" | "cargo">("cli");
+  const [method, setMethod] = useState<"cli" | "brew" | "desktop" | "cargo">("cli");
   const [copied, setCopied] = useState(false);
 
-  const cargoCommand = "cargo install --path . --bin devpane --bin daemon";
-  const repoReleases = "https://github.com/Ranjeesh0701/devbox/releases/latest";
+  const cargoCommand = "cargo install devpane";
+  const brewCommand = "brew install Ranjeesh0701/tap/devpane";
+  const repoReleases = "https://github.com/Ranjeesh0701/devpane/releases/latest";
 
-  function copyCargo() {
-    void navigator.clipboard.writeText(cargoCommand);
+  function copyText(text: string) {
+    void navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -426,19 +427,27 @@ function InstallWidget() {
           className={`method-tab ${method === "cli" ? "active" : ""}`}
           onClick={() => setMethod("cli")}
         >
-          Pre-built CLI
+          1-Line Script
+        </button>
+        {selectedOS !== "windows" && (
+          <button
+            className={`method-tab ${method === "brew" ? "active" : ""}`}
+            onClick={() => setMethod("brew")}
+          >
+            Homebrew
+          </button>
+        )}
+        <button
+          className={`method-tab ${method === "cargo" ? "active" : ""}`}
+          onClick={() => setMethod("cargo")}
+        >
+          Cargo (crates.io)
         </button>
         <button
           className={`method-tab ${method === "desktop" ? "active" : ""}`}
           onClick={() => setMethod("desktop")}
         >
           Desktop App GUI
-        </button>
-        <button
-          className={`method-tab ${method === "cargo" ? "active" : ""}`}
-          onClick={() => setMethod("cargo")}
-        >
-          Cargo (Rust)
         </button>
       </div>
 
@@ -462,19 +471,17 @@ function InstallWidget() {
             <div className="install-terminal-box">
               <code>
                 {selectedOS === "windows"
-                  ? "irm https://raw.githubusercontent.com/Ranjeesh0701/devbox/main/scripts/install.ps1 | iex"
-                  : "curl -fsSL https://raw.githubusercontent.com/Ranjeesh0701/devbox/main/scripts/install.sh | sh"}
+                  ? "irm https://raw.githubusercontent.com/Ranjeesh0701/devpane/main/scripts/install.ps1 | iex"
+                  : "curl -fsSL https://raw.githubusercontent.com/Ranjeesh0701/devpane/main/scripts/install.sh | sh"}
               </code>
               <button
                 className="copy-button"
                 onClick={() => {
                   const cmd =
                     selectedOS === "windows"
-                      ? "irm https://raw.githubusercontent.com/Ranjeesh0701/devbox/main/scripts/install.ps1 | iex"
-                      : "curl -fsSL https://raw.githubusercontent.com/Ranjeesh0701/devbox/main/scripts/install.sh | sh";
-                  void navigator.clipboard.writeText(cmd);
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 2000);
+                      ? "irm https://raw.githubusercontent.com/Ranjeesh0701/devpane/main/scripts/install.ps1 | iex"
+                      : "curl -fsSL https://raw.githubusercontent.com/Ranjeesh0701/devpane/main/scripts/install.sh | sh";
+                  copyText(cmd);
                 }}
               >
                 {copied ? "Copied!" : "Copy"}
@@ -519,13 +526,28 @@ function InstallWidget() {
               {selectedOS === "linux" && (
                 <a
                   className="button button-primary"
-                  href="https://github.com/Ranjeesh0701/devbox/releases"
+                  href="https://github.com/Ranjeesh0701/devpane/releases"
                   target="_blank"
                   rel="noreferrer"
                 >
                   Browse Linux Releases on GitHub ↓
                 </a>
               )}
+            </div>
+          </div>
+        )}
+
+        {method === "brew" && (
+          <div className="install-card">
+            <div className="install-details">
+              <h4>Install via Homebrew (macOS & Linux)</h4>
+              <p>Install Devpane and its background daemon via the official tap:</p>
+            </div>
+            <div className="install-terminal-box">
+              <code>{brewCommand}</code>
+              <button className="copy-button" onClick={() => copyText(brewCommand)}>
+                {copied ? "Copied!" : "Copy"}
+              </button>
             </div>
           </div>
         )}
@@ -547,7 +569,7 @@ function InstallWidget() {
               {selectedOS === "macos" && (
                 <a
                   className="button button-primary"
-                  href="https://github.com/Ranjeesh0701/devbox/releases"
+                  href="https://github.com/Ranjeesh0701/devpane/releases"
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -557,7 +579,7 @@ function InstallWidget() {
               {selectedOS === "windows" && (
                 <a
                   className="button button-primary"
-                  href="https://github.com/Ranjeesh0701/devbox/releases"
+                  href="https://github.com/Ranjeesh0701/devpane/releases"
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -567,7 +589,7 @@ function InstallWidget() {
               {selectedOS === "linux" && (
                 <a
                   className="button button-primary"
-                  href="https://github.com/Ranjeesh0701/devbox/releases"
+                  href="https://github.com/Ranjeesh0701/devpane/releases"
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -581,12 +603,12 @@ function InstallWidget() {
         {method === "cargo" && (
           <div className="install-card">
             <div className="install-details">
-              <h4>Build & Install from Source via Cargo</h4>
-              <p>Installs both <code>devpane</code> and <code>daemon</code> directly into your <code>~/.cargo/bin</code>:</p>
+              <h4>Install via Cargo (crates.io)</h4>
+              <p>Installs <code>devpane</code> directly from crates.io into your <code>~/.cargo/bin</code>:</p>
             </div>
             <div className="install-terminal-box">
               <code>{cargoCommand}</code>
-              <button className="copy-button" onClick={copyCargo}>
+              <button className="copy-button" onClick={() => copyText(cargoCommand)}>
                 {copied ? "Copied!" : "Copy"}
               </button>
             </div>
