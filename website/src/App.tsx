@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./App.css";
+import { trackDownload, trackCopyInstall, trackGithubClick } from "./lib/analytics";
 
 const services = [
   { name: "backend", status: "running", command: "cargo run", active: true },
@@ -213,7 +214,12 @@ function App() {
           <a href="#features">Why Devpane</a>
           <a href="#workflow">How it works</a>
           <a href="#install">Install</a>
-          <a href="https://github.com/Ranjeesh0701/devpane" target="_blank" rel="noreferrer">
+          <a
+            href="https://github.com/Ranjeesh0701/devpane"
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => trackGithubClick("header_nav")}
+          >
             GitHub <ArrowIcon />
           </a>
         </nav>
@@ -415,6 +421,7 @@ function InstallWidget() {
   const repoReleases = "https://github.com/Ranjeesh0701/devpane/releases/latest";
 
   function copyText(text: string) {
+    trackCopyInstall(selectedOS, text);
     void navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -523,6 +530,7 @@ function InstallWidget() {
                     href={`${repoReleases}/download/devpane-darwin-arm64.tar.gz`}
                     target="_blank"
                     rel="noreferrer"
+                    onClick={() => trackDownload("macos", "devpane-darwin-arm64.tar.gz")}
                   >
                     Download Apple Silicon (.tar.gz) ↓
                   </a>
@@ -531,6 +539,7 @@ function InstallWidget() {
                     href={`${repoReleases}/download/devpane-darwin-x64.tar.gz`}
                     target="_blank"
                     rel="noreferrer"
+                    onClick={() => trackDownload("macos", "devpane-darwin-x64.tar.gz")}
                   >
                     Download Intel Mac (.tar.gz) ↓
                   </a>
@@ -542,6 +551,7 @@ function InstallWidget() {
                   href={`${repoReleases}/download/devpane-windows-x64.zip`}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() => trackDownload("windows", "devpane-windows-x64.zip")}
                 >
                   Download Windows x64 (.zip) ↓
                 </a>
@@ -552,6 +562,7 @@ function InstallWidget() {
                   href="https://github.com/Ranjeesh0701/devpane/releases"
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() => trackGithubClick("linux_releases_button")}
                 >
                   Browse Linux Releases on GitHub ↓
                 </a>
@@ -596,6 +607,7 @@ function InstallWidget() {
                   href="https://github.com/Ranjeesh0701/devpane/releases"
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() => trackDownload("macos_desktop", "dmg")}
                 >
                   Download macOS DMG Installer ↓
                 </a>
@@ -606,6 +618,7 @@ function InstallWidget() {
                   href="https://github.com/Ranjeesh0701/devpane/releases"
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() => trackDownload("windows_desktop", "msi")}
                 >
                   Download Windows MSI Installer ↓
                 </a>
@@ -616,6 +629,7 @@ function InstallWidget() {
                   href="https://github.com/Ranjeesh0701/devpane/releases"
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() => trackDownload("linux_desktop", "packages")}
                 >
                   Download Linux Packages ↓
                 </a>
