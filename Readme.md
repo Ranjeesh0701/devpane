@@ -1,142 +1,119 @@
-# Devbox
+# Devpane
 
-**Let AI build. Stay in control.**
+**Run your stack. Stay in control.**
 
-Devbox is a development process manager designed for the AI-assisted coding era. It aims to make it easier to start, manage, and observe the processes behind your applications — from frontend servers and backend APIs to workers and test runners.
+Devpane is an interactive development process manager and terminal workspace. It makes it simple to run, observe, and interact with the multiple services powering your applications — from frontend dev servers and backend APIs to workers and background databases — both for human developers and the AI coding agents working alongside them.
 
-AI coding agents can write code and execute commands. Devbox focuses on the next part: keeping development processes manageable and making their state visible to developers.
+> **Project status:** Under active development (v0.1.0).
 
-> **Project status:** Under active development. Features and commands may change as the project evolves.
+---
 
-## The problem
+## What Devpane Solves
 
 Modern applications often require several processes running at the same time:
+- Frontend development servers (`bun run dev`, `vite`, `next dev`)
+- Backend APIs (`cargo run`, `go run`, `fastapi`)
+- Background workers, queues, and watchers
+- Databases and auxiliary services
 
-- A frontend development server
-- A backend API
-- Background workers
-- Databases and supporting services
-- Tests, builds, and other development tasks
+Juggling these in scattered terminal windows is messy. Processes crash silently, output is lost in scrollback, and terminal tabs proliferate. 
 
-As AI coding agents become part of everyday development, managing these processes through scattered terminal sessions can become harder to follow. A process may exit unexpectedly, a server may fail to start, or its output may be buried in terminal history.
+Devpane provides:
+1. **Interactive Terminal Panes**: A tmux-inspired TUI with VT100 terminal emulation. Switch between service logs with `Tab`, spawn interactive shells with `Ctrl+T`, and scroll smoothly.
+2. **Declarative `devpane.yaml`**: Define all project services once. `devpane up` starts your entire stack; `devpane down` shuts it down.
+3. **Daemon-Backed Process Supervision**: Runs a background daemon so processes stay alive, logs are persisted, and state is preserved across CLI invocations.
+4. **AI-Agent Ready**: Coding agents (Claude, Gemini, Cursor) can manage development services cleanly through structured IPC without hijacking your interactive terminal.
+5. **Cross-Platform**: Built for macOS and Windows (supporting Windows Named Pipes, CMD, and PowerShell).
 
-Devbox aims to provide a consistent way to manage these processes and a clear place for developers to understand what's happening.
+---
 
-## Vision
+## Installation
 
-Devbox is being built around three ideas:
+### Option 1: Install from Source (Recommended for now)
 
-- **Agent-friendly:** Provide a predictable interface for tools and coding agents to manage development processes.
-- **Observable:** Make process state and output easier to inspect.
-- **Human-controlled:** Give developers a clear view of the processes running their applications.
-
-The long-term goal is a workflow where an AI agent can work on an application while the developer retains visibility and control over its runtime.
-
-## How it fits together
-
-```text
-AI coding agent
-      |
-      | Process commands
-      v
-   Devbox
-      |
-      +---- Frontend
-      |
-      +---- Backend
-      |
-      +---- Workers
-      |
-      v
-Process state and output
-      |
-      v
-Developer dashboard
-```
-
-This represents the intended direction of the project. AI-agent integrations and the complete visual workflow are not implied to be available today.
-
-## Features
-
-Devbox is being developed toward the following capabilities:
-
-- **Process lifecycle management** — launch and manage development processes.
-- **Session tracking** — associate processes with identifiable sessions.
-- **Process status** — distinguish running processes from completed or inactive ones.
-- **Exit information** — make process termination and exit codes available.
-- **Persistent session metadata** — retain session information between CLI invocations.
-- **Visual interface** — provide a desktop view of development processes.
-- **AI-agent integration** — build toward structured process controls that coding agents can use reliably.
-
-Refer to the current implementation and CLI help for commands that are actually supported.
-
-## Project structure
-
-```text
-devbox/
-├── src/            # Rust application and process management
-├── desktop/        # Desktop interface
-├── website/        # Public landing page
-├── Cargo.toml      # Rust dependencies and configuration
-└── README.md
-```
-
-The desktop application and website are separate frontend projects.
-
-## Getting started
-
-### Prerequisites
-
-Install the tools required by the parts of the project you want to work on:
-
-- [Rust](https://www.rust-lang.org/tools/install) and Cargo
-- [Bun](https://bun.sh/) for the JavaScript projects
-- [Node.js](https://nodejs.org/) if required by your local tooling
-- [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) to build the desktop application
-
-### Run the Rust application
-
-From the repository root:
+Make sure you have [Rust & Cargo](https://www.rust-lang.org/tools/install) installed:
 
 ```bash
-cargo run
+# Clone the repository
+git clone https://github.com/Ranjeesh0701/devbox.git devpane
+cd devpane
+
+# Install both the CLI and daemon into ~/.cargo/bin
+cargo install --path . --bin devpane --bin daemon
 ```
 
-Use the command syntax and actions implemented in the current source code. The CLI interface is still evolving.
+Ensure `~/.cargo/bin` is in your `PATH`.
 
-### Run the website
+### Option 2: Pre-built Release Binary
 
 ```bash
-cd website
-bun install
-bun run dev
+cargo build --release
+```
+The optimized binaries will be in:
+- `target/release/devpane` (CLI & Workspace TUI)
+- `target/release/daemon` (Background process supervisor)
+
+Place both binaries in any directory on your `PATH` (such as `/usr/local/bin` or `~/.local/bin`).
+
+---
+
+## Quick Start
+
+### 1. Create a `devpane.yaml` in your project
+
+```yaml
+version: 1
+services:
+  backend:
+    enabled: true
+    command: cargo run
+    working_dir: .
+
+  frontend:
+    enabled: true
+    command: bun run dev
+    working_dir: ./website
 ```
 
-Create a production build:
+### 2. Launch the workspace
 
 ```bash
-bun run build
+devpane up
 ```
 
-### Run the desktop interface
+This launches the interactive terminal workspace:
+- **`Tab` / `Shift+Tab`**: Switch between running service logs
+- **`Ctrl+T`**: Open a new interactive shell tab (PTY session)
+- **`Ctrl+W`**: Close current shell tab
+- **`PageUp` / `PageDown`**: Scroll log output
+- **`Ctrl+Q`**: Exit workspace (or `q` while on read-only service tabs)
+
+### 3. Stop your project
 
 ```bash
-cd desktop
-bun install
-bun run tauri dev
+devpane down
 ```
 
-The desktop command assumes the Tauri CLI and required native build dependencies are configured.
+---
 
-## Development principles
+## CLI Reference
 
-Devbox aims to follow a few principles as it evolves:
+| Command | Description |
+|---|---|
+| `devpane up` | Start all enabled services from `devpane.yaml` and open the workspace |
+| `devpane down` | Stop all services associated with the current project directory |
+| `devpane list` | List all active process sessions, PIDs, and statuses |
+| `devpane start <name> <cmd> [args...]` | Start an individual background process |
+| `devpane stop <session_id>` | Stop a specific process |
+| `devpane logs <session_id> [--follow]` | View or stream logs for a process |
+| `devpane shutdown` | Terminate all supervised processes and stop the daemon |
 
-1. **Reliable process control over clever automation.**
-2. **Structured state over parsing terminal output.**
-3. **Clear failure information over silent errors.**
-4. **Visibility for developers and predictable behavior for tools.**
-5. **Small, composable features over unnecessary complexity.**
+---
+
+## Desktop App & Website
+
+- **Desktop Interface (`desktop/`)**: Native Tauri GUI for monitoring running sessions and viewing streaming logs.
+- **Website (`website/`)**: Modern landing page built with Bun and Vite.
 
 ## Contributing
 
