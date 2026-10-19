@@ -19,8 +19,8 @@ export function Sidebar({
   return (
     <aside className="sidebar">
       <div className="brand">
-        <div className="brand-mark">
-          <Icon name="terminal" size={21} />
+        <div className="brand-mark" style={{ background: "none", boxShadow: "none" }}>
+          <img src="/logo.svg" alt="Devpane logo" width="34" height="34" style={{ borderRadius: "8px", display: "block" }} />
         </div>
         <div className="brand-copy">
           <span className="brand-name">devpane</span>

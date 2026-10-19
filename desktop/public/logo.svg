@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="dp-bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#141824" />
+      <stop offset="100%" stop-color="#0a0d14" />
+    </linearGradient>
+    <linearGradient id="dp-border" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3b4861" />
+      <stop offset="100%" stop-color="#1e2535" />
+    </linearGradient>
+    <linearGradient id="dp-term-border" x1="10" y1="10" x2="26" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#55d6a2" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#2a364a" />
+    </linearGradient>
+    <linearGradient id="dp-cyan" x1="30" y1="10" x2="54" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <linearGradient id="dp-purple" x1="30" y1="34" x2="54" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#a855f7" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle Base Frame -->
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="url(#dp-bg)" stroke="url(#dp-border)" stroke-width="2" />
+
+  <!-- Left Pane: Terminal Spine (forms left stem of 'D') -->
+  <rect x="10" y="10" width="16" height="44" rx="4" fill="#0f141f" stroke="url(#dp-term-border)" stroke-width="1.5" />
+  
+  <!-- Terminal Prompt inside Left Pane: '>' chevron and cursor '_' -->
+  <path d="M15 25 L21 31 L15 37" stroke="#55d6a2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+  <line x1="15" y1="42" x2="21" y2="42" stroke="#55d6a2" stroke-width="2" stroke-linecap="round" />
+
+  <!-- Top-Right Pane: Web/API Service (curved top-right forms upper loop of 'D') -->
+  <path d="M30 10 H42 C48.627 10 54 15.373 54 22 V28 C54 30.209 52.209 32 50 32 H30 V10 Z" fill="#0f141f" stroke="#252f42" stroke-width="1.5" />
+  <circle cx="36" cy="18" r="2.2" fill="url(#dp-cyan)" />
+  <rect x="41" y="17" width="7" height="2" rx="1" fill="#38bdf8" fill-opacity="0.6" />
+  <rect x="35" y="24" width="13" height="2" rx="1" fill="#2d3748" />
+
+  <!-- Bottom-Right Pane: Worker/DB Service (curved bottom-right forms lower loop of 'D') -->
+  <path d="M30 36 H50 C52.209 36 54 37.791 54 40 V42 C54 48.627 48.627 54 42 54 H30 V36 Z" fill="#0f141f" stroke="#252f42" stroke-width="1.5" />
+  <circle cx="36" cy="44" r="2.2" fill="url(#dp-purple)" />
+  <rect x="41" y="43" width="7" height="2" rx="1" fill="#a855f7" fill-opacity="0.6" />
+  <rect x="35" y="49" width="13" height="2" rx="1" fill="#2d3748" />
+</svg>

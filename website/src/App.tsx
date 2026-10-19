@@ -206,7 +206,7 @@ function App() {
     <div className="site-shell">
       <header className="site-header">
         <a className="brand" href="#home" aria-label="Devpane home">
-          <span className="brand-mark">d</span>
+          <img src="/logo.svg" alt="Devpane logo" className="brand-logo" width="32" height="32" />
           <span>devpane</span>
         </a>
 
@@ -389,7 +389,7 @@ function App() {
 
       <footer className="site-footer">
         <a className="brand footer-brand" href="#home">
-          <span className="brand-mark">d</span>
+          <img src="/logo.svg" alt="Devpane logo" className="brand-logo" width="28" height="28" />
           <span>devpane</span>
         </a>
         <p>A clearer view of the processes behind your code.</p>

@@ -59,18 +59,16 @@
   text-decoration: none;
 }
 
-.brand-mark {
+.brand-logo {
   width: 32px;
   height: 32px;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgb(139 156 255 / 35%);
-  border-radius: 9px;
-  background: rgb(139 156 255 / 12%);
-  color: var(--accent);
-  font-size: 21px;
-  font-weight: 800;
-  line-height: 1;
+  border-radius: 8px;
+  display: block;
+}
+
+.footer-brand .brand-logo {
+  width: 28px;
+  height: 28px;
 }
 
 .main-nav {
