@@ -8,7 +8,10 @@ import { ProcessStatusBadge } from "../../../components/ui/ProcessStatusBadge";
 type Props = {
   sessions: ProcessSession[];
   onStop: (id: string) => Promise<void>;
+  onRestart?: (id: string) => Promise<void>;
+  onRebuild?: (name: string) => Promise<void>;
   onStopProject?: (projectDir: string) => Promise<void>;
+  onRestartProject?: (projectDir: string) => Promise<void>;
   onViewLogs: (session: ProcessSession) => void;
 };
 
@@ -29,12 +32,18 @@ function formatCpu(cpu: number | null | undefined): string {
 export function SessionTable({
   sessions,
   onStop,
+  onRestart,
+  onRebuild,
   onStopProject,
+  onRestartProject,
   onViewLogs,
 }: Props) {
   const [stoppingId, setStoppingId] = useState<string | null>(null);
+  const [restartingId, setRestartingId] = useState<string | null>(null);
+  const [rebuildingName, setRebuildingName] = useState<string | null>(null);
   const [stoppingProject, setStoppingProject] = useState<string | null>(null);
-  const [stopError, setStopError] = useState<string | null>(null);
+  const [restartingProject, setRestartingProject] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const groups = useMemo(() => {
     const map = new Map<
@@ -65,27 +74,69 @@ export function SessionTable({
 
   async function handleStop(id: string) {
     setStoppingId(id);
-    setStopError(null);
+    setActionError(null);
     try {
       await onStop(id);
     } catch (cause) {
-      setStopError(cause instanceof Error ? cause.message : String(cause));
+      setActionError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       setStoppingId(null);
     }
   }
 
+  async function handleRestart(id: string) {
+    setRestartingId(id);
+    setActionError(null);
+    try {
+      if (onRestart) {
+        await onRestart(id);
+      }
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setRestartingId(null);
+    }
+  }
+
+  async function handleRebuild(name: string) {
+    setRebuildingName(name);
+    setActionError(null);
+    try {
+      if (onRebuild) {
+        await onRebuild(name);
+      }
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setRebuildingName(null);
+    }
+  }
+
   async function handleStopProject(projectDir: string) {
     setStoppingProject(projectDir);
-    setStopError(null);
+    setActionError(null);
     try {
       if (onStopProject) {
         await onStopProject(projectDir);
       }
     } catch (cause) {
-      setStopError(cause instanceof Error ? cause.message : String(cause));
+      setActionError(cause instanceof Error ? cause.message : String(cause));
     } finally {
       setStoppingProject(null);
+    }
+  }
+
+  async function handleRestartProject(projectDir: string) {
+    setRestartingProject(projectDir);
+    setActionError(null);
+    try {
+      if (onRestartProject) {
+        await onRestartProject(projectDir);
+      }
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setRestartingProject(null);
     }
   }
 
@@ -120,21 +171,42 @@ export function SessionTable({
                     </span>
                   </div>
                 </div>
-                {runningInGroup > 0 && onStopProject && group.projectDir && (
-                  <button
-                    className="project-stop-btn"
-                    onClick={() => void handleStopProject(group.projectDir!)}
-                    disabled={stoppingProject === group.projectDir}
-                    title={`Stop all services in ${group.name}`}
-                  >
-                    <Icon name="square" size={12} />
-                    <span>
-                      {stoppingProject === group.projectDir
-                        ? "Stopping…"
-                        : "Stop Project"}
-                    </span>
-                  </button>
-                )}
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  {onRestartProject && group.projectDir && (
+                    <button
+                      className="project-restart-btn"
+                      onClick={() => void handleRestartProject(group.projectDir!)}
+                      disabled={restartingProject === group.projectDir}
+                      title={`Restart all services in ${group.name}`}
+                    >
+                      <Icon
+                        name="refresh"
+                        size={12}
+                        className={restartingProject === group.projectDir ? "refresh-spinning" : ""}
+                      />
+                      <span>
+                        {restartingProject === group.projectDir
+                          ? "Restarting..."
+                          : "Restart Project"}
+                      </span>
+                    </button>
+                  )}
+                  {runningInGroup > 0 && onStopProject && group.projectDir && (
+                    <button
+                      className="project-stop-btn"
+                      onClick={() => void handleStopProject(group.projectDir!)}
+                      disabled={stoppingProject === group.projectDir}
+                      title={`Stop all services in ${group.name}`}
+                    >
+                      <Icon name="square" size={12} />
+                      <span>
+                        {stoppingProject === group.projectDir
+                          ? "Stopping..."
+                          : "Stop Project"}
+                      </span>
+                    </button>
+                  )}
+                </div>
               </div>
             )}
             <table className="session-table">
@@ -230,6 +302,36 @@ export function SessionTable({
                         >
                           <Icon name="copy" size={16} />
                         </button>
+                        {onRestart && (
+                          <button
+                            className="row-action"
+                            onClick={() => void handleRestart(session.id)}
+                            title="Restart service"
+                            aria-label={`Restart ${session.name}`}
+                            disabled={restartingId === session.id}
+                          >
+                            <Icon
+                              name="refresh"
+                              size={15}
+                              className={restartingId === session.id ? "refresh-spinning" : ""}
+                            />
+                          </button>
+                        )}
+                        {onRebuild && session.name && (
+                          <button
+                            className="row-action"
+                            onClick={() => void handleRebuild(session.name!)}
+                            title="Rebuild and restart service"
+                            aria-label={`Rebuild ${session.name}`}
+                            disabled={rebuildingName === session.name}
+                          >
+                            <Icon
+                              name="wrench"
+                              size={15}
+                              className={rebuildingName === session.name ? "refresh-spinning" : ""}
+                            />
+                          </button>
+                        )}
                         {session.status === "running" && (
                           <button
                             className="row-action"
@@ -250,9 +352,9 @@ export function SessionTable({
           </div>
         );
       })}
-      {stopError && (
+      {actionError && (
         <p className="error-message" role="alert">
-          {stopError}
+          {actionError}
         </p>
       )}
       <div className="table-footer">

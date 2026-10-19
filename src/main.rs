@@ -42,6 +42,8 @@ fn run() -> Result<u8, DevpaneError> {
         println!("  init [--force]                    - Auto-detect project stack & generate devpane.yaml.");
         println!("  up                                - Start all enabled services from devpane.yaml.");
         println!("  down                              - Stop all running project services.");
+        println!("  restart [service]                 - Restart all project services or a specific service.");
+        println!("  rebuild <service>                 - Clean rebuild and restart a service.");
         println!("  start <name> <program> [args...] - Start a process.");
         println!("  list                              - List active sessions.");
         println!("  stop <session_id>                 - Stop a process.");
@@ -243,9 +245,41 @@ fn run() -> Result<u8, DevpaneError> {
 
             Request::Down { project_dir }
         }
+        "restart" => {
+            let target = args.next();
+            let (project_dir, services) = match find_config() {
+                Ok(path) => {
+                    let p_dir = path
+                        .parent()
+                        .map(|p| p.to_path_buf())
+                        .unwrap_or_else(|| env::current_dir().unwrap_or_default());
+                    let svcs = load_config(&path).ok().map(|cfg| {
+                        cfg.enabled_services()
+                            .map(|(n, s)| (n.clone(), s.clone()))
+                            .collect()
+                    });
+                    (Some(p_dir), svcs)
+                }
+                Err(_) => (env::current_dir().ok(), None),
+            };
+
+            Request::Restart {
+                name: target,
+                project_dir,
+                services,
+            }
+        }
+        "rebuild" => {
+            let name = args.next().ok_or_else(|| {
+                DevpaneError::InvalidArguments(
+                    "No service specified. Usage: rebuild <service>".to_string(),
+                )
+            })?;
+            Request::Rebuild { name }
+        }
         _ => {
             return Err(DevpaneError::InvalidArguments(format!(
-                "Invalid action: {action}. Supported actions: start, list, stop, logs, shutdown, up."
+                "Invalid action: {action}. Supported actions: start, list, stop, logs, shutdown, up, down, restart, rebuild."
             )));
         }
     };
@@ -376,6 +410,47 @@ fn run() -> Result<u8, DevpaneError> {
                     return Ok(1);
                 }
 
+                break;
+            }
+            Response::Restart { results } => {
+                if !matches!(request, Request::Restart { .. }) {
+                    return Err(DevpaneError::InvalidResponse);
+                }
+
+                if results.is_empty() {
+                    println!("No services were found to restart.");
+                    break;
+                }
+
+                let mut failed = false;
+                for result in results {
+                    if let Some(session) = result.session {
+                        println!(
+                            "Service '{}' restarted successfully (PID: {}).",
+                            result.name, session.pid
+                        );
+                    } else if let Some(error) = result.error {
+                        failed = true;
+                        eprintln!("Failed to restart service '{}': {}", result.name, error);
+                    }
+                }
+
+                if failed {
+                    return Ok(1);
+                }
+                break;
+            }
+            Response::Rebuild { success, error } => {
+                if !matches!(request, Request::Rebuild { .. }) {
+                    return Err(DevpaneError::InvalidResponse);
+                }
+
+                if success {
+                    println!("Service rebuilt and restarted successfully.");
+                } else if let Some(err) = error {
+                    eprintln!("Rebuild failed: {}", err);
+                    return Ok(1);
+                }
                 break;
             }
             Response::Logs { .. } => {

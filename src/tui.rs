@@ -62,6 +62,7 @@ where
     let mut is_searching = false;
     let mut search_input = String::new();
     let mut error_message: Option<String> = None;
+    let mut action_status: Option<(String, Instant)> = None;
     let mut last_refresh = Instant::now() - Duration::from_secs(1);
 
     // Initial load of services
@@ -409,8 +410,11 @@ where
                         } else {
                             let has_filter = service_views.get(active_tab).and_then(|v| v.search_query.as_ref()).is_some();
                             let mut shortcuts = vec![
-                                Span::raw("Tab/Shift+Tab: Switch • "),
-                                Span::styled("/: Search • ", Style::default().fg(Color::Cyan)),
+                                Span::raw("Tab: Switch • "),
+                                Span::styled("r: Restart • ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                                Span::styled("b: Rebuild • ", Style::default().fg(Color::Yellow)),
+                                Span::styled("s: Stop/Start • ", Style::default().fg(Color::Magenta)),
+                                Span::styled("/: Search • ", Style::default().fg(Color::White)),
                             ];
                             if has_filter {
                                 shortcuts.push(Span::styled("Esc: Clear filter • ", Style::default().fg(Color::Yellow)));
@@ -421,10 +425,9 @@ where
                                 }
                             }
                             shortcuts.extend(vec![
-                                Span::raw("Ctrl+T: New shell • "),
+                                Span::raw("Ctrl+T: Shell • "),
                                 Span::raw("Ctrl+W: Close tab • "),
-                                Span::raw("Ctrl+R: Refresh • "),
-                                Span::raw("q / Ctrl+C: Stop & Quit • "),
+                                Span::raw("q: Quit • "),
                                 Span::styled(
                                     format!("{} running", running_count),
                                     Style::default().fg(Color::Green),
@@ -435,6 +438,17 @@ where
                                     Style::default().fg(Color::Red),
                                 ),
                             ]);
+
+                            if let Some((ref msg, time)) = action_status {
+                                if time.elapsed() < Duration::from_secs(3) {
+                                    shortcuts.push(Span::raw(" • "));
+                                    shortcuts.push(Span::styled(
+                                        format!("⚡ {msg}"),
+                                        Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+                                    ));
+                                }
+                            }
+
                             vec![Line::from(shortcuts)]
                         }
                     }
@@ -513,17 +527,72 @@ where
                                 continue;
                             }
                         }
-                        // Open detected URL in default browser (o)
-                        (KeyCode::Char('o'), KeyModifiers::NONE)
-                        | (KeyCode::Char('O'), KeyModifiers::NONE) if active_tab < service_views.len() => {
-                            if let Some(url) = service_views[active_tab].detected_url() {
-                                #[cfg(target_os = "macos")]
-                                let _ = std::process::Command::new("open").arg(&url).spawn();
-                                #[cfg(target_os = "windows")]
-                                let _ = std::process::Command::new("cmd").args(["/c", "start", &url]).spawn();
-                                #[cfg(target_os = "linux")]
-                                let _ = std::process::Command::new("xdg-open").arg(&url).spawn();
+                        // Interactive service controls (r: Restart, b: Rebuild, s: Stop/Start toggle)
+                        (KeyCode::Char('r'), KeyModifiers::NONE)
+                        | (KeyCode::Char('R'), KeyModifiers::NONE) if active_tab < service_views.len() => {
+                            let service_name = service_views[active_tab].name().to_string();
+                            action_status = Some((format!("Restarting '{service_name}'..."), Instant::now()));
+                            if let Ok(mut stream) = devpane::ipc::connect() {
+                                let _ = devpane::protocol::write_message(
+                                    &mut stream,
+                                    &devpane::protocol::Request::Restart {
+                                        name: Some(service_name.clone()),
+                                        project_dir: None,
+                                        services: None,
+                                    },
+                                );
+                                let _ = devpane::protocol::read_message::<_, devpane::protocol::Response>(&mut stream);
                             }
+                            last_refresh = Instant::now() - Duration::from_secs(1);
+                            continue;
+                        }
+
+                        (KeyCode::Char('b'), KeyModifiers::NONE)
+                        | (KeyCode::Char('B'), KeyModifiers::NONE) if active_tab < service_views.len() => {
+                            let service_name = service_views[active_tab].name().to_string();
+                            action_status = Some((format!("Rebuilding '{service_name}'..."), Instant::now()));
+                            if let Ok(mut stream) = devpane::ipc::connect() {
+                                let _ = devpane::protocol::write_message(
+                                    &mut stream,
+                                    &devpane::protocol::Request::Rebuild {
+                                        name: service_name.clone(),
+                                    },
+                                );
+                                let _ = devpane::protocol::read_message::<_, devpane::protocol::Response>(&mut stream);
+                            }
+                            last_refresh = Instant::now() - Duration::from_secs(1);
+                            continue;
+                        }
+
+                        (KeyCode::Char('s'), KeyModifiers::NONE)
+                        | (KeyCode::Char('S'), KeyModifiers::NONE) if active_tab < service_views.len() => {
+                            let service_name = service_views[active_tab].name().to_string();
+                            let is_running = matches!(service_views[active_tab].status(), ProcessStatus::Running);
+                            if is_running {
+                                action_status = Some((format!("Stopping '{service_name}'..."), Instant::now()));
+                                let session_id = service_views[active_tab].session.id.clone();
+                                if let Ok(mut stream) = devpane::ipc::connect() {
+                                    let _ = devpane::protocol::write_message(
+                                        &mut stream,
+                                        &devpane::protocol::Request::Stop { id: session_id },
+                                    );
+                                    let _ = devpane::protocol::read_message::<_, devpane::protocol::Response>(&mut stream);
+                                }
+                            } else {
+                                action_status = Some((format!("Starting '{service_name}'..."), Instant::now()));
+                                if let Ok(mut stream) = devpane::ipc::connect() {
+                                    let _ = devpane::protocol::write_message(
+                                        &mut stream,
+                                        &devpane::protocol::Request::Restart {
+                                            name: Some(service_name.clone()),
+                                            project_dir: None,
+                                            services: None,
+                                        },
+                                    );
+                                    let _ = devpane::protocol::read_message::<_, devpane::protocol::Response>(&mut stream);
+                                }
+                            }
+                            last_refresh = Instant::now() - Duration::from_secs(1);
                             continue;
                         }
 

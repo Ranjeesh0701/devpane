@@ -18,6 +18,9 @@ export function SessionsPage() {
     refresh,
     startSession,
     stopSession,
+    restartSession,
+    rebuildSession,
+    restartProject,
     stopProject,
     stopAllSessions,
   } = useSessions();
@@ -134,7 +137,10 @@ export function SessionsPage() {
           <SessionTable
             sessions={filteredSessions}
             onStop={stopSession}
+            onRestart={restartSession}
+            onRebuild={rebuildSession}
             onStopProject={stopProject}
+            onRestartProject={restartProject}
             onViewLogs={setViewingSession}
           />
         )}

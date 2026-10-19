@@ -402,22 +402,129 @@ impl ProcessSupervisor {
         Ok(session)
     }
 
-    pub fn restart_service(&mut self, name: &str) -> Result<ProcessSession, DevpaneError> {
-        let existing_id = self
-            .processes
-            .iter()
-            .find(|p| p.session.name == name)
-            .map(|p| p.session.id.clone());
+    pub fn register_service(&mut self, name: &str, service: &ServiceConfig, project_dir: &Path) {
+        self.services_meta.insert(
+            name.to_string(),
+            ServiceMeta {
+                config: service.clone(),
+                project_dir: project_dir.to_path_buf(),
+                crash_count: 0,
+                last_crash: None,
+                next_restart_at: None,
+            },
+        );
+    }
 
-        if let Some(id) = existing_id {
-            let _ = self.stop(&id);
+    pub fn restart_service(&mut self, name_or_id: &str) -> Result<ProcessSession, DevpaneError> {
+        let (resolved_name, session_id) = if self.services_meta.contains_key(name_or_id) {
+            let id = self
+                .processes
+                .iter()
+                .find(|p| p.session.name == name_or_id)
+                .map(|p| p.session.id.clone());
+            (name_or_id.to_string(), id)
+        } else if let Some(p) = self.processes.iter().find(|p| p.session.id == name_or_id || p.session.name == name_or_id) {
+            (p.session.name.clone(), Some(p.session.id.clone()))
+        } else {
+            (name_or_id.to_string(), None)
+        };
+
+        if let Some(ref id) = session_id {
+            let _ = self.stop(id);
         }
 
-        let meta = self.services_meta.get(name).cloned().ok_or_else(|| {
-            DevpaneError::InvalidArguments(format!("No configuration found for service '{name}'"))
+        if let Some(meta) = self.services_meta.get(&resolved_name).cloned() {
+            self.start_service_internal(&resolved_name, &meta.config, &meta.project_dir)
+        } else {
+            Err(DevpaneError::InvalidArguments(format!(
+                "No configuration found for service '{name_or_id}'"
+            )))
+        }
+    }
+
+    pub fn rebuild_service(&mut self, name_or_id: &str) -> Result<(), DevpaneError> {
+        let (resolved_name, session_id) = if self.services_meta.contains_key(name_or_id) {
+            let id = self
+                .processes
+                .iter()
+                .find(|p| p.session.name == name_or_id)
+                .map(|p| p.session.id.clone());
+            (name_or_id.to_string(), id)
+        } else if let Some(p) = self.processes.iter().find(|p| p.session.id == name_or_id || p.session.name == name_or_id) {
+            (p.session.name.clone(), Some(p.session.id.clone()))
+        } else {
+            (name_or_id.to_string(), None)
+        };
+
+        if let Some(ref id) = session_id {
+            let _ = self.stop(id);
+        }
+
+        let meta = self.services_meta.get(&resolved_name).cloned().ok_or_else(|| {
+            DevpaneError::InvalidArguments(format!("No configuration found for service '{name_or_id}'"))
         })?;
 
-        self.start_service_internal(name, &meta.config, &meta.project_dir)
+        let cwd = if meta.config.cwd.is_absolute() {
+            meta.config.cwd.clone()
+        } else {
+            meta.project_dir.join(&meta.config.cwd)
+        };
+
+        let env_files = crate::config::load_env_files(&meta.project_dir);
+        let mut final_env = env_files;
+        final_env.extend(meta.config.env.clone());
+
+        let log_path = get_log_file(&resolved_name).ok();
+
+        // 1. Pre-build
+        if let Some(ref hooks) = meta.config.hooks {
+            if let Some(ref pre_build) = hooks.pre_build {
+                super::hooks::run_command_list(&pre_build.to_vec(), &cwd, &final_env, log_path.as_deref())
+                    .map_err(|e| DevpaneError::InvalidArguments(format!("Pre-build hook failed: {e}")))?;
+            }
+        }
+
+        // 2. Unconditional Build CMD
+        if let Some(ref build) = meta.config.build {
+            if let Some(ref cmd) = build.cmd {
+                let build_cwd = build.cwd.as_ref().map(|c| if c.is_absolute() { c.clone() } else { meta.project_dir.join(c) }).unwrap_or_else(|| cwd.clone());
+                super::hooks::run_command_list(&cmd.to_vec(), &build_cwd, &final_env, log_path.as_deref())
+                    .map_err(|e| DevpaneError::InvalidArguments(format!("Build command failed: {e}")))?;
+            }
+        }
+
+        // 3. Post-build
+        if let Some(ref hooks) = meta.config.hooks {
+            if let Some(ref post_build) = hooks.post_build {
+                super::hooks::run_command_list(&post_build.to_vec(), &cwd, &final_env, log_path.as_deref())
+                    .map_err(|e| DevpaneError::InvalidArguments(format!("Post-build hook failed: {e}")))?;
+            }
+        }
+
+        // 4. Start service again
+        self.start_service_internal(&resolved_name, &meta.config, &meta.project_dir)?;
+
+        Ok(())
+    }
+
+    pub fn restart_project(
+        &mut self,
+        project_dir: &Path,
+        services: HashMap<String, ServiceConfig>,
+    ) -> Vec<ServiceStartResult> {
+        let _ = self.stop_project(project_dir);
+
+        let svcs = if services.is_empty() {
+            self.services_meta
+                .iter()
+                .filter(|(_, meta)| meta.project_dir == project_dir)
+                .map(|(n, meta)| (n.clone(), meta.config.clone()))
+                .collect()
+        } else {
+            services
+        };
+
+        self.start_project(project_dir, svcs)
     }
 
     pub fn tick(&mut self) -> Vec<String> {

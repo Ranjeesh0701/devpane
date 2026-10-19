@@ -199,6 +199,55 @@ fn handle_client(
                     message: format!("Failed to stop project: {error}"),
                 },
             },
+            Request::Restart {
+                name,
+                project_dir,
+                services,
+            } => match name {
+                Some(svc_name) => {
+                    if let (Some(p_dir), Some(svcs)) = (&project_dir, &services) {
+                        for (n, s) in svcs {
+                            if n == &svc_name {
+                                supervisor.register_service(n, s, p_dir);
+                            }
+                        }
+                    }
+                    match supervisor.restart_service(&svc_name) {
+                        Ok(session) => Response::Restart {
+                            results: vec![crate::protocol::ServiceStartResult {
+                                name: svc_name,
+                                session: Some(session),
+                                error: None,
+                            }],
+                        },
+                        Err(e) => Response::Restart {
+                            results: vec![crate::protocol::ServiceStartResult {
+                                name: svc_name,
+                                session: None,
+                                error: Some(e.to_string()),
+                            }],
+                        },
+                    }
+                }
+                None => {
+                    let p_dir = project_dir
+                        .unwrap_or_else(|| std::env::current_dir().unwrap_or_default());
+                    let svcs = services.unwrap_or_default();
+                    Response::Restart {
+                        results: supervisor.restart_project(&p_dir, svcs),
+                    }
+                }
+            },
+            Request::Rebuild { name } => match supervisor.rebuild_service(&name) {
+                Ok(_) => Response::Rebuild {
+                    success: true,
+                    error: None,
+                },
+                Err(e) => Response::Rebuild {
+                    success: false,
+                    error: Some(e.to_string()),
+                },
+            },
         },
     };
 

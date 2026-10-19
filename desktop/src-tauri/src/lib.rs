@@ -100,6 +100,87 @@ fn stop_project(project_dir: PathBuf) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn restart_session(id: String) -> Result<ProcessSession, String> {
+    let mut stream = connect_to_daemon()?;
+
+    write_message(
+        &mut stream,
+        &Request::Restart {
+            name: Some(id.clone()),
+            project_dir: None,
+            services: None,
+        },
+    )
+    .map_err(|error| format!("Failed to send restart request: {error}"))?;
+
+    let response: Response = read_message(&mut stream)
+        .map_err(|error| format!("Failed to read daemon response: {error}"))?;
+
+    match response {
+        Response::Restart { results } => {
+            if let Some(res) = results.into_iter().next() {
+                if let Some(session) = res.session {
+                    Ok(session)
+                } else {
+                    Err(res.error.unwrap_or_else(|| "Failed to restart session".to_string()))
+                }
+            } else {
+                Err("No restart result returned from daemon".to_string())
+            }
+        }
+        Response::Error { message } => Err(message),
+        other => Err(format!("Unexpected daemon response: {other:?}")),
+    }
+}
+
+#[tauri::command]
+fn restart_project(project_dir: PathBuf) -> Result<Vec<devpane_core::protocol::ServiceStartResult>, String> {
+    let mut stream = connect_to_daemon()?;
+
+    write_message(
+        &mut stream,
+        &Request::Restart {
+            name: None,
+            project_dir: Some(project_dir),
+            services: None,
+        },
+    )
+    .map_err(|error| format!("Failed to send restart project request: {error}"))?;
+
+    let response: Response = read_message(&mut stream)
+        .map_err(|error| format!("Failed to read daemon response: {error}"))?;
+
+    match response {
+        Response::Restart { results } => Ok(results),
+        Response::Error { message } => Err(message),
+        other => Err(format!("Unexpected daemon response: {other:?}")),
+    }
+}
+
+#[tauri::command]
+fn rebuild_session(name: String) -> Result<(), String> {
+    let mut stream = connect_to_daemon()?;
+
+    write_message(&mut stream, &Request::Rebuild { name })
+        .map_err(|error| format!("Failed to send rebuild request: {error}"))?;
+
+    let response: Response = read_message(&mut stream)
+        .map_err(|error| format!("Failed to read daemon response: {error}"))?;
+
+    match response {
+        Response::Rebuild { success, error } => {
+            if success {
+                Ok(())
+            } else {
+                Err(error.unwrap_or_else(|| "Failed to rebuild service".to_string()))
+            }
+        }
+        Response::Error { message } => Err(message),
+        other => Err(format!("Unexpected daemon response: {other:?}")),
+    }
+}
+
+#[tauri::command]
 fn stop_all_sessions() -> Result<(), String> {
     let sessions = list_sessions()?;
     let mut stream = connect_to_daemon()?;
@@ -354,6 +435,9 @@ pub fn run() {
             list_sessions,
             start_session,
             stop_session,
+            restart_session,
+            restart_project,
+            rebuild_session,
             stop_project,
             stop_all_sessions,
             get_session_logs,

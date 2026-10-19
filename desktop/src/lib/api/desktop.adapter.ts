@@ -13,6 +13,10 @@ export const desktopAdapter = {
     return invoke<ProcessSession>("start_session", input);
   },
   stopSession: (id: string) => invoke<void>("stop_session", { id }),
+  restartSession: (id: string) => invoke<ProcessSession>("restart_session", { id }),
+  rebuildSession: (name: string) => invoke<void>("rebuild_session", { name }),
+  restartProject: (projectDir: string) =>
+    invoke<void>("restart_project", { projectDir }),
   stopProject: (projectDir: string) =>
     invoke<void>("stop_project", { projectDir }),
   stopAllSessions: () => invoke<void>("stop_all_sessions"),

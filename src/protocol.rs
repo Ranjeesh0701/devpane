@@ -33,6 +33,14 @@ pub enum Request {
     Down {
         project_dir: PathBuf,
     },
+    Restart {
+        name: Option<String>,
+        project_dir: Option<PathBuf>,
+        services: Option<HashMap<String, ServiceConfig>>,
+    },
+    Rebuild {
+        name: String,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -47,6 +55,8 @@ pub enum Response {
     Error { message: String },
     Up { results: Vec<ServiceStartResult> },
     Down { results: Vec<ServiceStopResult> },
+    Restart { results: Vec<ServiceStartResult> },
+    Rebuild { success: bool, error: Option<String> },
 }
 
 #[derive(Debug, Serialize, Deserialize)]

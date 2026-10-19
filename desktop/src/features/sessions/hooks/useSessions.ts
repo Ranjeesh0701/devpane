@@ -53,6 +53,30 @@ export function useSessions() {
     [refresh],
   );
 
+  const restartSession = useCallback(
+    async (id: string) => {
+      await api.restartSession(id);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  const rebuildSession = useCallback(
+    async (name: string) => {
+      await api.rebuildSession(name);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  const restartProject = useCallback(
+    async (projectDir: string) => {
+      await api.restartProject(projectDir);
+      await refresh();
+    },
+    [refresh],
+  );
+
   const stopProject = useCallback(
     async (projectDir: string) => {
       await api.stopProject(projectDir);
@@ -88,6 +112,9 @@ export function useSessions() {
     refresh,
     startSession,
     stopSession,
+    restartSession,
+    rebuildSession,
+    restartProject,
     stopProject,
     stopAllSessions,
   };
