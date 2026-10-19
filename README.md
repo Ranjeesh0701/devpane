@@ -11,7 +11,7 @@
 
 Devpane is a high-performance development process manager and terminal workspace built in 100% native Rust. It delivers near-instant startup, zero runtime bloat, and minimal memory footprint - making it effortless to run, observe, and interact with the multiple services powering your applications.
 
-> **Project status:** v0.3.0 (Active development).
+> **Project status:** v0.3.1 (Active development).
 
 ---
 

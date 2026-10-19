@@ -866,7 +866,7 @@ dependencies = [
 
 [[package]]
 name = "devpane"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "crossterm",
  "dirs",
@@ -884,7 +884,7 @@ dependencies = [
 
 [[package]]
 name = "devpane-desktop"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "devpane",
  "dirs",
