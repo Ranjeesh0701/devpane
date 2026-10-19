@@ -39,7 +39,7 @@ fn run() -> Result<u8, DevpaneError> {
     if action == "--help" || action == "-h" {
         println!("Usage: devpane <command> [arguments...]");
         println!("Commands:");
-        println!("  init [--force]                    - Auto-detect project stack & generate devpane.yaml.");
+        println!("  init [--force] [--compose]        - Auto-detect project stack & generate devpane.yaml.");
         println!("  up                                - Start all enabled services from devpane.yaml.");
         println!("  down                              - Stop all running project services.");
         println!("  restart [service]                 - Restart all project services or a specific service.");
@@ -53,14 +53,16 @@ fn run() -> Result<u8, DevpaneError> {
     }
 
     if action == "init" {
-        let force = args.any(|arg| arg == "--force" || arg == "-f");
+        let args_vec: Vec<String> = args.collect();
+        let force = args_vec.iter().any(|arg| arg == "--force" || arg == "-f");
+        let compose = args_vec.iter().any(|arg| arg == "--compose" || arg == "-c");
         let cwd = env::current_dir().map_err(DevpaneError::FileOperation)?;
-        match devpane::config::init_config(&cwd, force) {
+        match devpane::config::init_config_with_opts(&cwd, force, compose) {
             Ok((path, services)) => {
                 let filename = path.file_name().unwrap_or_default().to_string_lossy();
                 println!("✨ Created {} with {} service(s):\n", filename, services.len());
                 for (name, cmd) in services {
-                    println!("  • {:<12} -> {}", name, cmd);
+                    println!("  • {:<14} -> {}", name, cmd);
                 }
                 println!("\nNext steps:");
                 println!("  1. Review {}", filename);
