@@ -1,11 +1,25 @@
 import { useState } from "react";
 import "./App.css";
-import { trackDownload, trackCopyInstall, trackGithubClick } from "./lib/analytics";
+import {
+  trackDownload,
+  trackCopyInstall,
+  trackGithubClick,
+} from "./lib/analytics";
 
 const services = [
   { name: "backend", status: "running", command: "cargo run", active: true },
-  { name: "frontend", status: "running", command: "bun run dev", active: false },
-  { name: "worker", status: "running", command: "bun run worker", active: false },
+  {
+    name: "frontend",
+    status: "running",
+    command: "bun run dev",
+    active: false,
+  },
+  {
+    name: "worker",
+    status: "running",
+    command: "bun run worker",
+    active: false,
+  },
   { name: "Shell 1", status: "interactive", command: "zsh", active: false },
 ] as const;
 
@@ -83,11 +97,20 @@ function ProcessPreview() {
             <span className="agent-indicator-dot" />
             LIVE DAEMON SUPERVISOR
           </span>
-          <span className="terminal-muted">devpane.yaml loaded • .env cascaded</span>
+          <span className="terminal-muted">
+            devpane.yaml loaded • .env cascaded
+          </span>
         </div>
 
         {/* Tab bar header */}
-        <div style={{ display: "flex", gap: "6px", margin: "14px 0 10px", flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "6px",
+            margin: "14px 0 10px",
+            flexWrap: "wrap",
+          }}
+        >
           {services.map((svc) => (
             <span
               key={svc.name}
@@ -96,15 +119,20 @@ function ProcessPreview() {
                 borderRadius: "4px",
                 fontSize: "10px",
                 fontFamily: "monospace",
-                background: svc.active ? "rgb(139 156 255 / 22%)" : "rgb(255 255 255 / 4%)",
-                border: svc.active ? "1px solid rgb(139 156 255 / 40%)" : "1px solid transparent",
+                background: svc.active
+                  ? "rgb(139 156 255 / 22%)"
+                  : "rgb(255 255 255 / 4%)",
+                border: svc.active
+                  ? "1px solid rgb(139 156 255 / 40%)"
+                  : "1px solid transparent",
                 color: svc.active ? "#c9d2ff" : "#888c9f",
                 fontWeight: svc.active ? 600 : 400,
               }}
             >
               <span
                 style={{
-                  color: svc.status === "running" ? "var(--success)" : "#888c9f",
+                  color:
+                    svc.status === "running" ? "var(--success)" : "#888c9f",
                   marginRight: "5px",
                 }}
               >
@@ -128,11 +156,24 @@ function ProcessPreview() {
             minHeight: "135px",
           }}
         >
-          <div style={{ color: "var(--subtle)" }}>[devpane:daemon] Service 'backend' started (PID 48921) • 0.8% CPU • 34.2 MB</div>
-          <div style={{ color: "#aab5ff" }}>   Compiling devpane v0.3.1 (/Workspace/devpane)</div>
-          <div style={{ color: "var(--success)" }}>    Finished `dev` profile in 0.82s</div>
-          <div style={{ color: "#e2e4ed" }}>[server] Listening on http://127.0.0.1:8080</div>
-          <div style={{ color: "#e2e4ed" }}>[server] IPC socket ready at /tmp/devpane.sock</div>
+          <div style={{ color: "var(--subtle)" }}>
+            [devpane:daemon] Service 'backend' started (PID 48921) • 0.8% CPU •
+            34.2 MB
+          </div>
+          <div style={{ color: "#aab5ff" }}>
+            {" "}
+            Compiling devpane v0.3.1 (/Workspace/devpane)
+          </div>
+          <div style={{ color: "var(--success)" }}>
+            {" "}
+            Finished `dev` profile in 0.82s
+          </div>
+          <div style={{ color: "#e2e4ed" }}>
+            [server] Listening on http://127.0.0.1:8080
+          </div>
+          <div style={{ color: "#e2e4ed" }}>
+            [server] IPC socket ready at /tmp/devpane.sock
+          </div>
           <div style={{ color: "#55d6a2" }}>
             [server] Connected to 2 service watchers <span className="cursor" />
           </div>
@@ -141,7 +182,9 @@ function ProcessPreview() {
         <div className="terminal-bottom">
           <div className="terminal-summary">
             <span className="terminal-green">● 3 running</span>
-            <span className="terminal-muted">Tab: Switch • /: Search • Ctrl+T: Shell • Ctrl+W: Close • q: Quit</span>
+            <span className="terminal-muted">
+              Tab: Switch • /: Search • Ctrl+T: Shell • Ctrl+W: Close • q: Quit
+            </span>
           </div>
           <span className="preview-label">INTERACTIVE TUI</span>
         </div>
@@ -206,7 +249,13 @@ function App() {
     <div className="site-shell">
       <header className="site-header">
         <a className="brand" href="#home" aria-label="Devpane home">
-          <img src="/logo.svg" alt="Devpane logo" className="brand-logo" width="32" height="32" />
+          <img
+            src="/logo-dark.svg"
+            alt="Devpane logo"
+            className="brand-logo"
+            width="32"
+            height="32"
+          />
           <span>devpane</span>
         </a>
 
@@ -244,9 +293,10 @@ function App() {
             </h1>
 
             <p className="hero-description">
-              Stop juggling disconnected terminal tabs. Devpane is a blazingly fast
-              process manager and terminal workspace built in native Rust - giving you
-              instant startup, minimal RAM usage, and full control over your development stack.
+              Stop juggling disconnected terminal tabs. Devpane is a blazingly
+              fast process manager and terminal workspace built in native Rust -
+              giving you instant startup, minimal RAM usage, and full control
+              over your development stack.
             </p>
 
             <div className="hero-actions">
@@ -260,7 +310,8 @@ function App() {
 
             <div className="hero-note">
               <span className="note-check">✓</span>
-              100% Native Rust core with near-zero overhead, interactive TUI, and desktop dashboard.
+              100% Native Rust core with near-zero overhead, interactive TUI,
+              and desktop dashboard.
             </div>
           </div>
 
@@ -300,8 +351,9 @@ function App() {
             <div className="eyebrow">THE LOCAL RUNTIME LAYER</div>
             <h2>Full visibility over your entire stack.</h2>
             <p>
-              Whether you're developing manually or pairing with AI coding agents,
-              Devpane keeps every server, worker, and task manageable from a single pane.
+              Whether you're developing manually or pairing with AI coding
+              agents, Devpane keeps every server, worker, and task manageable
+              from a single pane.
             </p>
           </div>
 
@@ -329,9 +381,11 @@ function App() {
               <div className="eyebrow">A BETTER DEVELOPMENT LOOP</div>
               <h2>Built for developers. Ready for AI agents.</h2>
               <p>
-                Run <code style={{ color: "var(--accent)" }}>devpane up</code> to launch your whole environment into interactive
-                terminal tabs. Coding agents can also invoke Devpane commands via IPC to spin up servers,
-                run migrations, and inspect logs - while you stay in full control.
+                Run <code style={{ color: "var(--accent)" }}>devpane up</code>{" "}
+                to launch your whole environment into interactive terminal tabs.
+                Coding agents can also invoke Devpane commands via IPC to spin
+                up servers, run migrations, and inspect logs - while you stay in
+                full control.
               </p>
 
               <div className="workflow-benefits">
@@ -359,8 +413,8 @@ function App() {
             <div className="eyebrow">GET STARTED IN SECONDS</div>
             <h2>Install Devpane on your machine.</h2>
             <p>
-              Pre-built binaries, single-command Cargo installs, and native desktop applications
-              for macOS and Windows.
+              Pre-built binaries, single-command Cargo installs, and native
+              desktop applications for macOS and Windows.
             </p>
           </div>
 
@@ -369,18 +423,14 @@ function App() {
 
         <section className="get-started section-container" id="get-started">
           <div className="get-started-panel">
-            <div className="eyebrow">
-              LOCAL DEVELOPMENT, SIMPLIFIED
-            </div>
+            <div className="eyebrow">LOCAL DEVELOPMENT, SIMPLIFIED</div>
             <h2>One command for your entire dev stack.</h2>
             <p>
               Define your services in devpane.yaml and run devpane up.
-              Experience clean terminal multiplexing with interactive shell tabs.
+              Experience clean terminal multiplexing with interactive shell
+              tabs.
             </p>
-            <a
-              className="button button-primary"
-              href="#install"
-            >
+            <a className="button button-primary" href="#install">
               Get Started Now <ArrowIcon />
             </a>
           </div>
@@ -389,7 +439,13 @@ function App() {
 
       <footer className="site-footer">
         <a className="brand footer-brand" href="#home">
-          <img src="/logo.svg" alt="Devpane logo" className="brand-logo" width="28" height="28" />
+          <img
+            src="/logo.svg"
+            alt="Devpane logo"
+            className="brand-logo"
+            width="28"
+            height="28"
+          />
           <span>devpane</span>
         </a>
         <p>A clearer view of the processes behind your code.</p>
@@ -412,13 +468,18 @@ function getInitialOS(): "macos" | "windows" | "linux" {
 }
 
 function InstallWidget() {
-  const [selectedOS, setSelectedOS] = useState<"macos" | "windows" | "linux">(getInitialOS);
-  const [method, setMethod] = useState<"cli" | "brew" | "desktop" | "cargo">("cli");
+  const [selectedOS, setSelectedOS] = useState<"macos" | "windows" | "linux">(
+    getInitialOS,
+  );
+  const [method, setMethod] = useState<"cli" | "brew" | "desktop" | "cargo">(
+    "cli",
+  );
   const [copied, setCopied] = useState(false);
 
   const cargoCommand = "cargo install devpane";
   const brewCommand = "brew install Ranjeesh0701/devpane/devpane";
-  const repoReleases = "https://github.com/Ranjeesh0701/devpane/releases/latest";
+  const repoReleases =
+    "https://github.com/Ranjeesh0701/devpane/releases/latest";
 
   function copyText(text: string) {
     trackCopyInstall(selectedOS, text);
@@ -487,13 +548,16 @@ function InstallWidget() {
           <div className="install-card">
             <div className="install-details">
               <h4>
-                {selectedOS === "macos" && "macOS Standalone CLI (devpane + daemon)"}
-                {selectedOS === "windows" && "Windows Standalone CLI (devpane.exe + daemon.exe)"}
+                {selectedOS === "macos" &&
+                  "macOS Standalone CLI (devpane + daemon)"}
+                {selectedOS === "windows" &&
+                  "Windows Standalone CLI (devpane.exe + daemon.exe)"}
                 {selectedOS === "linux" && "Linux x86_64 Standalone CLI"}
               </h4>
               <p>
-                Run the install command in your terminal to automatically download, extract,
-                and configure both <code>devpane</code> and <code>daemon</code> into your <code>$PATH</code>:
+                Run the install command in your terminal to automatically
+                download, extract, and configure both <code>devpane</code> and{" "}
+                <code>daemon</code> into your <code>$PATH</code>:
               </p>
             </div>
 
@@ -518,7 +582,13 @@ function InstallWidget() {
               </button>
             </div>
 
-            <div style={{ marginTop: "10px", fontSize: "11px", color: "var(--subtle)" }}>
+            <div
+              style={{
+                marginTop: "10px",
+                fontSize: "11px",
+                color: "var(--subtle)",
+              }}
+            >
               Or download the pre-built binaries directly:
             </div>
 
@@ -530,7 +600,9 @@ function InstallWidget() {
                     href={`${repoReleases}/download/devpane-darwin-arm64.tar.gz`}
                     target="_blank"
                     rel="noreferrer"
-                    onClick={() => trackDownload("macos", "devpane-darwin-arm64.tar.gz")}
+                    onClick={() =>
+                      trackDownload("macos", "devpane-darwin-arm64.tar.gz")
+                    }
                   >
                     Download Apple Silicon (.tar.gz) ↓
                   </a>
@@ -539,7 +611,9 @@ function InstallWidget() {
                     href={`${repoReleases}/download/devpane-darwin-x64.tar.gz`}
                     target="_blank"
                     rel="noreferrer"
-                    onClick={() => trackDownload("macos", "devpane-darwin-x64.tar.gz")}
+                    onClick={() =>
+                      trackDownload("macos", "devpane-darwin-x64.tar.gz")
+                    }
                   >
                     Download Intel Mac (.tar.gz) ↓
                   </a>
@@ -551,7 +625,9 @@ function InstallWidget() {
                   href={`${repoReleases}/download/devpane-windows-x64.zip`}
                   target="_blank"
                   rel="noreferrer"
-                  onClick={() => trackDownload("windows", "devpane-windows-x64.zip")}
+                  onClick={() =>
+                    trackDownload("windows", "devpane-windows-x64.zip")
+                  }
                 >
                   Download Windows x64 (.zip) ↓
                 </a>
@@ -575,11 +651,16 @@ function InstallWidget() {
           <div className="install-card">
             <div className="install-details">
               <h4>Install via Homebrew (macOS & Linux)</h4>
-              <p>Install Devpane and its background daemon via the official tap:</p>
+              <p>
+                Install Devpane and its background daemon via the official tap:
+              </p>
             </div>
             <div className="install-terminal-box">
               <code>{brewCommand}</code>
-              <button className="copy-button" onClick={() => copyText(brewCommand)}>
+              <button
+                className="copy-button"
+                onClick={() => copyText(brewCommand)}
+              >
                 {copied ? "Copied!" : "Copy"}
               </button>
             </div>
@@ -591,13 +672,16 @@ function InstallWidget() {
             <div className="install-details">
               <h4>
                 {selectedOS === "macos" && "Devpane for macOS (.dmg installer)"}
-                {selectedOS === "windows" && "Devpane for Windows (.msi installer)"}
-                {selectedOS === "linux" && "Devpane for Linux (.AppImage / .deb)"}
+                {selectedOS === "windows" &&
+                  "Devpane for Windows (.msi installer)"}
+                {selectedOS === "linux" &&
+                  "Devpane for Linux (.AppImage / .deb)"}
               </h4>
               <p>
-                Zero-click standalone desktop application with an embedded background daemon.
-                No terminal or manual daemon setup required - launch the app and immediately monitor
-                real-time CPU %, RAM, and stream live logs visually.
+                Zero-click standalone desktop application with an embedded
+                background daemon. No terminal or manual daemon setup required -
+                launch the app and immediately monitor real-time CPU %, RAM, and
+                stream live logs visually.
               </p>
             </div>
             <div className="install-action-row">
@@ -642,11 +726,17 @@ function InstallWidget() {
           <div className="install-card">
             <div className="install-details">
               <h4>Install via Cargo</h4>
-              <p>Installs <code>devpane</code> directly into your <code>~/.cargo/bin</code>:</p>
+              <p>
+                Installs <code>devpane</code> directly into your{" "}
+                <code>~/.cargo/bin</code>:
+              </p>
             </div>
             <div className="install-terminal-box">
               <code>{cargoCommand}</code>
-              <button className="copy-button" onClick={() => copyText(cargoCommand)}>
+              <button
+                className="copy-button"
+                onClick={() => copyText(cargoCommand)}
+              >
                 {copied ? "Copied!" : "Copy"}
               </button>
             </div>
