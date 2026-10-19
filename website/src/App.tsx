@@ -440,7 +440,7 @@ function App() {
       <footer className="site-footer">
         <a className="brand footer-brand" href="#home">
           <img
-            src="/logo.svg"
+            src="/logo-dark.svg"
             alt="Devpane logo"
             className="brand-logo"
             width="28"
