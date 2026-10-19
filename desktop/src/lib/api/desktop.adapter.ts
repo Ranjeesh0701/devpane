@@ -17,6 +17,15 @@ export const desktopAdapter = {
   rebuildSession: (name: string) => invoke<void>("rebuild_session", { name }),
   restartProject: (projectDir: string) =>
     invoke<void>("restart_project", { projectDir }),
+  syncProject: (projectDir: string, installDeps = true) =>
+    invoke<{
+      env_created: boolean;
+      missing_env_keys: string[];
+      added_env_keys: string[];
+      dependencies_installed: string[];
+      lockfile_updated: boolean;
+      warnings: string[];
+    }>("sync_project", { projectDir, installDeps }),
   stopProject: (projectDir: string) =>
     invoke<void>("stop_project", { projectDir }),
   stopAllSessions: () => invoke<void>("stop_all_sessions"),

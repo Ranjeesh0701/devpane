@@ -181,6 +181,26 @@ fn rebuild_session(name: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn sync_project(
+    project_dir: PathBuf,
+    install_deps: bool,
+) -> Result<devpane_core::sync::SyncReport, String> {
+    let mut stream = connect_to_daemon()?;
+
+    write_message(&mut stream, &Request::Sync { project_dir, install_deps })
+        .map_err(|error| format!("Failed to send sync request: {error}"))?;
+
+    let response: Response = read_message(&mut stream)
+        .map_err(|error| format!("Failed to read daemon response: {error}"))?;
+
+    match response {
+        Response::Sync { report } => Ok(report),
+        Response::Error { message } => Err(message),
+        other => Err(format!("Unexpected daemon response: {other:?}")),
+    }
+}
+
+#[tauri::command]
 fn stop_all_sessions() -> Result<(), String> {
     let sessions = list_sessions()?;
     let mut stream = connect_to_daemon()?;
@@ -438,6 +458,7 @@ pub fn run() {
             restart_session,
             restart_project,
             rebuild_session,
+            sync_project,
             stop_project,
             stop_all_sessions,
             get_session_logs,

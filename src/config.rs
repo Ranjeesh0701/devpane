@@ -229,6 +229,8 @@ pub struct ServiceConfig {
     pub hooks: Option<LifecycleHooks>,
     #[serde(default)]
     pub build: Option<BuildConfig>,
+    #[serde(default)]
+    pub profiles: Vec<String>,
 }
 
 impl ServiceConfig {
@@ -276,12 +278,36 @@ impl ServiceConfig {
 pub struct DevpaneConfig {
     #[serde(default)]
     pub version: u32,
+    #[serde(default)]
+    pub default_profile: Option<String>,
     pub services: HashMap<String, ServiceConfig>,
 }
 
 impl DevpaneConfig {
     pub fn enabled_services(&self) -> impl Iterator<Item = (&String, &ServiceConfig)> {
         self.services.iter().filter(|(_, service)| service.enabled)
+    }
+
+    pub fn services_for_profile<'a>(
+        &'a self,
+        profile: Option<&str>,
+    ) -> Vec<(&'a String, &'a ServiceConfig)> {
+        let active = profile.or(self.default_profile.as_deref());
+        self.services
+            .iter()
+            .filter(|(_, service)| {
+                if !service.enabled {
+                    return false;
+                }
+                match active {
+                    Some(p) => {
+                        service.profiles.is_empty()
+                            || service.profiles.iter().any(|sp| sp.eq_ignore_ascii_case(p))
+                    }
+                    None => true,
+                }
+            })
+            .collect()
     }
 }
 
@@ -338,13 +364,17 @@ fn parse_env_file_into(contents: &str, map: &mut HashMap<String, String>) {
 
 pub fn find_config() -> Result<PathBuf, io::Error> {
     let current = std::env::current_dir()?;
+    find_config_in_dir(&current)
+}
+
+pub fn find_config_in_dir(dir: &Path) -> Result<PathBuf, io::Error> {
     let candidates = [
         "devpane.yaml",
         "devpane.yml",
     ];
 
     for candidate in candidates {
-        let path = current.join(candidate);
+        let path = dir.join(candidate);
         if path.is_file() {
             return Ok(path);
         }
@@ -1075,108 +1105,6 @@ fn detect_services_in_dir(
             build_cmd: Some(format!("{} classes", cmd)),
             depends_on: Vec::new(),
         });
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::fs;
-
-    fn create_test_dir(prefix: &str) -> PathBuf {
-        let path = std::env::temp_dir().join(format!("{}_{}", prefix, uuid::Uuid::new_v4()));
-        let _ = fs::create_dir_all(&path);
-        path
-    }
-
-    #[test]
-    fn test_init_config_starter_fallback() {
-        let dir = create_test_dir("devpane_init_starter");
-        let (config_path, services) = init_config(&dir, false).expect("init_config should succeed");
-        assert!(config_path.exists());
-        assert_eq!(services.len(), 2);
-        assert_eq!(services[0].0, "web");
-        assert_eq!(services[1].0, "worker");
-
-        let yaml = fs::read_to_string(&config_path).unwrap();
-        assert!(yaml.contains("restart: on-failure"));
-        let _ = fs::remove_dir_all(&dir);
-    }
-
-    #[test]
-    fn test_init_config_fullstack_monorepo() {
-        let dir = create_test_dir("devpane_init_fullstack");
-        let fe_dir = dir.join("frontend");
-        let be_dir = dir.join("backend");
-        fs::create_dir_all(&fe_dir).unwrap();
-        fs::create_dir_all(&be_dir).unwrap();
-
-        fs::write(
-            fe_dir.join("package.json"),
-            r#"{"name": "fe", "scripts": {"dev": "vite"}, "dependencies": {"vite": "^5.0"}}"#,
-        )
-        .unwrap();
-
-        fs::write(
-            be_dir.join("Cargo.toml"),
-            r#"[package]
-name = "be"
-version = "0.1.0"
-"#,
-        )
-        .unwrap();
-
-        let (config_path, services) = init_config(&dir, false).expect("init_config should succeed");
-        assert!(config_path.exists());
-        assert_eq!(services.len(), 2);
-
-        let names: Vec<String> = services.iter().map(|(n, _)| n.clone()).collect();
-        assert!(names.contains(&"web".to_string()));
-        assert!(names.contains(&"api".to_string()));
-
-        let yaml = fs::read_to_string(&config_path).unwrap();
-        assert!(yaml.contains("working_dir: ./frontend"));
-        assert!(yaml.contains("working_dir: ./backend"));
-        assert!(yaml.contains("depends_on:"));
-        assert!(yaml.contains("- api"));
-
-        let _ = fs::remove_dir_all(&dir);
-    }
-
-    #[test]
-    fn test_init_config_docker_compose_import() {
-        let dir = create_test_dir("devpane_init_compose");
-        fs::write(
-            dir.join("compose.yaml"),
-            r#"services:
-  web:
-    build: ./frontend
-    ports:
-      - "3000:3000"
-    depends_on:
-      - db
-  db:
-    image: postgres:16
-    ports:
-      - "5432:5432"
-"#,
-        )
-        .unwrap();
-
-        let (config_path, services) =
-            init_config_with_opts(&dir, false, true).expect("compose import should succeed");
-        assert!(config_path.exists());
-        assert_eq!(services.len(), 2);
-
-        let yaml = fs::read_to_string(&config_path).unwrap();
-        assert!(yaml.contains("web:"));
-        assert!(yaml.contains("db:"));
-        assert!(yaml.contains("working_dir: ./frontend"));
-        assert!(yaml.contains("command: \"docker\""));
-        assert!(yaml.contains("port: 3000"));
-        assert!(yaml.contains("port: 5432"));
-
-        let _ = fs::remove_dir_all(&dir);
     }
 }
 

@@ -248,6 +248,15 @@ fn handle_client(
                     error: Some(e.to_string()),
                 },
             },
+            Request::Sync {
+                project_dir,
+                install_deps,
+            } => match crate::sync::sync_project(&project_dir, install_deps) {
+                Ok(report) => Response::Sync { report },
+                Err(e) => Response::Error {
+                    message: format!("Failed to sync project: {e}"),
+                },
+            },
         },
     };
 

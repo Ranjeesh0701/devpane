@@ -21,6 +21,7 @@ export function SessionsPage() {
     restartSession,
     rebuildSession,
     restartProject,
+    syncProject,
     stopProject,
     stopAllSessions,
   } = useSessions();
@@ -141,6 +142,7 @@ export function SessionsPage() {
             onRebuild={rebuildSession}
             onStopProject={stopProject}
             onRestartProject={restartProject}
+            onSyncProject={syncProject}
             onViewLogs={setViewingSession}
           />
         )}

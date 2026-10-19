@@ -40,7 +40,8 @@ fn run() -> Result<u8, DevpaneError> {
         println!("Usage: devpane <command> [arguments...]");
         println!("Commands:");
         println!("  init [--force] [--compose]        - Auto-detect project stack & generate devpane.yaml.");
-        println!("  up                                - Start all enabled services from devpane.yaml.");
+        println!("  sync [--no-deps]                  - Sync team environment (.env, dependencies, lockfile).");
+        println!("  up [--profile <name>] [--sync]    - Start enabled services (optionally by profile, sync first).");
         println!("  down                              - Stop all running project services.");
         println!("  restart [service]                 - Restart all project services or a specific service.");
         println!("  rebuild <service>                 - Clean rebuild and restart a service.");
@@ -71,6 +72,55 @@ fn run() -> Result<u8, DevpaneError> {
             }
             Err(e) => {
                 eprintln!("Error: {e}");
+                return Ok(1);
+            }
+        }
+    }
+
+    if action == "sync" {
+        let args_vec: Vec<String> = args.collect();
+        let no_deps = args_vec.iter().any(|arg| arg == "--no-deps");
+        let cwd = env::current_dir().map_err(DevpaneError::FileOperation)?;
+
+        println!("🔄 Synchronizing team environment in {}...\n", cwd.display());
+        match devpane::sync::sync_project(&cwd, !no_deps) {
+            Ok(report) => {
+                if report.env_created {
+                    println!("  ✓ Created .env from .env.example");
+                } else if !report.added_env_keys.is_empty() {
+                    println!("  ✓ Synced {} missing key(s) from .env.example to .env:", report.added_env_keys.len());
+                    for k in &report.added_env_keys {
+                        println!("    • {}", k);
+                    }
+                } else {
+                    println!("  ✓ Environment file (.env) is up to date");
+                }
+
+                if !report.dependencies_installed.is_empty() {
+                    println!("\n  ✓ Installed dependencies for {} service(s):", report.dependencies_installed.len());
+                    for dep in &report.dependencies_installed {
+                        println!("    • {}", dep);
+                    }
+                }
+
+                if report.lockfile_updated {
+                    println!("\n  ✓ Updated devpane.lock with latest configuration fingerprint");
+                } else {
+                    println!("\n  ✓ devpane.lock is up to date");
+                }
+
+                if !report.warnings.is_empty() {
+                    println!("\n⚠️ Warnings:");
+                    for w in &report.warnings {
+                        println!("  • {}", w);
+                    }
+                }
+
+                println!("\n✨ Team environment is fully synchronized! Run 'devpane up' to start.\n");
+                return Ok(0);
+            }
+            Err(e) => {
+                eprintln!("Error during sync: {e}");
                 return Ok(1);
             }
         }
@@ -151,10 +201,31 @@ fn run() -> Result<u8, DevpaneError> {
             Request::Shutdown
         }
         "up" => {
-            if args.next().is_some() {
-                return Err(DevpaneError::InvalidArguments(
-                    "No arguments expected for 'up'. Usage: up".to_string(),
-                ));
+            let mut profile: Option<String> = None;
+            let mut run_sync = false;
+
+            while let Some(arg) = args.next() {
+                match arg.as_str() {
+                    "--sync" | "-s" => {
+                        run_sync = true;
+                    }
+                    "--profile" | "-p" => {
+                        profile = args.next();
+                        if profile.is_none() {
+                            return Err(DevpaneError::InvalidArguments(
+                                "Missing profile name. Usage: up [--profile <name>] [--sync]".to_string(),
+                            ));
+                        }
+                    }
+                    other if other.starts_with("--profile=") => {
+                        profile = Some(other.trim_start_matches("--profile=").to_string());
+                    }
+                    other => {
+                        return Err(DevpaneError::InvalidArguments(format!(
+                            "Unexpected argument: {other}. Usage: up [--profile <name>] [--sync]"
+                        )));
+                    }
+                }
             }
 
             let path = find_config()
@@ -171,12 +242,49 @@ fn run() -> Result<u8, DevpaneError> {
                 .ok_or(DevpaneError::InvalidResponse)?
                 .to_path_buf();
 
+            if run_sync {
+                println!("🔄 Running team environment sync before startup...");
+                match devpane::sync::sync_project(&project_dir, true) {
+                    Ok(rep) => {
+                        if rep.env_created {
+                            println!("  ✓ Created .env from .env.example");
+                        }
+                        if !rep.added_env_keys.is_empty() {
+                            println!("  ✓ Added {} missing key(s) to .env", rep.added_env_keys.len());
+                        }
+                        if rep.lockfile_updated {
+                            println!("  ✓ Updated devpane.lock");
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("⚠️ Sync warning: {e}");
+                    }
+                }
+            } else {
+                let status = devpane::sync::check_sync_status(&project_dir);
+                if !status.missing_env_keys.is_empty() {
+                    eprintln!("💡 Tip: {} variable(s) in .env.example are missing from .env. Run 'devpane sync' to update.\n", status.missing_env_keys.len());
+                } else if !status.lockfile_in_sync && status.lockfile_exists {
+                    eprintln!("💡 Tip: devpane.yaml has changed since last sync. Run 'devpane sync' to update team lockfile.\n");
+                }
+            }
+
+            let target_services = config.services_for_profile(profile.as_deref());
+            if target_services.is_empty() {
+                if let Some(ref p) = profile {
+                    eprintln!("No enabled services matched profile '{p}'. Check your devpane.yaml profiles.");
+                } else {
+                    eprintln!("No enabled services found in devpane.yaml.");
+                }
+                return Ok(1);
+            }
+
             // Connect to daemon and send Up request
             let mut stream = connect_or_start(50, 100)?;
             let request = Request::Up {
                 project_dir: project_dir.clone(),
-                services: config
-                    .enabled_services()
+                services: target_services
+                    .into_iter()
                     .map(|(name, service)| (name.clone(), service.clone()))
                     .collect(),
             };
@@ -452,6 +560,18 @@ fn run() -> Result<u8, DevpaneError> {
                 } else if let Some(err) = error {
                     eprintln!("Rebuild failed: {}", err);
                     return Ok(1);
+                }
+                break;
+            }
+            Response::Sync { report } => {
+                if report.env_created {
+                    println!("✓ Created .env from .env.example");
+                }
+                if !report.added_env_keys.is_empty() {
+                    println!("✓ Added {} missing key(s) to .env", report.added_env_keys.len());
+                }
+                if report.lockfile_updated {
+                    println!("✓ Updated devpane.lock");
                 }
                 break;
             }

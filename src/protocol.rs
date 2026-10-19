@@ -41,6 +41,10 @@ pub enum Request {
     Rebuild {
         name: String,
     },
+    Sync {
+        project_dir: PathBuf,
+        install_deps: bool,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -57,6 +61,7 @@ pub enum Response {
     Down { results: Vec<ServiceStopResult> },
     Restart { results: Vec<ServiceStartResult> },
     Rebuild { success: bool, error: Option<String> },
+    Sync { report: crate::sync::SyncReport },
 }
 
 #[derive(Debug, Serialize, Deserialize)]

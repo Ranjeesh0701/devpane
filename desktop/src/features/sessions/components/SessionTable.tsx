@@ -12,6 +12,7 @@ type Props = {
   onRebuild?: (name: string) => Promise<void>;
   onStopProject?: (projectDir: string) => Promise<void>;
   onRestartProject?: (projectDir: string) => Promise<void>;
+  onSyncProject?: (projectDir: string) => Promise<unknown>;
   onViewLogs: (session: ProcessSession) => void;
 };
 
@@ -36,6 +37,7 @@ export function SessionTable({
   onRebuild,
   onStopProject,
   onRestartProject,
+  onSyncProject,
   onViewLogs,
 }: Props) {
   const [stoppingId, setStoppingId] = useState<string | null>(null);
@@ -43,6 +45,7 @@ export function SessionTable({
   const [rebuildingName, setRebuildingName] = useState<string | null>(null);
   const [stoppingProject, setStoppingProject] = useState<string | null>(null);
   const [restartingProject, setRestartingProject] = useState<string | null>(null);
+  const [syncingProject, setSyncingProject] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const groups = useMemo(() => {
@@ -140,6 +143,20 @@ export function SessionTable({
     }
   }
 
+  async function handleSyncProject(projectDir: string) {
+    setSyncingProject(projectDir);
+    setActionError(null);
+    try {
+      if (onSyncProject) {
+        await onSyncProject(projectDir);
+      }
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setSyncingProject(null);
+    }
+  }
+
   if (sessions.length === 0) return null;
 
   return (
@@ -172,6 +189,25 @@ export function SessionTable({
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  {onSyncProject && group.projectDir && (
+                    <button
+                      className="project-sync-btn"
+                      onClick={() => void handleSyncProject(group.projectDir!)}
+                      disabled={syncingProject === group.projectDir}
+                      title={`Synchronize team environment and dependencies for ${group.name}`}
+                    >
+                      <Icon
+                        name="refresh"
+                        size={12}
+                        className={syncingProject === group.projectDir ? "refresh-spinning" : ""}
+                      />
+                      <span>
+                        {syncingProject === group.projectDir
+                          ? "Syncing..."
+                          : "Sync Env"}
+                      </span>
+                    </button>
+                  )}
                   {onRestartProject && group.projectDir && (
                     <button
                       className="project-restart-btn"

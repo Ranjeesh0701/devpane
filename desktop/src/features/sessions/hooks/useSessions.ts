@@ -77,6 +77,15 @@ export function useSessions() {
     [refresh],
   );
 
+  const syncProject = useCallback(
+    async (projectDir: string, installDeps = true) => {
+      const res = await api.syncProject(projectDir, installDeps);
+      await refresh();
+      return res;
+    },
+    [refresh],
+  );
+
   const stopProject = useCallback(
     async (projectDir: string) => {
       await api.stopProject(projectDir);
@@ -115,6 +124,7 @@ export function useSessions() {
     restartSession,
     rebuildSession,
     restartProject,
+    syncProject,
     stopProject,
     stopAllSessions,
   };
