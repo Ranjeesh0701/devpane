@@ -415,6 +415,11 @@ where
                             if has_filter {
                                 shortcuts.push(Span::styled("Esc: Clear filter • ", Style::default().fg(Color::Yellow)));
                             }
+                            if let Some(view) = service_views.get(active_tab) {
+                                if view.detected_url().is_some() {
+                                    shortcuts.push(Span::styled("o: Open browser • ", Style::default().fg(Color::Green)));
+                                }
+                            }
                             shortcuts.extend(vec![
                                 Span::raw("Ctrl+T: New shell • "),
                                 Span::raw("Ctrl+W: Close tab • "),
@@ -508,6 +513,20 @@ where
                                 continue;
                             }
                         }
+                        // Open detected URL in default browser (o)
+                        (KeyCode::Char('o'), KeyModifiers::NONE)
+                        | (KeyCode::Char('O'), KeyModifiers::NONE) if active_tab < service_views.len() => {
+                            if let Some(url) = service_views[active_tab].detected_url() {
+                                #[cfg(target_os = "macos")]
+                                let _ = std::process::Command::new("open").arg(&url).spawn();
+                                #[cfg(target_os = "windows")]
+                                let _ = std::process::Command::new("cmd").args(["/c", "start", &url]).spawn();
+                                #[cfg(target_os = "linux")]
+                                let _ = std::process::Command::new("xdg-open").arg(&url).spawn();
+                            }
+                            continue;
+                        }
+
                         // Quit: Ctrl+C or Ctrl+Q always quits; 'q' quits on read-only service views
                         (KeyCode::Char('c'), KeyModifiers::CONTROL)
                         | (KeyCode::Char('\x03'), _) => break,
