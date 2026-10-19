@@ -51,7 +51,14 @@ impl ServiceLogView {
             // Keep only the last 50KB to avoid memory issues
             const MAX_CONTENT_SIZE: usize = 50 * 1024;
             if self.log_content.len() > MAX_CONTENT_SIZE {
-                let start = self.log_content.len() - MAX_CONTENT_SIZE;
+                let raw_start = self.log_content.len() - MAX_CONTENT_SIZE;
+                let mut start = raw_start;
+                while start < self.log_content.len() && !self.log_content.is_char_boundary(start) {
+                    start += 1;
+                }
+                if let Some(newline_offset) = self.log_content[start..].find('\n') {
+                    start += newline_offset + 1;
+                }
                 self.log_content = self.log_content[start..].to_string();
             }
         }

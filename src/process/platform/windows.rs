@@ -11,6 +11,11 @@ use windows_sys::Win32::System::Threading::{
 const SYNCHRONIZE: u32 = 0x0010_0000;
 
 pub fn stop_process(pid: u32) -> Result<bool, io::Error> {
+    // First attempt tree termination to cleanly stop child subprocesses
+    let _ = std::process::Command::new("taskkill")
+        .args(["/F", "/T", "/PID", &pid.to_string()])
+        .output();
+
     let handle = unsafe { OpenProcess(PROCESS_TERMINATE, 0, pid) };
 
     if handle.is_null() {

@@ -9,19 +9,28 @@ export function useSessions() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const fetchSessions = useCallback(async (isSilent = false) => {
+    if (!isSilent) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const result = await api.listSessions();
       setSessions(result);
+      setError(null);
       setLastUpdated(new Date());
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
-      setLoading(false);
+      if (!isSilent) {
+        setLoading(false);
+      }
     }
   }, []);
+
+  const refresh = useCallback(async () => {
+    await fetchSessions(false);
+  }, [fetchSessions]);
 
   const startSession = useCallback(
     async (input: NewSessionInput) => {
@@ -58,8 +67,18 @@ export function useSessions() {
   }, [refresh]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    void fetchSessions(false);
+
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void fetchSessions(true);
+      }
+    }, 1500);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [fetchSessions]);
 
   return {
     sessions,

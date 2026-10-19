@@ -14,6 +14,7 @@ export function LogViewer({ session, onClose }: Props) {
   const [logs, setLogs] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
   const [copied, setCopied] = useState(false);
   const outputRef = useRef<HTMLPreElement>(null);
 
@@ -21,27 +22,37 @@ export function LogViewer({ session, onClose }: Props) {
     return extractLocalhostUrls(`${logs} ${session.command}`);
   }, [logs, session.command]);
 
-  const loadLogs = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await api.getSessionLogs(session.id);
-      setLogs(result);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      setLoading(false);
-    }
-  }, [session.id]);
+  const loadLogs = useCallback(
+    async (isSilent = false) => {
+      if (!isSilent) {
+        setLoading(true);
+        setError(null);
+      }
+      try {
+        const result = await api.getSessionLogs(session.id);
+        setLogs(result);
+        setError(null);
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : String(cause));
+      } finally {
+        if (!isSilent) {
+          setLoading(false);
+        }
+      }
+    },
+    [session.id],
+  );
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    void loadLogs();
+    void loadLogs(false);
 
-    // Auto-refresh logs every 1.5 seconds while open if process is running
+    // Auto-refresh logs silently every 1.5 seconds while open
     const interval = window.setInterval(() => {
-      void loadLogs();
+      if (document.visibilityState === "visible") {
+        void loadLogs(true);
+      }
     }, 1500);
 
     return () => {
@@ -50,10 +61,28 @@ export function LogViewer({ session, onClose }: Props) {
     };
   }, [loadLogs]);
 
+  const handleScroll = useCallback(() => {
+    const output = outputRef.current;
+    if (!output) return;
+    const distanceFromBottom =
+      output.scrollHeight - output.scrollTop - output.clientHeight;
+    setIsAtBottom(distanceFromBottom <= 40);
+  }, []);
+
   useEffect(() => {
     const output = outputRef.current;
-    if (output) output.scrollTop = output.scrollHeight;
-  }, [logs]);
+    if (output && isAtBottom) {
+      output.scrollTop = output.scrollHeight;
+    }
+  }, [logs, isAtBottom]);
+
+  const scrollToBottom = useCallback(() => {
+    const output = outputRef.current;
+    if (output) {
+      output.scrollTop = output.scrollHeight;
+      setIsAtBottom(true);
+    }
+  }, []);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -164,17 +193,30 @@ export function LogViewer({ session, onClose }: Props) {
             <div className="log-viewer-message log-viewer-error">
               <strong>Unable to load logs</strong>
               <span>{error}</span>
-              <button onClick={() => void loadLogs()}>Try again</button>
+              <button onClick={() => void loadLogs(false)}>Try again</button>
             </div>
           ) : logs ? (
-            <pre
-              className="log-viewer-output"
-              ref={outputRef}
-              tabIndex={0}
-              aria-label="Session log output"
-            >
-              {logs}
-            </pre>
+            <>
+              <pre
+                className="log-viewer-output"
+                ref={outputRef}
+                onScroll={handleScroll}
+                tabIndex={0}
+                aria-label="Session log output"
+              >
+                {logs}
+              </pre>
+              {!isAtBottom && (
+                <button
+                  className="log-viewer-scroll-btn"
+                  onClick={scrollToBottom}
+                  aria-label="Jump to latest logs"
+                >
+                  <Icon name="arrow-down" size={13} />
+                  <span>Latest logs</span>
+                </button>
+              )}
+            </>
           ) : (
             <div className="log-viewer-message">
               <div className="log-viewer-empty-icon">

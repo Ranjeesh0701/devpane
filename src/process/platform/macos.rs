@@ -3,6 +3,13 @@ use std::{io, mem};
 pub fn stop_process(pid: u32) -> Result<bool, io::Error> {
     let pid = pid_to_i32(pid)?;
 
+    // First attempt to terminate the entire process group to avoid orphaned child processes
+    let pgid_result = unsafe { libc::kill(-pid, libc::SIGTERM) };
+    if pgid_result == 0 {
+        return Ok(true);
+    }
+
+    // Fall back to direct process signal if process group is not available
     let result = unsafe { libc::kill(pid, libc::SIGTERM) };
 
     if result == 0 {

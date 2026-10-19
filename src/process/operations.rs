@@ -27,14 +27,20 @@ pub fn start_process(
 
     let stdout_file = file.try_clone().map_err(DevboxError::FileOperation)?;
 
-    let child = Command::new(&program)
-        .args(args)
+    let mut cmd = Command::new(&program);
+    cmd.args(args)
         .current_dir(&cwd)
         .envs(env)
         .stdout(Stdio::from(stdout_file))
-        .stderr(Stdio::from(file))
-        .spawn()
-        .map_err(DevboxError::ProcessLaunch)?;
+        .stderr(Stdio::from(file));
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        cmd.process_group(0);
+    }
+
+    let child = cmd.spawn().map_err(DevboxError::ProcessLaunch)?;
 
     let pid = child.id();
 

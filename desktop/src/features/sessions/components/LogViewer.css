@@ -182,10 +182,35 @@
   box-shadow: 0 0 12px rgba(56, 239, 125, 0.2);
 }
 .log-viewer-output-wrap {
+  position: relative;
   min-height: 260px;
   flex: 1;
   overflow: hidden;
   background: var(--terminal-bg, #0b0e13);
+}
+.log-viewer-scroll-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--surface-raised, #1b2230);
+  color: var(--accent, #a8b9ff);
+  border: 1px solid var(--border, #29303d);
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  transition: all 0.15s ease;
+  z-index: 10;
+}
+.log-viewer-scroll-btn:hover {
+  background: var(--surface-hover, #232c3d);
+  border-color: var(--accent, #a8b9ff);
+  transform: translateY(-1px);
 }
 .log-viewer-output {
   box-sizing: border-box;
