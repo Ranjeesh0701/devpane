@@ -4,6 +4,7 @@
 
 [![Built with Rust](https://img.shields.io/badge/built_with-Rust-dca282.svg?logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![Crates.io](https://img.shields.io/crates/v/devpane.svg)](https://crates.io/crates/devpane)
+[![Website](https://img.shields.io/badge/website-devpane.dev-55d6a2.svg)](https://devpane.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 Devpane is a high-performance development process manager and terminal workspace built in 100% native Rust. It delivers near-instant startup, zero runtime bloat, and minimal memory footprint - making it effortless to run, observe, and interact with the multiple services powering your applications.

@@ -1,6 +1,6 @@
 class Devpane < Formula
   desc "Terminal-first multi-process workspace and development dashboard"
-  homepage "https://github.com/Ranjeesh0701/devpane"
+  homepage "https://devpane.dev"
   url "https://github.com/Ranjeesh0701/devpane/archive/refs/tags/v0.3.0.tar.gz"
   sha256 "e1f2afa1f17bfa4b258e04f14934bd8bf04aa425feff30ca9d1bde10b29bde02"
   license "MIT"
