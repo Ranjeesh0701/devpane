@@ -97,13 +97,28 @@ services:
     health_check:
       port: 5432
       timeout_secs: 15
+    restart:
+      on: crash
+      max_crash_retries: 5
+      backoff_ms: 1000
 
   backend:
     enabled: true
     command: cargo run
     port: 8080
     depends_on:
-      - db
+      db:
+        condition: ready
+        timeout_secs: 20
+    build:
+      check: "cargo check"
+      cmd: "cargo build"
+    hooks:
+      pre_start: "cargo sqlx migrate run"
+    watch:
+      include: ["src/**/*", "Cargo.toml"]
+      exclude: ["target/**/*"]
+      debounce_ms: 300
     health_check:
       http: "http://localhost:8080/health"
 
@@ -159,7 +174,7 @@ devpane down
 
 ## Contributing
 
-Devbox is evolving incrementally. Contributions, bug reports, and ideas around process management, developer experience, and AI-assisted workflows are welcome.
+Devpane is evolving incrementally. Contributions, bug reports, and ideas around process management, developer experience, and AI-assisted workflows are welcome.
 
 Before contributing:
 

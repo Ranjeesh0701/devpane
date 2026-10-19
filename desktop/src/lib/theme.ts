@@ -1,6 +1,6 @@
 export type Theme = "dark" | "light";
 
-const THEME_STORAGE_KEY = "devbox-theme";
+const THEME_STORAGE_KEY = "devpane-theme";
 
 export function getInitialTheme(): Theme {
   try {

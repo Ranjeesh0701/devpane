@@ -88,28 +88,81 @@ pub fn free_port_if_occupied(port: u16) -> io::Result<Option<u32>> {
     Ok(pids.into_iter().next())
 }
 
-/// Wait until a TCP port or HTTP endpoint becomes healthy (reachable).
-pub fn wait_for_health(
+use std::collections::HashMap;
+use std::path::Path;
+
+/// Check if a command exits with code 0 (readiness check).
+pub fn check_command_readiness(
+    command: &str,
+    cwd: Option<&Path>,
+    env: Option<&HashMap<String, String>>,
+) -> bool {
+    #[cfg(unix)]
+    let mut cmd = Command::new("sh");
+    #[cfg(unix)]
+    cmd.arg("-c").arg(command);
+
+    #[cfg(windows)]
+    let mut cmd = Command::new("cmd");
+    #[cfg(windows)]
+    cmd.arg("/C").arg(command);
+
+    if let Some(dir) = cwd {
+        cmd.current_dir(dir);
+    }
+    if let Some(envs) = env {
+        cmd.envs(envs);
+    }
+    cmd.stdout(std::process::Stdio::null());
+    cmd.stderr(std::process::Stdio::null());
+
+    match cmd.status() {
+        Ok(status) => status.success(),
+        Err(_) => false,
+    }
+}
+
+/// Wait until a TCP port, HTTP endpoint, or custom command becomes healthy (reachable/passing).
+pub fn wait_for_health_full(
     port: Option<u16>,
     http_url: Option<&str>,
+    command: Option<&str>,
+    cwd: Option<&Path>,
+    env: Option<&HashMap<String, String>>,
     timeout: Duration,
     interval: Duration,
 ) -> Result<(), String> {
     let start = Instant::now();
 
     while start.elapsed() < timeout {
+        let mut healthy = true;
+
         if let Some(p) = port {
-            if TcpStream::connect(("127.0.0.1", p)).is_ok() {
-                return Ok(());
+            if TcpStream::connect(("127.0.0.1", p)).is_err() {
+                healthy = false;
             }
         }
 
-        if let Some(url) = http_url {
-            if let Some(p) = extract_port_from_url(url) {
-                if TcpStream::connect(("127.0.0.1", p)).is_ok() {
-                    return Ok(());
+        if healthy {
+            if let Some(url) = http_url {
+                if let Some(p) = extract_port_from_url(url) {
+                    if TcpStream::connect(("127.0.0.1", p)).is_err() {
+                        healthy = false;
+                    }
                 }
             }
+        }
+
+        if healthy {
+            if let Some(cmd) = command {
+                if !check_command_readiness(cmd, cwd, env) {
+                    healthy = false;
+                }
+            }
+        }
+
+        if healthy && (port.is_some() || http_url.is_some() || command.is_some()) {
+            return Ok(());
         }
 
         thread::sleep(interval);
@@ -121,9 +174,20 @@ pub fn wait_for_health(
     ))
 }
 
+/// Wait until a TCP port or HTTP endpoint becomes healthy (reachable).
+pub fn wait_for_health(
+    port: Option<u16>,
+    http_url: Option<&str>,
+    timeout: Duration,
+    interval: Duration,
+) -> Result<(), String> {
+    wait_for_health_full(port, http_url, None, None, None, timeout, interval)
+}
+
 fn extract_port_from_url(url: &str) -> Option<u16> {
     let stripped = url.trim_start_matches("http://").trim_start_matches("https://");
     let host_port = stripped.split('/').next()?;
     let port_str = host_port.split(':').nth(1)?;
     port_str.parse::<u16>().ok()
 }
+

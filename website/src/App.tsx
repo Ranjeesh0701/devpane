@@ -213,7 +213,7 @@ function WorkflowDiagram() {
       </div>
 
       <div className="workflow-node workflow-node-highlight">
-        <div className="workflow-node-icon devbox-node-icon">
+        <div className="workflow-node-icon devpane-node-icon">
           <span>d</span>
         </div>
         <div className="workflow-node-copy">
@@ -489,7 +489,7 @@ function InstallWidget() {
   }
 
   return (
-    <div className="install-box">
+    <div className="install-pane">
       {/* OS Selector Tabs */}
       <div className="install-os-tabs">
         <button
@@ -562,7 +562,7 @@ function InstallWidget() {
             </div>
 
             {/* Terminal Install Command */}
-            <div className="install-terminal-box">
+            <div className="install-terminal-pane">
               <code>
                 {selectedOS === "windows"
                   ? "irm https://raw.githubusercontent.com/Ranjeesh0701/devpane/main/scripts/install.ps1 | iex"
@@ -655,7 +655,7 @@ function InstallWidget() {
                 Install Devpane and its background daemon via the official tap:
               </p>
             </div>
-            <div className="install-terminal-box">
+            <div className="install-terminal-pane">
               <code>{brewCommand}</code>
               <button
                 className="copy-button"
@@ -731,7 +731,7 @@ function InstallWidget() {
                 <code>~/.cargo/bin</code>:
               </p>
             </div>
-            <div className="install-terminal-box">
+            <div className="install-terminal-pane">
               <code>{cargoCommand}</code>
               <button
                 className="copy-button"

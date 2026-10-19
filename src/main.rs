@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use std::process::{Command, ExitCode, Stdio};
 
 use devpane::config::{find_config, load_config};
-use devpane::error::DevboxError;
+use devpane::error::DevpaneError;
 use devpane::ipc;
 use devpane::ipc::Connection;
 use devpane::process::session::{ProcessSession, ProcessStatus};
@@ -23,14 +23,14 @@ fn main() -> ExitCode {
     }
 }
 
-fn run() -> Result<u8, DevboxError> {
+fn run() -> Result<u8, DevpaneError> {
     let mut args = env::args();
     args.next();
 
     let action = match args.next() {
         Some(a) => a,
         None => {
-            return Err(DevboxError::InvalidArguments(
+            return Err(DevpaneError::InvalidArguments(
                 "No action specified. Usage: devpane <command> [arguments...]".to_string(),
             ));
         }
@@ -52,7 +52,7 @@ fn run() -> Result<u8, DevboxError> {
 
     if action == "init" {
         let force = args.any(|arg| arg == "--force" || arg == "-f");
-        let cwd = env::current_dir().map_err(DevboxError::FileOperation)?;
+        let cwd = env::current_dir().map_err(DevpaneError::FileOperation)?;
         match devpane::config::init_config(&cwd, force) {
             Ok((path, services)) => {
                 let filename = path.file_name().unwrap_or_default().to_string_lossy();
@@ -75,13 +75,13 @@ fn run() -> Result<u8, DevboxError> {
     let request = match action.as_str() {
         "start" => {
             let name = args.next().ok_or_else(|| {
-                DevboxError::InvalidArguments(
+                DevpaneError::InvalidArguments(
                     "No name specified. Usage: start <name> <program> [args...]".to_string(),
                 )
             })?;
 
             let program = args.next().ok_or_else(|| {
-                DevboxError::InvalidArguments(
+                DevpaneError::InvalidArguments(
                     "No program specified. Usage: start <name> <program> [args...]".to_string(),
                 )
             })?;
@@ -90,13 +90,13 @@ fn run() -> Result<u8, DevboxError> {
                 name,
                 program,
                 args: args.collect(),
-                cwd: env::current_dir().map_err(DevboxError::FileOperation)?,
+                cwd: env::current_dir().map_err(DevpaneError::FileOperation)?,
                 env: HashMap::new(),
             }
         }
         "list" => {
             if args.next().is_some() {
-                return Err(DevboxError::InvalidArguments(
+                return Err(DevpaneError::InvalidArguments(
                     "No arguments expected for 'list'. Usage: list".to_string(),
                 ));
             }
@@ -105,13 +105,13 @@ fn run() -> Result<u8, DevboxError> {
         }
         "stop" => {
             let id = args.next().ok_or_else(|| {
-                DevboxError::InvalidArguments(
+                DevpaneError::InvalidArguments(
                     "No session ID specified. Usage: stop <session_id>".to_string(),
                 )
             })?;
 
             if args.next().is_some() {
-                return Err(DevboxError::InvalidArguments(
+                return Err(DevpaneError::InvalidArguments(
                     "Only one argument expected for 'stop'. Usage: stop <session_id>".to_string(),
                 ));
             }
@@ -120,7 +120,7 @@ fn run() -> Result<u8, DevboxError> {
         }
         "logs" => {
             let id = args.next().ok_or_else(|| {
-                DevboxError::InvalidArguments(
+                DevpaneError::InvalidArguments(
                     "No session ID specified. Usage: logs <session_id>".to_string(),
                 )
             })?;
@@ -129,7 +129,7 @@ fn run() -> Result<u8, DevboxError> {
                 None => false,
                 Some("--follow") => true,
                 Some(arg) => {
-                    return Err(DevboxError::InvalidArguments(format!(
+                    return Err(DevpaneError::InvalidArguments(format!(
                         "Unexpected argument: {arg}. Usage: logs <session_id> [--follow]"
                     )));
                 }
@@ -139,7 +139,7 @@ fn run() -> Result<u8, DevboxError> {
         }
         "shutdown" => {
             if args.next().is_some() {
-                return Err(DevboxError::InvalidArguments(
+                return Err(DevpaneError::InvalidArguments(
                     "No arguments expected for 'shutdown'. Usage: shutdown".to_string(),
                 ));
             }
@@ -148,23 +148,23 @@ fn run() -> Result<u8, DevboxError> {
         }
         "up" => {
             if args.next().is_some() {
-                return Err(DevboxError::InvalidArguments(
+                return Err(DevpaneError::InvalidArguments(
                     "No arguments expected for 'up'. Usage: up".to_string(),
                 ));
             }
 
             let path = find_config()
-                .map_err(|e| DevboxError::InvalidArguments(
-                    format!("Could not find devpane.yaml (or devbox.yaml) in current directory.\n\nTry:\n  1. Create a devpane.yaml file (see examples/)\n  2. Run 'devpane up' from the project root\n\nOriginal error: {}", e)
+                .map_err(|e| DevpaneError::InvalidArguments(
+                    format!("Could not find devpane.yaml (or devpane.yml) in current directory.\n\nTry:\n  1. Create a devpane.yaml file (see examples/)\n  2. Run 'devpane up' from the project root\n\nOriginal error: {}", e)
                 ))?
                 .canonicalize()
-                .map_err(DevboxError::FileOperation)?;
-            let config = load_config(&path).map_err(|e| DevboxError::InvalidArguments(
+                .map_err(DevpaneError::FileOperation)?;
+            let config = load_config(&path).map_err(|e| DevpaneError::InvalidArguments(
                 format!("Failed to parse config file.\n\nCheck your YAML syntax:\n  - Proper indentation\n  - All required fields present\n  - Valid service definitions\n\nOriginal error: {}", e)
             ))?;
             let project_dir = path
                 .parent()
-                .ok_or(DevboxError::InvalidResponse)?
+                .ok_or(DevpaneError::InvalidResponse)?
                 .to_path_buf();
 
             // Connect to daemon and send Up request
@@ -177,8 +177,8 @@ fn run() -> Result<u8, DevboxError> {
                     .collect(),
             };
 
-            write_message(&mut stream, &request).map_err(DevboxError::Ipc)?;
-            let response = read_message::<_, Response>(&mut stream).map_err(DevboxError::Ipc)?;
+            write_message(&mut stream, &request).map_err(DevpaneError::Ipc)?;
+            let response = read_message::<_, Response>(&mut stream).map_err(DevpaneError::Ipc)?;
 
             // Check if services started successfully
             match response {
@@ -213,38 +213,38 @@ fn run() -> Result<u8, DevboxError> {
                         let _ = read_message::<_, Response>(&mut stop_stream);
                     }
 
-                    tui_res.map_err(DevboxError::Tui)?;
+                    tui_res.map_err(DevpaneError::Tui)?;
                     return Ok(0);
                 }
                 Response::Error { message } => {
-                    return Err(DevboxError::DaemonError(message));
+                    return Err(DevpaneError::DaemonError(message));
                 }
                 other => {
                     eprintln!("DEBUG: Received unexpected response: {:?}", other);
-                    return Err(DevboxError::InvalidResponse);
+                    return Err(DevpaneError::InvalidResponse);
                 }
             }
         }
         "down" => {
             if args.next().is_some() {
-                return Err(DevboxError::InvalidArguments(
+                return Err(DevpaneError::InvalidArguments(
                     "No arguments expected for 'down'. Usage: down".to_string(),
                 ));
             }
 
             let path = find_config()
-                .map_err(DevboxError::ConfigNotFound)?
+                .map_err(DevpaneError::ConfigNotFound)?
                 .canonicalize()
-                .map_err(DevboxError::FileOperation)?;
+                .map_err(DevpaneError::FileOperation)?;
             let project_dir = path
                 .parent()
-                .ok_or(DevboxError::InvalidResponse)?
+                .ok_or(DevpaneError::InvalidResponse)?
                 .to_path_buf();
 
             Request::Down { project_dir }
         }
         _ => {
-            return Err(DevboxError::InvalidArguments(format!(
+            return Err(DevpaneError::InvalidArguments(format!(
                 "Invalid action: {action}. Supported actions: start, list, stop, logs, shutdown, up."
             )));
         }
@@ -252,22 +252,22 @@ fn run() -> Result<u8, DevboxError> {
 
     let mut stream = connect_or_start(50, 100)?;
 
-    write_message(&mut stream, &request).map_err(DevboxError::Ipc)?;
+    write_message(&mut stream, &request).map_err(DevpaneError::Ipc)?;
 
-    let mut response = read_message::<_, Response>(&mut stream).map_err(DevboxError::Ipc)?;
+    let mut response = read_message::<_, Response>(&mut stream).map_err(DevpaneError::Ipc)?;
 
     loop {
         match response {
             Response::Start { session } => {
                 if !matches!(request, Request::Start { .. }) {
-                    return Err(DevboxError::InvalidResponse);
+                    return Err(DevpaneError::InvalidResponse);
                 }
                 println!("{session:?}");
                 break;
             }
             Response::List { sessions } => {
                 if !matches!(request, Request::List) {
-                    return Err(DevboxError::InvalidResponse);
+                    return Err(DevpaneError::InvalidResponse);
                 }
 
                 if sessions.is_empty() {
@@ -295,40 +295,40 @@ fn run() -> Result<u8, DevboxError> {
             }
             Response::LogChunk { logs } => {
                 if !matches!(request, Request::Logs { .. }) {
-                    return Err(DevboxError::InvalidResponse);
+                    return Err(DevpaneError::InvalidResponse);
                 }
 
                 print!("{logs}");
                 use std::io::Write;
                 std::io::stdout()
                     .flush()
-                    .map_err(DevboxError::FileOperation)?;
+                    .map_err(DevpaneError::FileOperation)?;
 
-                response = read_message::<_, Response>(&mut stream).map_err(DevboxError::Ipc)?;
+                response = read_message::<_, Response>(&mut stream).map_err(DevpaneError::Ipc)?;
             }
             Response::LogStreamEnd => {
                 if !matches!(request, Request::Logs { .. }) {
-                    return Err(DevboxError::InvalidResponse);
+                    return Err(DevpaneError::InvalidResponse);
                 }
                 break;
             }
             Response::Stop => {
                 if !matches!(request, Request::Stop { .. }) {
-                    return Err(DevboxError::InvalidResponse);
+                    return Err(DevpaneError::InvalidResponse);
                 }
                 println!("Session stopped successfully.");
                 break;
             }
             Response::Shutdown => {
                 if !matches!(request, Request::Shutdown) {
-                    return Err(DevboxError::InvalidResponse);
+                    return Err(DevpaneError::InvalidResponse);
                 }
                 println!("Daemon shutdown successfully.");
                 break;
             }
             Response::Up { results } => {
                 if !matches!(request, Request::Up { .. }) {
-                    return Err(DevboxError::InvalidResponse);
+                    return Err(DevpaneError::InvalidResponse);
                 }
 
                 let mut failed = false;
@@ -353,7 +353,7 @@ fn run() -> Result<u8, DevboxError> {
             }
             Response::Down { results } => {
                 if !matches!(request, Request::Down { .. }) {
-                    return Err(DevboxError::InvalidResponse);
+                    return Err(DevpaneError::InvalidResponse);
                 }
 
                 if results.is_empty() {
@@ -379,10 +379,10 @@ fn run() -> Result<u8, DevboxError> {
                 break;
             }
             Response::Logs { .. } => {
-                return Err(DevboxError::InvalidResponse);
+                return Err(DevpaneError::InvalidResponse);
             }
             Response::Error { message } => {
-                return Err(DevboxError::DaemonError(message));
+                return Err(DevpaneError::DaemonError(message));
             }
         }
     }
@@ -403,14 +403,14 @@ fn get_daemon_path() -> io::Result<PathBuf> {
     Ok(path)
 }
 
-fn connect_or_start(retries: u32, delay_ms: u64) -> Result<Connection, DevboxError> {
+fn connect_or_start(retries: u32, delay_ms: u64) -> Result<Connection, DevpaneError> {
     match ipc::connect() {
         Ok(stream) => return Ok(stream),
         Err(_) => {
-            let daemon_path = get_daemon_path().map_err(DevboxError::FileOperation)?;
+            let daemon_path = get_daemon_path().map_err(DevpaneError::FileOperation)?;
 
             if !daemon_path.exists() {
-                return Err(DevboxError::InvalidArguments(
+                return Err(DevpaneError::InvalidArguments(
                     format!(
                         "Daemon binary not found at: {}\n\nTry:\n  1. Build the project: cargo build\n  2. Ensure the daemon binary is in the same directory as devpane",
                         daemon_path.display()
@@ -423,13 +423,13 @@ fn connect_or_start(retries: u32, delay_ms: u64) -> Result<Connection, DevboxErr
                 .stdout(Stdio::null())
                 .stderr(Stdio::inherit())
                 .spawn()
-                .map_err(|e| DevboxError::InvalidArguments(
+                .map_err(|e| DevpaneError::InvalidArguments(
                     format!("Failed to start daemon.\n\nError: {}\n\nTry:\n  1. Check if another daemon is already running\n  2. Check file permissions on {}", e, daemon_path.display())
                 ))?;
         }
     }
 
-    ipc::connect_with_retry(retries, delay_ms).map_err(|e| DevboxError::InvalidArguments(
+    ipc::connect_with_retry(retries, delay_ms).map_err(|e| DevpaneError::InvalidArguments(
         format!("Could not connect to daemon after {} retries.\n\nThe daemon may have failed to start.\nCheck for error messages above.\n\nOriginal error: {}", retries, e)
     ))
 }

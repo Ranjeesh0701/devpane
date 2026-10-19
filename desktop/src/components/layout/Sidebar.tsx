@@ -68,9 +68,9 @@ export function Sidebar({
 
       <div className="sidebar-bottom">
         <div className="sidebar-footer">
-          <div className="avatar-small">DV</div>
+          <div className="avatar-small">DP</div>
           <div className="footer-copy">
-            <strong>Devbox Desktop</strong>
+            <strong>Devpane Desktop</strong>
             <span>Developer preview</span>
           </div>
           <button

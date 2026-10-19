@@ -14,7 +14,7 @@ export function SessionEmptyState({ kind, message, onRetry }: Props) {
       <div className="state-panel">
         <div className="loading-orb" />
         <h3>Loading sessions</h3>
-        <p>Connecting to your local Devbox daemon…</p>
+        <p>Connecting to your local Devpane daemon...</p>
       </div>
     );
   }
@@ -24,10 +24,10 @@ export function SessionEmptyState({ kind, message, onRetry }: Props) {
         <div className="state-icon error-state-icon">
           <Icon name="alert" size={21} />
         </div>
-        <h3>Couldn't connect to Devbox</h3>
+        <h3>Couldn't connect to Devpane</h3>
         <p>{message}</p>
         <p className="state-hint">
-          Make sure the Devbox daemon is running, then try again.
+          Make sure the Devpane daemon is running, then try again.
         </p>
         {onRetry && (
           <Button icon={<Icon name="refresh" size={15} />} onClick={onRetry}>
@@ -47,17 +47,17 @@ export function SessionEmptyState({ kind, message, onRetry }: Props) {
       <p>
         {noResults
           ? "Try another name, command, PID, or session ID."
-          : "Start a process with the Devbox CLI. It will show up here when you refresh."}
+          : "Start a process with the Devpane CLI. It will show up here when you refresh."}
       </p>
       {!noResults && (
         <div className="terminal-tip">
           <span className="terminal-prompt">$</span>
-          <code>devbox start &lt;name&gt; &lt;program&gt; [args...]</code>
+          <code>devpane start &lt;name&gt; &lt;program&gt; [args...]</code>
           <button
             className="copy-tip"
             onClick={() =>
               void navigator.clipboard?.writeText(
-                "devbox start <name> <program> [args...]",
+                "devpane start <name> <program> [args...]",
               )
             }
           >

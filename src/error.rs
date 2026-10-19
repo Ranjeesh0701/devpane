@@ -1,7 +1,7 @@
 use std::fmt;
 
 #[derive(Debug)]
-pub enum DevboxError {
+pub enum DevpaneError {
     InvalidArguments(String),
     ProcessLaunch(std::io::Error),
     ProcessNotFound(std::io::Error),
@@ -18,49 +18,49 @@ pub enum DevboxError {
     ExitCodeOutOfRange(i32),
 }
 
-impl fmt::Display for DevboxError {
+impl fmt::Display for DevpaneError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DevboxError::InvalidArguments(message) => {
+            DevpaneError::InvalidArguments(message) => {
                 write!(f, "{message}")
             }
-            DevboxError::ProcessLaunch(error) => {
+            DevpaneError::ProcessLaunch(error) => {
                 write!(f, "Failed to start process: {error}")
             }
-            DevboxError::ProcessCheck(error) => {
+            DevpaneError::ProcessCheck(error) => {
                 write!(f, "Failed to check process: {error}")
             }
-            DevboxError::ExitCodeUnavailable => {
+            DevpaneError::ExitCodeUnavailable => {
                 write!(f, "Process terminated without a normal exit code")
             }
-            DevboxError::ExitCodeOutOfRange(code) => {
+            DevpaneError::ExitCodeOutOfRange(code) => {
                 write!(f, "Cannot represent child exit code: {code}")
             }
-            DevboxError::FileOperation(error) => {
+            DevpaneError::FileOperation(error) => {
                 write!(f, "File operation failed: {error}")
             }
-            DevboxError::Ipc(error) => {
+            DevpaneError::Ipc(error) => {
                 write!(f, "IPC operation failed: {error}")
             }
-            DevboxError::Json(error) => {
+            DevpaneError::Json(error) => {
                 write!(f, "JSON operation failed: {error}")
             }
-            DevboxError::InvalidResponse => {
+            DevpaneError::InvalidResponse => {
                 write!(f, "Invalid response received")
             }
-            DevboxError::ProcessNotFound(error) => {
+            DevpaneError::ProcessNotFound(error) => {
                 write!(f, "Process not found: {error}")
             }
-            DevboxError::StorageDirectoryUnavailable => {
+            DevpaneError::StorageDirectoryUnavailable => {
                 write!(f, "Could not determine the application data directory")
             }
-            DevboxError::DaemonError(message) => {
+            DevpaneError::DaemonError(message) => {
                 write!(f, "Daemon error: {message}")
             }
-            DevboxError::ConfigNotFound(error) => {
+            DevpaneError::ConfigNotFound(error) => {
                 write!(f, "Config not found: {error}")
             }
-            DevboxError::Tui(error) => {
+            DevpaneError::Tui(error) => {
                 write!(f, "TUI error: {error}")
             }
         }

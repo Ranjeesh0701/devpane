@@ -8,4 +8,6 @@ pub mod protocol;
 pub mod service_log_view;
 pub mod storage;
 pub mod terminal;
+pub mod watcher;
 pub mod workspace;
+

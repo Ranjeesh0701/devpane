@@ -24,7 +24,7 @@ export function PlaceholderPage({ page }: { page: NavItem }) {
   return (
     <section className="page-content secondary-page">
       <div className="eyebrow">
-        <span className="eyebrow-line" /> DEVBOX WORKSPACE
+        <span className="eyebrow-line" /> DEVPANE WORKSPACE
       </div>
       <h1>
         {title}

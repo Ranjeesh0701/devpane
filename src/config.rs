@@ -7,15 +7,190 @@ use std::path::Path;
 use std::path::PathBuf;
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+#[serde(untagged)]
+pub enum CommandList {
+    Single(String),
+    Multiple(Vec<String>),
+}
+
+impl CommandList {
+    pub fn to_vec(&self) -> Vec<String> {
+        match self {
+            Self::Single(s) => vec![s.clone()],
+            Self::Multiple(list) => list.clone(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq, Default)]
+pub struct LifecycleHooks {
+    #[serde(default)]
+    pub pre_build: Option<CommandList>,
+    #[serde(default)]
+    pub post_build: Option<CommandList>,
+    #[serde(default)]
+    pub pre_start: Option<CommandList>,
+    #[serde(default)]
+    pub post_start: Option<CommandList>,
+    #[serde(default)]
+    pub pre_stop: Option<CommandList>,
+    #[serde(default)]
+    pub post_stop: Option<CommandList>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq, Default)]
+pub struct BuildConfig {
+    #[serde(default)]
+    pub check: Option<CommandList>,
+    #[serde(default)]
+    pub cmd: Option<CommandList>,
+    #[serde(default)]
+    pub cwd: Option<PathBuf>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq, Default)]
+#[serde(rename_all = "kebab-case")]
+pub enum RestartMode {
+    #[default]
+    #[serde(alias = "never", alias = "no")]
+    Never,
+    #[serde(alias = "always")]
+    Always,
+    #[serde(alias = "on-failure", alias = "crash")]
+    Crash,
+    #[serde(alias = "on-change", alias = "change")]
+    Change,
+    #[serde(alias = "manual")]
+    Manual,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+pub struct RestartConfig {
+    #[serde(default)]
+    pub on: RestartMode,
+    #[serde(default = "default_max_crash_retries")]
+    pub max_crash_retries: u32,
+    #[serde(default = "default_backoff_ms")]
+    pub backoff_ms: u64,
+    #[serde(default = "default_restart_debounce_ms")]
+    pub debounce_ms: u64,
+}
+
+fn default_max_crash_retries() -> u32 {
+    5
+}
+
+fn default_backoff_ms() -> u64 {
+    1000
+}
+
+fn default_restart_debounce_ms() -> u64 {
+    300
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+#[serde(untagged)]
+pub enum RestartOpt {
+    Mode(RestartMode),
+    Detailed(RestartConfig),
+}
+
+impl RestartOpt {
+    pub fn into_config(self) -> RestartConfig {
+        match self {
+            Self::Mode(mode) => RestartConfig {
+                on: mode,
+                max_crash_retries: default_max_crash_retries(),
+                backoff_ms: default_backoff_ms(),
+                debounce_ms: default_restart_debounce_ms(),
+            },
+            Self::Detailed(config) => config,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq, Default)]
+pub struct WatchConfig {
+    #[serde(default)]
+    pub include: Vec<String>,
+    #[serde(default)]
+    pub exclude: Vec<String>,
+    #[serde(default)]
+    pub ignore_paths: Vec<String>,
+    #[serde(default = "default_watch_debounce_ms")]
+    pub debounce_ms: u64,
+}
+
+fn default_watch_debounce_ms() -> u64 {
+    300
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+#[serde(untagged)]
+pub enum WatchOpt {
+    Enabled(bool),
+    Paths(Vec<String>),
+    Detailed(WatchConfig),
+}
+
+impl WatchOpt {
+    pub fn into_config(self) -> Option<WatchConfig> {
+        match self {
+            Self::Enabled(true) => Some(WatchConfig {
+                include: vec![".".to_string()],
+                ..Default::default()
+            }),
+            Self::Enabled(false) => None,
+            Self::Paths(paths) => Some(WatchConfig {
+                include: paths,
+                ..Default::default()
+            }),
+            Self::Detailed(cfg) => Some(cfg),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq, Default)]
+#[serde(rename_all = "kebab-case")]
+pub enum DependencyCondition {
+    #[default]
+    #[serde(alias = "ready")]
+    Ready,
+    #[serde(alias = "started")]
+    Started,
+    #[serde(alias = "running")]
+    Running,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+pub struct DependencySpec {
+    #[serde(default)]
+    pub condition: DependencyCondition,
+    #[serde(default)]
+    pub timeout_secs: Option<u64>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+#[serde(untagged)]
+pub enum DependsOnConfig {
+    List(Vec<String>),
+    Map(HashMap<String, DependencySpec>),
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
 pub struct HealthCheckConfig {
     #[serde(default)]
     pub port: Option<u16>,
     #[serde(default)]
     pub http: Option<String>,
+    #[serde(default)]
+    pub command: Option<CommandList>,
     #[serde(default = "default_timeout_secs")]
     pub timeout_secs: u64,
     #[serde(default = "default_interval_ms")]
     pub interval_ms: u64,
+    #[serde(default = "default_retries")]
+    pub retries: u32,
 }
 
 fn default_timeout_secs() -> u64 {
@@ -24,6 +199,10 @@ fn default_timeout_secs() -> u64 {
 
 fn default_interval_ms() -> u64 {
     250
+}
+
+fn default_retries() -> u32 {
+    3
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -37,29 +216,78 @@ pub struct ServiceConfig {
     #[serde(default)]
     pub env: HashMap<String, String>,
     #[serde(default)]
-    pub depends_on: Vec<String>,
+    pub depends_on: Option<DependsOnConfig>,
     #[serde(default)]
     pub port: Option<u16>,
     #[serde(default)]
     pub health_check: Option<HealthCheckConfig>,
+    #[serde(default)]
+    pub restart: Option<RestartOpt>,
+    #[serde(default)]
+    pub watch: Option<WatchOpt>,
+    #[serde(default)]
+    pub hooks: Option<LifecycleHooks>,
+    #[serde(default)]
+    pub build: Option<BuildConfig>,
+}
+
+impl ServiceConfig {
+    pub fn dependency_map(&self) -> HashMap<String, DependencySpec> {
+        match &self.depends_on {
+            None => HashMap::new(),
+            Some(DependsOnConfig::List(list)) => list
+                .iter()
+                .map(|name| {
+                    (
+                        name.clone(),
+                        DependencySpec {
+                            condition: DependencyCondition::Ready,
+                            timeout_secs: None,
+                        },
+                    )
+                })
+                .collect(),
+            Some(DependsOnConfig::Map(map)) => map.clone(),
+        }
+    }
+
+    pub fn dependency_names(&self) -> Vec<String> {
+        match &self.depends_on {
+            None => Vec::new(),
+            Some(DependsOnConfig::List(list)) => list.clone(),
+            Some(DependsOnConfig::Map(map)) => {
+                let mut keys: Vec<String> = map.keys().cloned().collect();
+                keys.sort();
+                keys
+            }
+        }
+    }
+
+    pub fn restart_config(&self) -> Option<RestartConfig> {
+        self.restart.clone().map(|r| r.into_config())
+    }
+
+    pub fn watch_config(&self) -> Option<WatchConfig> {
+        self.watch.clone().and_then(|w| w.into_config())
+    }
 }
 
 #[derive(Debug, Deserialize)]
-pub struct DevboxConfig {
+pub struct DevpaneConfig {
     #[serde(default)]
     pub version: u32,
     pub services: HashMap<String, ServiceConfig>,
 }
 
-impl DevboxConfig {
+impl DevpaneConfig {
     pub fn enabled_services(&self) -> impl Iterator<Item = (&String, &ServiceConfig)> {
         self.services.iter().filter(|(_, service)| service.enabled)
     }
 }
 
-pub fn load_config(path: &Path) -> Result<DevboxConfig, Box<dyn error::Error>> {
+pub fn load_config(path: &Path) -> Result<DevpaneConfig, Box<dyn error::Error>> {
     let contents = fs::read_to_string(path)?;
-    let config: DevboxConfig = serde_yaml_ng::from_str(&contents)?;
+    let config: DevpaneConfig = serde_yaml_ng::from_str(&contents)?;
 
     Ok(config)
 }
@@ -109,19 +337,22 @@ fn parse_env_file_into(contents: &str, map: &mut HashMap<String, String>) {
 }
 
 pub fn find_config() -> Result<PathBuf, io::Error> {
-    let devpane_path = std::env::current_dir()?.join("devpane.yaml");
-    if devpane_path.is_file() {
-        return Ok(devpane_path);
-    }
+    let current = std::env::current_dir()?;
+    let candidates = [
+        "devpane.yaml",
+        "devpane.yml",
+    ];
 
-    let devbox_path = std::env::current_dir()?.join("devbox.yaml");
-    if devbox_path.is_file() {
-        return Ok(devbox_path);
+    for candidate in candidates {
+        let path = current.join(candidate);
+        if path.is_file() {
+            return Ok(path);
+        }
     }
 
     Err(io::Error::new(
         io::ErrorKind::NotFound,
-        "devpane.yaml (or devbox.yaml) not found in the current directory",
+        "devpane.yaml (or devpane.yml) not found in the current directory",
     ))
 }
 

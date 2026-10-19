@@ -85,13 +85,13 @@ where
 
             if service_views.is_empty() {
                 error_message = Some(
-                    "No services running.\n\nTry:\n  1. Check devbox.yaml has enabled services\n  2. Run 'devbox list' to see all sessions\n  3. Press Ctrl+T to create a shell".to_string()
+                    "No services running.\n\nTry:\n  1. Check devpane.yaml has enabled services\n  2. Run 'devpane list' to see all sessions\n  3. Press Ctrl+T to create a shell".to_string()
                 );
             }
         }
         Err(e) => {
             error_message = Some(format!(
-                "Failed to connect to daemon: {}\n\nTry:\n  1. Check if daemon is running: devbox list\n  2. Restart daemon: devbox shutdown && devbox up",
+                "Failed to connect to daemon: {}\n\nTry:\n  1. Check if daemon is running: devpane list\n  2. Restart daemon: devpane shutdown && devpane up",
                 e
             ));
         }
@@ -206,7 +206,7 @@ where
             }
 
             let tabs = Tabs::new(tab_titles)
-                .block(Block::default().title(" Devbox Workspace ").borders(Borders::ALL))
+                .block(Block::default().title(" Devpane Workspace ").borders(Borders::ALL))
                 .select(active_tab)
                 .style(Style::default().fg(Color::White))
                 .highlight_style(
@@ -226,7 +226,7 @@ where
                 let help_text = vec![
                     Line::from(""),
                     Line::from(Span::styled(
-                        "Welcome to Devbox!",
+                        "Welcome to Devpane!",
                         Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
                     )),
                     Line::from(""),
@@ -242,12 +242,12 @@ where
                     ]),
                     Line::from(vec![
                         Span::raw("  2. Edit "),
-                        Span::styled("devbox.yaml", Style::default().fg(Color::Green)),
+                        Span::styled("devpane.yaml", Style::default().fg(Color::Green)),
                         Span::raw(" to define your services"),
                     ]),
                     Line::from(vec![
                         Span::raw("  3. Run "),
-                        Span::styled("devbox up", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                        Span::styled("devpane up", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
                         Span::raw(" to start services"),
                     ]),
                     Line::from(""),

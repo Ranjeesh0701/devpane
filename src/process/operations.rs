@@ -5,7 +5,7 @@ use std::{fs, io};
 
 use super::platform;
 use super::session::{ProcessSession, ProcessStatus};
-use crate::error::DevboxError;
+use crate::error::DevpaneError;
 use crate::storage::get_log_file;
 use uuid::Uuid;
 
@@ -16,16 +16,16 @@ pub fn start_process(
     cwd: PathBuf,
     env: HashMap<String, String>,
     project_dir: Option<PathBuf>,
-) -> Result<(Child, ProcessSession), DevboxError> {
+) -> Result<(Child, ProcessSession), DevpaneError> {
     let id = Uuid::new_v4().to_string();
 
     let file = fs::OpenOptions::new()
         .create(true)
         .append(true)
         .open(get_log_file(&id)?)
-        .map_err(DevboxError::FileOperation)?;
+        .map_err(DevpaneError::FileOperation)?;
 
-    let stdout_file = file.try_clone().map_err(DevboxError::FileOperation)?;
+    let stdout_file = file.try_clone().map_err(DevpaneError::FileOperation)?;
 
     let mut cmd = Command::new(&program);
     cmd.args(args)
@@ -40,7 +40,7 @@ pub fn start_process(
         cmd.process_group(0);
     }
 
-    let child = cmd.spawn().map_err(DevboxError::ProcessLaunch)?;
+    let child = cmd.spawn().map_err(DevpaneError::ProcessLaunch)?;
 
     let pid = child.id();
 
@@ -48,7 +48,7 @@ pub fn start_process(
         Ok(value) => value,
         Err(error) => {
             let _ = platform::stop_process(pid);
-            return Err(DevboxError::ProcessCheck(error));
+            return Err(DevpaneError::ProcessCheck(error));
         }
     };
 

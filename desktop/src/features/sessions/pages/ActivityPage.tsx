@@ -60,7 +60,7 @@ export function ActivityPage() {
   return (
     <section className="page-content activity-page">
       <div className="eyebrow">
-        <span className="eyebrow-line" /> DEVBOX WORKSPACE
+        <span className="eyebrow-line" /> DEVPANE WORKSPACE
       </div>
 
       <div className="activity-heading">

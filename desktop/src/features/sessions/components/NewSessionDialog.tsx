@@ -81,7 +81,7 @@ export function NewSessionDialog({ onClose, onSubmit }: Props) {
           </div>
           <div className="dialog-heading-copy">
             <h2 id="new-session-title">Start a session</h2>
-            <p>Launch a process and let Devbox manage it.</p>
+            <p>Launch a process and let Devpane manage it.</p>
           </div>
           <button
             className="icon-button dialog-close"
@@ -155,7 +155,7 @@ export function NewSessionDialog({ onClose, onSubmit }: Props) {
 
           <div className="dialog-footer">
             <span className="dialog-footer-note">
-              <span className="dialog-footer-dot" /> Runs under the Devbox
+              <span className="dialog-footer-dot" /> Runs under the Devpane
               daemon
             </span>
             <div className="dialog-actions">

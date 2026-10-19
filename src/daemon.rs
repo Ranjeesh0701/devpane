@@ -34,6 +34,21 @@ pub fn run_daemon(shutdown: Arc<AtomicBool>) -> io::Result<()> {
 
     let listener = ipc::prepare_listener()?;
 
+    // Spawn background monitor thread for crash restarts and file watching
+    let monitor_supervisor = Arc::clone(&supervisor);
+    let monitor_shutdown = Arc::clone(&shutdown);
+    let monitor_thread = thread::spawn(move || {
+        while !monitor_shutdown.load(Ordering::SeqCst) {
+            {
+                if let Ok(mut sup) = monitor_supervisor.lock() {
+                    sup.tick();
+                }
+            }
+            thread::sleep(Duration::from_millis(250));
+        }
+    });
+    client_threads.push(monitor_thread);
+
     loop {
         if shutdown.load(Ordering::SeqCst) {
             break;
