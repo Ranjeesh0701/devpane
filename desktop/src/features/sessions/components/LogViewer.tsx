@@ -16,7 +16,53 @@ export function LogViewer({ session, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [search, setSearch] = useState("");
+  const [filterOnly, setFilterOnly] = useState(false);
   const outputRef = useRef<HTMLPreElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const { displayLogs, matchCount } = useMemo(() => {
+    if (!logs) return { displayLogs: "", matchCount: 0 };
+    const query = search.trim().toLowerCase();
+    if (!query) return { displayLogs: logs, matchCount: 0 };
+
+    let count = 0;
+    let pos = 0;
+    const lower = logs.toLowerCase();
+    while ((pos = lower.indexOf(query, pos)) !== -1) {
+      count++;
+      pos += query.length;
+    }
+
+    if (filterOnly) {
+      const filtered = logs
+        .split("\n")
+        .filter((line) => line.toLowerCase().includes(query))
+        .join("\n");
+      return { displayLogs: filtered, matchCount: count };
+    }
+
+    return { displayLogs: logs, matchCount: count };
+  }, [logs, search, filterOnly]);
+
+  const renderedContent = useMemo(() => {
+    const query = search.trim();
+    if (!query || !displayLogs) return displayLogs;
+
+    const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(${escaped})`, "gi");
+    const parts = displayLogs.split(regex);
+
+    return parts.map((part, index) =>
+      regex.test(part) ? (
+        <mark key={index} className="log-viewer-highlight">
+          {part}
+        </mark>
+      ) : (
+        part
+      ),
+    );
+  }, [displayLogs, search]);
 
   const detectedUrls = useMemo(() => {
     return extractLocalhostUrls(`${logs} ${session.command}`);
@@ -86,15 +132,29 @@ export function LogViewer({ session, onClose }: Props) {
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        if (search) {
+          setSearch("");
+        } else {
+          onClose();
+        }
+      } else if (
+        (event.metaKey || event.ctrlKey) &&
+        event.key.toLowerCase() === "f"
+      ) {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, [onClose, search]);
 
   async function copyLogs() {
     try {
-      await navigator.clipboard.writeText(logs);
+      const textToCopy = filterOnly && search.trim() ? displayLogs : logs;
+      await navigator.clipboard.writeText(textToCopy);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
@@ -144,13 +204,56 @@ export function LogViewer({ session, onClose }: Props) {
         </header>
 
         <div className="log-viewer-toolbar">
-          <div className="log-viewer-stream-label">
-            <span className="log-viewer-live-dot" /> Captured output{" "}
-            <span className="log-viewer-count">
-              {logs ? `${logs.split("\n").length} lines` : "0 lines"}
-            </span>
+          <div className="log-viewer-search-wrap">
+            <label className="log-viewer-search-field">
+              <Icon name="search" size={14} />
+              <input
+                ref={searchInputRef}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Find in logs (Cmd+F)..."
+                aria-label="Find in logs"
+              />
+              {search && (
+                <button
+                  type="button"
+                  className="log-viewer-search-clear"
+                  onClick={() => setSearch("")}
+                  title="Clear search"
+                  aria-label="Clear search"
+                >
+                  ×
+                </button>
+              )}
+            </label>
+            {search.trim() ? (
+              <span className="log-viewer-match-badge">
+                {matchCount} {matchCount === 1 ? "match" : "matches"}
+              </span>
+            ) : null}
+            {search.trim() ? (
+              <button
+                type="button"
+                className={`log-viewer-filter-toggle ${filterOnly ? "active" : ""}`}
+                onClick={() => setFilterOnly((prev) => !prev)}
+                title="Only show lines matching search query"
+              >
+                {filterOnly ? "Filtered" : "Filter lines"}
+              </button>
+            ) : null}
           </div>
+
           <div className="log-viewer-actions">
+            <div className="log-viewer-stream-label">
+              <span className="log-viewer-live-dot" />
+              <span className="log-viewer-count">
+                {logs
+                  ? filterOnly && search.trim()
+                    ? `${displayLogs.split("\n").length} / ${logs.split("\n").length} lines`
+                    : `${logs.split("\n").length} lines`
+                  : "0 lines"}
+              </span>
+            </div>
             {detectedUrls.map((url) => (
               <button
                 key={url}
@@ -165,7 +268,7 @@ export function LogViewer({ session, onClose }: Props) {
             ))}
             <button
               className="log-viewer-tool-button"
-              onClick={() => void loadLogs()}
+              onClick={() => void loadLogs(false)}
               disabled={loading}
             >
               <span className={loading ? "log-viewer-spin" : ""}>
@@ -179,7 +282,11 @@ export function LogViewer({ session, onClose }: Props) {
               disabled={!logs || loading}
             >
               <Icon name={copied ? "check" : "copy"} size={14} />{" "}
-              {copied ? "Copied" : "Copy logs"}
+              {copied
+                ? "Copied"
+                : filterOnly && search.trim()
+                  ? "Copy filtered"
+                  : "Copy logs"}
             </button>
           </div>
         </div>
@@ -204,7 +311,7 @@ export function LogViewer({ session, onClose }: Props) {
                 tabIndex={0}
                 aria-label="Session log output"
               >
-                {logs}
+                {renderedContent}
               </pre>
               {!isAtBottom && (
                 <button
@@ -237,9 +344,8 @@ export function LogViewer({ session, onClose }: Props) {
         )}
         <footer className="log-viewer-footer">
           <span>
-            <kbd>Esc</kbd> to close{" "}
-            <span className="log-viewer-separator">·</span> Refresh to fetch the
-            latest output
+            <kbd>Cmd+F</kbd> find <span className="log-viewer-separator">·</span>{" "}
+            <kbd>Esc</kbd> close
           </span>
           <button className="log-viewer-done" onClick={onClose}>
             Done
