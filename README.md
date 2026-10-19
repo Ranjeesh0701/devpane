@@ -2,6 +2,8 @@
 
 **Run your stack. Stay in control.**
 
+🌐 **[https://devpane.dev](https://devpane.dev)**
+
 [![Built with Rust](https://img.shields.io/badge/built_with-Rust-dca282.svg?logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![Crates.io](https://img.shields.io/crates/v/devpane.svg)](https://crates.io/crates/devpane)
 [![Website](https://img.shields.io/badge/website-devpane.dev-55d6a2.svg)](https://devpane.dev)
@@ -152,8 +154,8 @@ devpane down
 
 ## Desktop App & Website
 
-- **Desktop Interface (`desktop/`)**: Native Tauri GUI for monitoring running sessions and viewing streaming logs.
-- **Website (`website/`)**: Modern landing page built with Bun and Vite.
+- **Website**: [https://devpane.dev](https://devpane.dev) - Official site, interactive terminal showcase, and documentation.
+- **Desktop Application (`desktop/`)**: Standalone Tauri GUI with zero-click embedded daemon for real-time process monitoring and live log viewing.
 
 ## Contributing
 
