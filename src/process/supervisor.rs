@@ -83,6 +83,8 @@ impl ProcessSupervisor {
     pub fn list(&mut self) -> Result<Vec<ProcessSession>, DevpaneError> {
         super::platform::reap_zombies();
 
+        let mut status_changed = false;
+
         for process in &mut self.processes {
             let child_result = match process.child.as_mut() {
                 Some(child) => Some(child.try_wait()),
@@ -91,6 +93,11 @@ impl ProcessSupervisor {
 
             match child_result {
                 Some(Ok(Some(exit_status))) => {
+                    if process.session.status != ProcessStatus::Exited
+                        || process.session.exit_code != exit_status.code()
+                    {
+                        status_changed = true;
+                    }
                     process.session.status = ProcessStatus::Exited;
                     process.session.exit_code = exit_status.code();
                     process.session.cpu_percent = None;
@@ -98,6 +105,9 @@ impl ProcessSupervisor {
                     process.child = None;
                 }
                 Some(Ok(None)) => {
+                    if process.session.status != ProcessStatus::Running {
+                        status_changed = true;
+                    }
                     process.session.status = ProcessStatus::Running;
                     let (cpu, mem) = super::platform::get_process_metrics(process.session.pid);
                     process.session.cpu_percent = cpu;
@@ -106,6 +116,9 @@ impl ProcessSupervisor {
                 Some(Err(error)) => {
                     #[cfg(unix)]
                     if error.raw_os_error() == Some(libc::ECHILD) {
+                        if process.session.status != ProcessStatus::Exited {
+                            status_changed = true;
+                        }
                         process.session.status = ProcessStatus::Exited;
                         process.session.exit_code = None;
                         process.session.cpu_percent = None;
@@ -120,6 +133,9 @@ impl ProcessSupervisor {
                 }
                 None => match is_same_process(&process.session) {
                     Ok(true) => {
+                        if process.session.status != ProcessStatus::Running {
+                            status_changed = true;
+                        }
                         process.session.status = ProcessStatus::Running;
                         let (cpu, mem) = super::platform::get_process_metrics(process.session.pid);
                         process.session.cpu_percent = cpu;
@@ -127,11 +143,17 @@ impl ProcessSupervisor {
                     }
                     Ok(false) => {
                         if super::platform::is_process_active(process.session.pid).unwrap_or(false) {
+                            if process.session.status != ProcessStatus::Running {
+                                status_changed = true;
+                            }
                             process.session.status = ProcessStatus::Running;
                             let (cpu, mem) = super::platform::get_process_metrics(process.session.pid);
                             process.session.cpu_percent = cpu;
                             process.session.memory_bytes = mem;
                         } else {
+                            if process.session.status != ProcessStatus::Exited {
+                                status_changed = true;
+                            }
                             process.session.status = ProcessStatus::Exited;
                             process.session.cpu_percent = None;
                             process.session.memory_bytes = None;
@@ -139,8 +161,14 @@ impl ProcessSupervisor {
                     }
                     Err(error) => {
                         if super::platform::is_process_active(process.session.pid).unwrap_or(false) {
+                            if process.session.status != ProcessStatus::Running {
+                                status_changed = true;
+                            }
                             process.session.status = ProcessStatus::Running;
                         } else {
+                            if process.session.status != ProcessStatus::Exited {
+                                status_changed = true;
+                            }
                             process.session.status = ProcessStatus::Exited;
                         }
                         eprintln!("Failed to check process {}: {error}", process.session.pid);
@@ -149,7 +177,9 @@ impl ProcessSupervisor {
             }
         }
 
-        self.save_sessions()?;
+        if status_changed {
+            self.save_sessions()?;
+        }
 
         Ok(self
             .processes

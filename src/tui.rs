@@ -1518,48 +1518,93 @@ where
                 .split(inner_logs);
 
                 let max_line_width = logs_split[0].width.saturating_sub(1) as usize;
+                let viewport_h = logs_split[0].height as usize;
 
-                let (formatted_lines, _) = if is_all {
-                    let mut lines: Vec<Line<'static>> = Vec::new();
-                    let mut line_no = 1;
-                    for v in &service_views {
-                        let content = v.filtered_content();
+                let (visible_lines, max_scroll, current_offset) = if !wrap_logs && !is_all {
+                    let view = &mut service_views[active_tab - 1];
+                    let total_lines = view.filtered_content().lines().count();
+                    let max_scroll = total_lines.saturating_sub(viewport_h);
+                    view.clamp_scroll(max_scroll);
+                    let current_offset = view.scroll_offset;
+                    let scroll_y = if current_offset == 0 {
+                        max_scroll
+                    } else {
+                        max_scroll.saturating_sub(current_offset)
+                    };
+
+                    let content = view.filtered_content();
+                    let visible: Vec<Line> = content
+                        .lines()
+                        .enumerate()
+                        .skip(scroll_y)
+                        .take(viewport_h)
+                        .flat_map(|(idx, line)| {
+                            format_log_entry(idx + 1, line, None, max_line_width, false)
+                        })
+                        .collect();
+
+                    (visible, max_scroll, current_offset)
+                } else {
+                    let (formatted_lines, _) = if is_all {
+                        let mut lines: Vec<Line<'static>> = Vec::new();
+                        let mut line_no = 1;
+                        for v in &service_views {
+                            let content = v.filtered_content();
+                            for l in content.lines() {
+                                lines.extend(format_log_entry(
+                                    line_no,
+                                    l,
+                                    Some(v.name()),
+                                    max_line_width,
+                                    wrap_logs,
+                                ));
+                                line_no += 1;
+                            }
+                        }
+                        (lines, all_services_scroll_offset)
+                    } else {
+                        let view = &service_views[active_tab - 1];
+                        let mut lines: Vec<Line<'static>> = Vec::new();
+                        let mut line_no = 1;
+                        let content = view.filtered_content();
                         for l in content.lines() {
-                            lines.extend(format_log_entry(line_no, l, Some(v.name()), max_line_width, wrap_logs));
+                            lines.extend(format_log_entry(
+                                line_no,
+                                l,
+                                None,
+                                max_line_width,
+                                wrap_logs,
+                            ));
                             line_no += 1;
                         }
+                        (lines, view.scroll_offset)
+                    };
+
+                    let total_lines = formatted_lines.len();
+                    let max_scroll = total_lines.saturating_sub(viewport_h);
+
+                    if is_all {
+                        all_services_scroll_offset = all_services_scroll_offset.min(max_scroll);
+                    } else {
+                        service_views[active_tab - 1].clamp_scroll(max_scroll);
                     }
-                    (lines, all_services_scroll_offset)
-                } else {
-                    let view = &service_views[active_tab - 1];
-                    let mut lines: Vec<Line<'static>> = Vec::new();
-                    let mut line_no = 1;
-                    let content = view.filtered_content();
-                    for l in content.lines() {
-                        lines.extend(format_log_entry(line_no, l, None, max_line_width, wrap_logs));
-                        line_no += 1;
-                    }
-                    (lines, view.scroll_offset)
+                    let current_offset = if is_all {
+                        all_services_scroll_offset
+                    } else {
+                        service_views[active_tab - 1].scroll_offset
+                    };
+
+                    let scroll_y = if current_offset == 0 {
+                        max_scroll
+                    } else {
+                        max_scroll.saturating_sub(current_offset)
+                    };
+
+                    let visible: Vec<Line> =
+                        formatted_lines.into_iter().skip(scroll_y).take(viewport_h).collect();
+                    (visible, max_scroll, current_offset)
                 };
 
-                let viewport_h = logs_split[0].height as usize;
-                let total_lines = formatted_lines.len();
-                let max_scroll = total_lines.saturating_sub(viewport_h);
-
-                if is_all {
-                    all_services_scroll_offset = all_services_scroll_offset.min(max_scroll);
-                } else {
-                    service_views[active_tab - 1].clamp_scroll(max_scroll);
-                }
-                let current_offset = if is_all { all_services_scroll_offset } else { service_views[active_tab - 1].scroll_offset };
-
-                let scroll_y = if current_offset == 0 {
-                    max_scroll
-                } else {
-                    max_scroll.saturating_sub(current_offset)
-                };
-
-                let visible_lines: Vec<Line> = formatted_lines.into_iter().skip(scroll_y).take(viewport_h).collect();
                 frame.render_widget(Paragraph::new(visible_lines), logs_split[0]);
 
                 // Render floating pill in reserved bottom status line - guaranteed zero overlap!

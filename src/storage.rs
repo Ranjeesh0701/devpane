@@ -81,7 +81,7 @@ pub fn get_sessions() -> Result<Vec<ProcessSession>, DevpaneError> {
 pub fn save_sessions(sessions: &[ProcessSession]) -> Result<(), DevpaneError> {
     let json = serde_json::to_string(sessions).map_err(DevpaneError::Json)?;
     let storage_directory = get_storage_directory()?;
-    let temp_file = storage_directory.join(SESSIONS_TMP);
+    let temp_file = storage_directory.join(format!("sessions.{}.tmp", uuid::Uuid::new_v4()));
     let file = storage_directory.join(SESSIONS);
     fs::write(&temp_file, json).map_err(DevpaneError::FileOperation)?;
     fs::rename(&temp_file, &file).map_err(DevpaneError::FileOperation)?;

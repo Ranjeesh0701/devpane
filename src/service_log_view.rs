@@ -39,11 +39,14 @@ impl ServiceLogView {
             Err(e) => return Err(e),
         };
 
-        // Detect truncation or log rotation
+        // Detect truncation, log rotation, or no new content
         if let Ok(metadata) = file.metadata() {
-            if metadata.len() < self.file_position {
+            let len = metadata.len();
+            if len < self.file_position {
                 self.file_position = 0;
                 self.log_content.clear();
+            } else if len == self.file_position {
+                return Ok(());
             }
         }
 
