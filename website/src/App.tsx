@@ -242,9 +242,7 @@ const TUI_SERVICES: TuiService[] = [
 ];
 
 function HeroTerminal() {
-  const [activeId, setActiveId] = useState<string>("web");
-  const activeService =
-    TUI_SERVICES.find((s) => s.id === activeId) || TUI_SERVICES[2];
+  const activeService = TUI_SERVICES[2]; // 'web' service as showcased in authentic devpane up
 
   return (
     <div className="terminal-window">
@@ -300,14 +298,9 @@ function HeroTerminal() {
             <kbd className="tui-key">S</kbd>
           </span>
           {activeService.url && (
-            <a
-              href={`http://${activeService.url}`}
-              target="_blank"
-              rel="noreferrer"
-              className="tui-port-link"
-            >
+            <span className="tui-port-link">
               {activeService.url} <span className="tui-arrow">↗</span>
-            </a>
+            </span>
           )}
         </div>
       </div>
@@ -316,17 +309,13 @@ function HeroTerminal() {
       <div className="tui-body">
         {/* Sidebar */}
         <aside className="tui-sidebar">
-          <div className="tui-sidebar-list" role="tablist" aria-label="Services">
+          <div className="tui-sidebar-list">
             {TUI_SERVICES.map((svc) => {
-              const isActive = svc.id === activeId;
+              const isActive = svc.id === "web";
               return (
-                <button
+                <div
                   key={svc.id}
                   className={`tui-service-item ${isActive ? "active" : ""}`}
-                  onClick={() => setActiveId(svc.id)}
-                  role="tab"
-                  aria-selected={isActive}
-                  type="button"
                 >
                   <div className="tui-service-line1">
                     <div className="tui-service-left">
@@ -337,7 +326,7 @@ function HeroTerminal() {
                     <span className="tui-service-key">{svc.key}</span>
                   </div>
                   <div className="tui-service-subline">{svc.subline}</div>
-                </button>
+                </div>
               );
             })}
           </div>
