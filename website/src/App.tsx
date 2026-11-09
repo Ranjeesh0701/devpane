@@ -491,9 +491,351 @@ function HeroTerminal() {
   );
 }
 
+function HeroDesktopPreview() {
+  const [filter, setFilter] = useState<string>("");
+
+  return (
+    <div className="desktop-window-preview">
+      {/* Titlebar */}
+      <div className="gui-titlebar">
+        <div className="window-dots" aria-hidden="true">
+          <span className="dot dot-close" />
+          <span className="dot dot-minimize" />
+          <span className="dot dot-expand" />
+        </div>
+        <div className="gui-titlebar-crumbs">
+          <span>Workspace</span>
+          <span className="gui-crumb-sep">›</span>
+          <span className="gui-crumb-active">Sessions</span>
+        </div>
+        <div className="gui-titlebar-shortcut">
+          <kbd>⌘K</kbd>
+        </div>
+      </div>
+
+      {/* Main app layout */}
+      <div className="gui-layout">
+        {/* Sidebar */}
+        <aside className="gui-sidebar">
+          <div className="gui-brand">
+            <div className="gui-brand-icon">
+              <span>&gt;_</span>
+            </div>
+            <div className="gui-brand-copy">
+              <strong>devpane</strong>
+              <span>PROCESS WORKSPACE</span>
+            </div>
+          </div>
+
+          <div className="gui-host-card">
+            <div className="gui-host-avatar">D</div>
+            <div className="gui-host-info">
+              <span className="gui-host-title">Local machine</span>
+              <span className="gui-host-sub">macOS · Desktop</span>
+            </div>
+            <span className="gui-host-dot" />
+          </div>
+
+          <div className="gui-nav-section">
+            <span className="gui-nav-label">WORKSPACE</span>
+            <div className="gui-nav-item active">
+              <span className="gui-nav-icon">⊞</span>
+              <span>Sessions</span>
+              <span className="gui-nav-pill">3</span>
+            </div>
+            <div className="gui-nav-item">
+              <span className="gui-nav-icon">⚡</span>
+              <span>Activity</span>
+            </div>
+            <div className="gui-nav-item">
+              <span className="gui-nav-icon">⚙</span>
+              <span>Settings</span>
+            </div>
+          </div>
+
+          <div className="gui-sidebar-bottom">
+            <span>Devpane Desktop</span>
+            <span className="gui-version-badge">v0.4.0</span>
+          </div>
+        </aside>
+
+        {/* Content */}
+        <div className="gui-content">
+          <div className="gui-header">
+            <div>
+              <h3>
+                All sessions <span className="gui-count-pill">3</span>
+              </h3>
+              <p>Processes managed by your Devpane daemon</p>
+            </div>
+            <button className="gui-refresh-btn" type="button">
+              <span>↺</span> Refresh
+            </button>
+          </div>
+
+          <div className="gui-card">
+            <div className="gui-search-toolbar">
+              <div className="gui-search-field">
+                <span>🔍</span>
+                <input
+                  placeholder="Search sessions..."
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  aria-label="Search preview sessions"
+                />
+                <kbd>⌘F</kbd>
+              </div>
+              <div className="gui-filter-status">
+                <span className="gui-live-dot" /> All processes
+              </div>
+            </div>
+
+            {/* Project Header */}
+            <div className="gui-project-header">
+              <div className="gui-project-info">
+                <div className="gui-project-icon">⊞</div>
+                <div className="gui-project-text">
+                  <div className="gui-project-title-row">
+                    <strong>realworld-stack</strong>
+                    <span className="gui-meta-badge">3 running · 0 exited</span>
+                  </div>
+                  <span className="gui-project-path">
+                    /Users/ranjeesh/Workspace/devbox/examples/realworld-stack
+                  </span>
+                </div>
+              </div>
+              <div className="gui-project-actions">
+                <button className="gui-btn-sync" type="button">
+                  <span>↺</span> Sync
+                </button>
+                <button className="gui-btn-restart" type="button">
+                  <span>↺</span> Restart
+                </button>
+                <button className="gui-btn-stop" type="button">
+                  <span>■</span> Stop
+                </button>
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="gui-table-wrap">
+              <table className="gui-table">
+                <thead>
+                  <tr>
+                    <th>PROCESS</th>
+                    <th>COMMAND</th>
+                    <th>CPU</th>
+                    <th>MEMORY</th>
+                    <th>STATUS</th>
+                    <th style={{ textAlign: "right" }}>ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div className="gui-proc-cell">
+                        <span className="gui-proc-icon hex">⬡</span>
+                        <div>
+                          <div className="gui-proc-title">
+                            <strong>api</strong>
+                            <span className="gui-port-badge">:8080</span>
+                          </div>
+                          <span className="gui-proc-sub">
+                            PID 34470 · 60707a8c…
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <code className="gui-code">cargo run</code>
+                    </td>
+                    <td>
+                      <span className="gui-stat">0.8%</span>
+                    </td>
+                    <td>
+                      <span className="gui-stat green">32.4 MB</span>
+                    </td>
+                    <td>
+                      <span className="gui-status-pill running">
+                        <span className="gui-dot" /> Running
+                      </span>
+                    </td>
+                    <td>
+                      <div className="gui-row-actions">
+                        <button className="gui-act-btn" title="Open in browser">
+                          ↗
+                        </button>
+                        <button className="gui-act-btn" title="View live logs">
+                          ⌨
+                        </button>
+                        <button className="gui-act-btn" title="Restart">
+                          ↺
+                        </button>
+                        <button className="gui-act-btn" title="More">
+                          ···
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td>
+                      <div className="gui-proc-cell">
+                        <span className="gui-proc-icon globe">🌐</span>
+                        <div>
+                          <div className="gui-proc-title">
+                            <strong>web</strong>
+                            <span className="gui-port-badge">:5173</span>
+                          </div>
+                          <span className="gui-proc-sub">
+                            PID 34475 · eb9b77a7…
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <code className="gui-code">bun run dev</code>
+                    </td>
+                    <td>
+                      <span className="gui-stat">0.0%</span>
+                    </td>
+                    <td>
+                      <span className="gui-stat green">45.6 MB</span>
+                    </td>
+                    <td>
+                      <span className="gui-status-pill running">
+                        <span className="gui-dot" /> Running
+                      </span>
+                    </td>
+                    <td>
+                      <div className="gui-row-actions">
+                        <button className="gui-act-btn" title="Open in browser">
+                          ↗
+                        </button>
+                        <button className="gui-act-btn" title="View live logs">
+                          ⌨
+                        </button>
+                        <button className="gui-act-btn" title="Restart">
+                          ↺
+                        </button>
+                        <button className="gui-act-btn" title="More">
+                          ···
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td>
+                      <div className="gui-proc-cell">
+                        <span className="gui-proc-icon gear">⚙</span>
+                        <div>
+                          <div className="gui-proc-title">
+                            <strong>worker</strong>
+                          </div>
+                          <span className="gui-proc-sub">
+                            PID 34482 · 8c48de44…
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <code className="gui-code">python3 worker.py</code>
+                    </td>
+                    <td>
+                      <span className="gui-stat">0.0%</span>
+                    </td>
+                    <td>
+                      <span className="gui-stat green">8.2 MB</span>
+                    </td>
+                    <td>
+                      <span className="gui-status-pill running">
+                        <span className="gui-dot" /> Running
+                      </span>
+                    </td>
+                    <td>
+                      <div className="gui-row-actions">
+                        <button className="gui-act-btn" title="View live logs">
+                          ⌨
+                        </button>
+                        <button className="gui-act-btn" title="Restart">
+                          ↺
+                        </button>
+                        <button className="gui-act-btn" title="More">
+                          ···
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="gui-table-footer">
+              <span>
+                Showing <strong>3</strong> sessions (
+                <strong style={{ color: "#3fb950" }}>3 running</strong> · 0
+                exited)
+              </span>
+              <span className="gui-footer-live">
+                <span className="gui-dot" /> Supervised
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeroPreview() {
+  const [mode, setMode] = useState<"tui" | "gui">("tui");
+
+  return (
+    <div className="hero-preview-container">
+      <div className="hero-preview-mode-bar">
+        <div className="mode-toggle-group" role="tablist">
+          <button
+            className={`mode-btn ${mode === "tui" ? "active" : ""}`}
+            onClick={() => setMode("tui")}
+            role="tab"
+            aria-selected={mode === "tui"}
+            type="button"
+          >
+            <span className="mode-icon">⊞</span>
+            <span>Terminal TUI</span>
+            <span className="mode-tag">devpane up</span>
+          </button>
+          <button
+            className={`mode-btn ${mode === "gui" ? "active" : ""}`}
+            onClick={() => setMode("gui")}
+            role="tab"
+            aria-selected={mode === "gui"}
+            type="button"
+          >
+            <span className="mode-icon">💻</span>
+            <span>Desktop GUI</span>
+            <span className="mode-tag">Tauri App</span>
+          </button>
+        </div>
+        <div className="mode-hint">
+          {mode === "tui"
+            ? "Interactive terminal: click services (0-3) to inspect telemetry"
+            : "Native desktop app: clean, responsive multi-process control"}
+        </div>
+      </div>
+
+      {mode === "tui" ? <HeroTerminal /> : <HeroDesktopPreview />}
+    </div>
+  );
+}
+
 function MCPConfigSection() {
+  const [activeTab, setActiveTab] = useState<"simulate" | "config">("simulate");
   const [activeClient, setActiveClient] = useState<"cursor" | "claude">("cursor");
   const [copied, setCopied] = useState(false);
+  const [simStep, setSimStep] = useState(3);
+  const [simulating, setSimulating] = useState(false);
 
   const cursorSnippet = `{
   "mcpServers": {
@@ -510,6 +852,17 @@ function MCPConfigSection() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleSimulate = () => {
+    setSimStep(0);
+    setSimulating(true);
+    setTimeout(() => setSimStep(1), 600);
+    setTimeout(() => setSimStep(2), 1400);
+    setTimeout(() => {
+      setSimStep(3);
+      setSimulating(false);
+    }, 2200);
+  };
+
   return (
     <div className="mcp-section" id="mcp">
       <div className="section-head">
@@ -521,73 +874,172 @@ function MCPConfigSection() {
         </p>
       </div>
 
-      <div className="mcp-grid">
-        <div className="mcp-card mcp-config-box">
-          <div className="mcp-card-header">
-            <div className="mcp-tabs">
-              <button
-                className={`mcp-tab ${activeClient === "cursor" ? "active" : ""}`}
-                onClick={() => setActiveClient("cursor")}
-                type="button"
-              >
-                Cursor (.cursor/mcp.json)
-              </button>
-              <button
-                className={`mcp-tab ${activeClient === "claude" ? "active" : ""}`}
-                onClick={() => setActiveClient("claude")}
-                type="button"
-              >
-                Claude Desktop (config.json)
-              </button>
+      <div className="mcp-mode-switcher">
+        <button
+          className={`mcp-mode-btn ${activeTab === "simulate" ? "active" : ""}`}
+          onClick={() => setActiveTab("simulate")}
+          type="button"
+        >
+          <span>⚡ Live AI Agent Simulator</span>
+          <span className="mcp-mode-tag">Interactive</span>
+        </button>
+        <button
+          className={`mcp-mode-btn ${activeTab === "config" ? "active" : ""}`}
+          onClick={() => setActiveTab("config")}
+          type="button"
+        >
+          <span>⚙ Client Config &amp; Tools</span>
+          <span className="mcp-mode-tag">JSON-RPC</span>
+        </button>
+      </div>
+
+      {activeTab === "simulate" ? (
+        <div className="mcp-simulator-card">
+          <div className="mcp-simulator-header">
+            <div className="mcp-sim-header-left">
+              <span className="sim-dot" />
+              <strong>AI Coding Agent Diagnostic Flow</strong>
+              <span className="sim-sub">Cursor Agent ➜ Devpane MCP stdio</span>
             </div>
-            <button className="copy-code-btn" onClick={copySnippet} type="button">
-              {copied ? "Copied ✓" : "Copy JSON"}
+            <button
+              className="sim-run-btn"
+              onClick={handleSimulate}
+              disabled={simulating}
+              type="button"
+            >
+              <span>{simulating ? "Diagnosing…" : "Re-run Agent Diagnosis ↻"}</span>
             </button>
           </div>
-          <pre className="code-block">
-            <code>{cursorSnippet}</code>
-          </pre>
-          <div className="mcp-card-footer">
-            <span>Runs locally over stdio • Zero telemetry • Sub-millisecond latency</span>
+
+          <div className="mcp-chat-stream">
+            {simStep >= 0 && (
+              <div className="sim-bubble sim-user">
+                <span className="sim-avatar">👤</span>
+                <div className="sim-bubble-body">
+                  <div className="sim-author">Developer</div>
+                  <p>Why did the payment worker crash during testing?</p>
+                </div>
+              </div>
+            )}
+
+            {simStep >= 1 && (
+              <div className="sim-bubble sim-agent">
+                <span className="sim-avatar">🤖</span>
+                <div className="sim-bubble-body">
+                  <div className="sim-author">Cursor Agent</div>
+                  <div className="sim-call">
+                    <span className="sim-call-tag">TOOL CALL</span>
+                    <code>devpane_get_logs(service: "worker", filter: "error", limit: 3)</code>
+                  </div>
+                  <div className="sim-response">
+                    <code>
+                      [worker] ConnectionRefusedError: redis://127.0.0.1:6379 failed<br />
+                      [worker] Process exited with status code 1 (EADDRNOTAVAIL)
+                    </code>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {simStep >= 2 && (
+              <div className="sim-bubble sim-agent">
+                <span className="sim-avatar">⚡</span>
+                <div className="sim-bubble-body">
+                  <div className="sim-author">Devpane MCP Daemon</div>
+                  <div className="sim-call">
+                    <span className="sim-call-tag">AUTOMATED RECOVERY</span>
+                    <code>devpane_restart_service(service: "worker")</code>
+                  </div>
+                  <div className="sim-response success">
+                    <code>✓ Service &apos;worker&apos; restarted cleanly • PID 34502 • Health: Active</code>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {simStep >= 3 && (
+              <div className="sim-bubble sim-agent final">
+                <span className="sim-avatar">🤖</span>
+                <div className="sim-bubble-body">
+                  <div className="sim-author">Cursor Agent</div>
+                  <p>
+                    I diagnosed the worker crash. The Redis dependency socket wasn&apos;t ready.
+                    I restarted the worker service via Devpane MCP. All <strong>3 services</strong> are now healthy.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
+      ) : (
+        <div className="mcp-grid">
+          <div className="mcp-card mcp-config-box">
+            <div className="mcp-card-header">
+              <div className="mcp-tabs">
+                <button
+                  className={`mcp-tab ${activeClient === "cursor" ? "active" : ""}`}
+                  onClick={() => setActiveClient("cursor")}
+                  type="button"
+                >
+                  Cursor (.cursor/mcp.json)
+                </button>
+                <button
+                  className={`mcp-tab ${activeClient === "claude" ? "active" : ""}`}
+                  onClick={() => setActiveClient("claude")}
+                  type="button"
+                >
+                  Claude Desktop (config.json)
+                </button>
+              </div>
+              <button className="copy-code-btn" onClick={copySnippet} type="button">
+                {copied ? "Copied ✓" : "Copy JSON"}
+              </button>
+            </div>
+            <pre className="code-block">
+              <code>{cursorSnippet}</code>
+            </pre>
+            <div className="mcp-card-footer">
+              <span>Runs locally over stdio • Zero telemetry • Sub-millisecond latency</span>
+            </div>
+          </div>
 
-        <div className="mcp-card mcp-features-box">
-          <h3>Tools Exposed to Your AI Agent</h3>
-          <ul className="mcp-tool-list">
-            <li>
-              <div className="tool-name">
-                <code>devpane_list_services</code>
-              </div>
-              <p>Reports live process statuses, PIDs, ports, CPU%, and memory to the LLM.</p>
-            </li>
-            <li>
-              <div className="tool-name">
-                <code>devpane_get_logs</code>
-              </div>
-              <p>Fetches recent logs with error filtering so the agent diagnoses crash stacktraces.</p>
-            </li>
-            <li>
-              <div className="tool-name">
-                <code>devpane_restart_service</code>
-              </div>
-              <p>Triggers clean service reloads automatically after code edits are applied.</p>
-            </li>
-            <li>
-              <div className="tool-name">
-                <code>devpane_rebuild_service</code>
-              </div>
-              <p>Triggers clean rebuild-and-restart cycles for compiled backends and services.</p>
-            </li>
-            <li>
-              <div className="tool-name">
-                <code>devpane_sync_environment</code>
-              </div>
-              <p>Ensures <code>.env</code> keys and dependencies match before tests run.</p>
-            </li>
-          </ul>
+          <div className="mcp-card mcp-features-box">
+            <h3>Tools Exposed to Your AI Agent</h3>
+            <ul className="mcp-tool-list">
+              <li>
+                <div className="tool-name">
+                  <code>devpane_list_services</code>
+                </div>
+                <p>Reports live process statuses, PIDs, ports, CPU%, and memory to the LLM.</p>
+              </li>
+              <li>
+                <div className="tool-name">
+                  <code>devpane_get_logs</code>
+                </div>
+                <p>Fetches recent logs with error filtering so the agent diagnoses crash stacktraces.</p>
+              </li>
+              <li>
+                <div className="tool-name">
+                  <code>devpane_restart_service</code>
+                </div>
+                <p>Triggers clean service reloads automatically after code edits are applied.</p>
+              </li>
+              <li>
+                <div className="tool-name">
+                  <code>devpane_rebuild_service</code>
+                </div>
+                <p>Triggers clean rebuild-and-restart cycles for compiled backends and services.</p>
+              </li>
+              <li>
+                <div className="tool-name">
+                  <code>devpane_sync_environment</code>
+                </div>
+                <p>Ensures <code>.env</code> keys and dependencies match before tests run.</p>
+              </li>
+            </ul>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -601,6 +1053,83 @@ function BenchmarkTable() {
         <p>
           Local development shouldn&apos;t require heavyweight VM layers or heavy Node.js runtimes.
         </p>
+      </div>
+
+      {/* Visual Comparison Cards */}
+      <div className="benchmark-bars-grid">
+        <div className="benchmark-bar-card">
+          <div className="bench-card-head">
+            <span className="bench-label">Startup Latency (Lower is Better)</span>
+            <span className="bench-multiplier">800× Faster</span>
+          </div>
+          <div className="bench-rows">
+            <div className="bench-row">
+              <span className="bench-name devpane">Devpane</span>
+              <div className="bench-track">
+                <div className="bench-fill devpane-fill" style={{ width: "2%" }} />
+              </div>
+              <span className="bench-val good">~3 ms</span>
+            </div>
+            <div className="bench-row">
+              <span className="bench-name">Overmind</span>
+              <div className="bench-track">
+                <div className="bench-fill" style={{ width: "12%" }} />
+              </div>
+              <span className="bench-val">~35 ms</span>
+            </div>
+            <div className="bench-row">
+              <span className="bench-name">PM2</span>
+              <div className="bench-track">
+                <div className="bench-fill" style={{ width: "24%" }} />
+              </div>
+              <span className="bench-val">~420 ms</span>
+            </div>
+            <div className="bench-row">
+              <span className="bench-name">Docker Compose</span>
+              <div className="bench-track">
+                <div className="bench-fill docker-fill" style={{ width: "100%" }} />
+              </div>
+              <span className="bench-val slow">~2,400 ms</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="benchmark-bar-card">
+          <div className="bench-card-head">
+            <span className="bench-label">Idle RAM Consumption (Lower is Better)</span>
+            <span className="bench-multiplier">99.4% Lighter</span>
+          </div>
+          <div className="bench-rows">
+            <div className="bench-row">
+              <span className="bench-name devpane">Devpane</span>
+              <div className="bench-track">
+                <div className="bench-fill devpane-fill" style={{ width: "3%" }} />
+              </div>
+              <span className="bench-val good">~11 MB</span>
+            </div>
+            <div className="bench-row">
+              <span className="bench-name">Overmind</span>
+              <div className="bench-track">
+                <div className="bench-fill" style={{ width: "7%" }} />
+              </div>
+              <span className="bench-val">~28 MB</span>
+            </div>
+            <div className="bench-row">
+              <span className="bench-name">PM2</span>
+              <div className="bench-track">
+                <div className="bench-fill" style={{ width: "16%" }} />
+              </div>
+              <span className="bench-val">~68 MB</span>
+            </div>
+            <div className="bench-row">
+              <span className="bench-name">Docker Compose</span>
+              <div className="bench-track">
+                <div className="bench-fill docker-fill" style={{ width: "100%" }} />
+              </div>
+              <span className="bench-val slow">~1,800 MB</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="benchmark-table-wrapper">
@@ -673,6 +1202,167 @@ function BenchmarkTable() {
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+type StackTemplate = {
+  id: string;
+  name: string;
+  badge: string;
+  desc: string;
+  ports: string;
+  yaml: string;
+};
+
+const STACK_TEMPLATES: StackTemplate[] = [
+  {
+    id: "fullstack",
+    name: "Fullstack Web & API",
+    badge: "Next.js / Rust / Postgres",
+    desc: "React/Vite frontend, hyper-fast Rust API backend, and managed PostgreSQL with automatic readiness dependency wait.",
+    ports: ":5173 ➜ :8080 ➜ :5432",
+    yaml: `# devpane.yaml — Fullstack Stack
+name: fullstack-app
+version: "1"
+
+services:
+  api:
+    command: cargo run
+    working_dir: ./backend
+    ports: [8080]
+    env_file: .env
+
+  web:
+    command: bun run dev
+    working_dir: ./frontend
+    ports: [5173]
+    depends_on: [api]
+    env_file: .env
+
+  db:
+    command: devpane-service postgres:16
+    ports: [5432]
+`,
+  },
+  {
+    id: "ai",
+    name: "AI Agent & Local LLM",
+    badge: "FastAPI / Ollama / Qdrant",
+    desc: "Autonomous coding agent workflow with local embedding vector database, local LLM inference, and FastAPI server.",
+    ports: ":8000 ➜ :6333 ➜ :11434",
+    yaml: `# devpane.yaml — AI Agent Stack
+name: ai-agent-stack
+version: "1"
+
+services:
+  agent-api:
+    command: python -m uvicorn server:app --port 8000
+    working_dir: ./agent
+    ports: [8000]
+    env_file: .env
+
+  vector-db:
+    command: qdrant --config-path ./qdrant.yaml
+    ports: [6333]
+
+  local-llm:
+    command: ollama serve
+    ports: [11434]
+    depends_on: [vector-db]
+`,
+  },
+  {
+    id: "microservices",
+    name: "Microservices & Celery",
+    badge: "Go / Node / Python / Redis",
+    desc: "Multi-language microservices architecture with background Celery queue workers and shared Redis broker.",
+    ports: ":3000 ➜ :4001 ➜ :4002 ➜ :6379",
+    yaml: `# devpane.yaml — Microservices Stack
+name: microservices-stack
+version: "1"
+
+services:
+  gateway:
+    command: go run ./cmd/gateway
+    ports: [3000]
+    depends_on: [auth, billing]
+
+  auth:
+    command: bun run start:auth
+    ports: [4001]
+
+  billing:
+    command: python -m billing_service
+    ports: [4002]
+
+  worker:
+    command: python -m celery -A tasks worker -l INFO
+    depends_on: [billing]
+`,
+  },
+];
+
+function StackConfigSection() {
+  const [selectedId, setSelectedId] = useState<string>("fullstack");
+  const [copied, setCopied] = useState<boolean>(false);
+  const activeTemplate =
+    STACK_TEMPLATES.find((t) => t.id === selectedId) || STACK_TEMPLATES[0];
+
+  const handleCopy = () => {
+    void navigator.clipboard.writeText(activeTemplate.yaml);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="stack-config-section" id="config">
+      <div className="section-head">
+        <div className="tech-badge">DECLARATIVE CONFIGURATION</div>
+        <h2>One clean file replaces 200 lines of Docker.</h2>
+        <p>
+          Define your local dependencies in a human-readable <code>devpane.yaml</code>.
+          Automatic port clearing, environment sync, and ordered dependency boots.
+        </p>
+      </div>
+
+      <div className="stack-config-card">
+        <div className="stack-tabs-bar">
+          <div className="stack-tabs">
+            {STACK_TEMPLATES.map((tmpl) => (
+              <button
+                key={tmpl.id}
+                className={`stack-tab ${tmpl.id === selectedId ? "active" : ""}`}
+                onClick={() => setSelectedId(tmpl.id)}
+                type="button"
+              >
+                <span className="stack-tab-title">{tmpl.name}</span>
+                <span className="stack-tab-badge">{tmpl.badge}</span>
+              </button>
+            ))}
+          </div>
+
+          <button className="stack-copy-btn" onClick={handleCopy} type="button">
+            {copied ? "Copied ✓" : "Copy devpane.yaml"}
+          </button>
+        </div>
+
+        <div className="stack-editor-body">
+          <div className="stack-editor-meta">
+            <span className="stack-file-tag">📄 devpane.yaml</span>
+            <span className="stack-flow-ports">{activeTemplate.ports}</span>
+          </div>
+          <pre className="stack-code-block">
+            <code>{activeTemplate.yaml}</code>
+          </pre>
+          <div className="stack-editor-footer">
+            <span>✓ {activeTemplate.desc}</span>
+            <span className="stack-run-hint">
+              Run with: <code>devpane up</code>
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1015,6 +1705,7 @@ function App() {
           <nav className="nav-links">
             <a href="#demo">Workspace</a>
             <a href="#benchmarks">Benchmarks</a>
+            <a href="#config">Stacks</a>
             <a href="#mcp">AI MCP Server</a>
             <a href="#features">Features</a>
             <a href="#install">Install</a>
@@ -1086,12 +1777,15 @@ function App() {
           </div>
 
           <div className="hero-terminal-wrapper" id="demo">
-            <HeroTerminal />
+            <HeroPreview />
           </div>
         </section>
 
         {/* BENCHMARKS */}
         <BenchmarkTable />
+
+        {/* STACK CONFIGURATION EXPLORER */}
+        <StackConfigSection />
 
         {/* AI MCP SECTION */}
         <MCPConfigSection />
