@@ -17,6 +17,7 @@ type LogSegment = {
 type ServiceTab = {
   id: string;
   name: string;
+  icon?: string;
   port?: number;
   lines: LogSegment[];
 };
@@ -25,11 +26,12 @@ const DEMO_SERVICES: ServiceTab[] = [
   {
     id: "backend",
     name: "backend",
+    icon: "⬡",
     port: 8080,
     lines: [
       {
         badge: { text: "devpane:daemon", type: "daemon" },
-        text: "Supervised 'backend' (PID 58120) • 0.8% CPU • 32.4 MB",
+        text: "Supervised 'backend' (PID 58120) • 0.8% CPU • 32.4 MB • Zero-orphan active",
       },
       {
         text: "   Compiling devpane-server v0.4.0 (/Workspace/devpane)",
@@ -73,6 +75,7 @@ const DEMO_SERVICES: ServiceTab[] = [
   {
     id: "frontend",
     name: "frontend",
+    icon: "🌐",
     port: 5173,
     lines: [
       {
@@ -108,6 +111,7 @@ const DEMO_SERVICES: ServiceTab[] = [
   {
     id: "worker",
     name: "worker",
+    icon: "⚙",
     lines: [
       {
         badge: { text: "devpane:daemon", type: "daemon" },
@@ -142,6 +146,7 @@ const DEMO_SERVICES: ServiceTab[] = [
   {
     id: "shell",
     name: "shell (pty)",
+    icon: "🐚",
     lines: [
       {
         text: "devpane-workspace % ",
@@ -149,15 +154,28 @@ const DEMO_SERVICES: ServiceTab[] = [
         highlightType: "indigo",
       },
       {
-        text: "  ● backend   PID 58120   RUNNING   :8080    32.4 MB",
+        text: "  ⬡ backend   PID 58120   RUNNING   :8080    32.4 MB",
         highlightType: "green",
       },
       {
-        text: "  ● frontend  PID 58124   RUNNING   :5173    49.2 MB",
+        text: "  🌐 frontend  PID 58124   RUNNING   :5173    49.2 MB",
         highlightType: "green",
       },
       {
-        text: "  ● worker    PID 58130   RUNNING            26.1 MB",
+        text: "  ⚙ worker    PID 58130   RUNNING            26.1 MB",
+        highlightType: "green",
+      },
+      {
+        text: "devpane-workspace % ",
+        highlight: "devpane sync",
+        highlightType: "indigo",
+      },
+      {
+        text: "  ✓ .env verified against .env.example (0 missing keys)",
+        highlightType: "green",
+      },
+      {
+        text: "  ✓ Configuration hash synchronized in devpane.lock",
         highlightType: "green",
       },
       {
@@ -170,7 +188,7 @@ const DEMO_SERVICES: ServiceTab[] = [
         highlightType: "indigo",
       },
       {
-        text: "  ✓ IPC daemon socket connected",
+        text: "  ✓ Zero-zombie supervisor socket active",
         highlightType: "green",
       },
       {
@@ -204,6 +222,7 @@ function HeroTerminal() {
               type="button"
             >
               <span className="tab-indicator" />
+              {svc.icon && <span className="tab-icon">{svc.icon}</span>}
               <span className="tab-title">{svc.name}</span>
               {svc.port && <span className="tab-port-pill">:{svc.port}</span>}
             </button>
@@ -241,12 +260,15 @@ function HeroTerminal() {
         <div className="statusbar-shortcuts">
           <span><kbd>Tab</kbd> Switch</span>
           <span><kbd>Ctrl+T</kbd> Shell</span>
+          <span><kbd>m</kbd> Min/Max</span>
           <span><kbd>r</kbd> Restart</span>
           <span><kbd>/</kbd> Search</span>
           <span><kbd>q</kbd> Quit</span>
         </div>
         <div className="statusbar-meta">
           <span className="meta-green">● 3 running</span>
+          <span className="meta-sep">/</span>
+          <span className="meta-muted">0 exited</span>
           <span className="meta-sep">/</span>
           <span className="meta-muted">devpane v0.4.0</span>
         </div>
@@ -339,6 +361,12 @@ function MCPConfigSection() {
             </li>
             <li>
               <div className="tool-name">
+                <code>devpane_rebuild_service</code>
+              </div>
+              <p>Triggers clean rebuild-and-restart cycles for compiled backends and services.</p>
+            </li>
+            <li>
+              <div className="tool-name">
                 <code>devpane_sync_environment</code>
               </div>
               <p>Ensures <code>.env</code> keys and dependencies match before tests run.</p>
@@ -402,6 +430,13 @@ function BenchmarkTable() {
               <td>Manual</td>
             </tr>
             <tr>
+              <td><strong>Zero-Zombie Reaping &amp; Tree Teardown</strong></td>
+              <td className="highlight-col"><span className="metric-good">Automatic (waitpid)</span></td>
+              <td>Docker Daemon</td>
+              <td>Leaves defunct zombies</td>
+              <td>Manual signal trapping</td>
+            </tr>
+            <tr>
               <td><strong>Built-in AI MCP Server</strong></td>
               <td className="highlight-col"><span className="metric-good">Built-in (devpane mcp)</span></td>
               <td>No</td>
@@ -433,9 +468,15 @@ function FeaturesGrid() {
   const pillars = [
     {
       badge: "TERMINAL WORKSPACE",
-      kbd: "Ctrl+T",
+      kbd: "Ctrl+T / m",
       title: "Interactive VT100 Panes & Shells",
-      desc: "Tmux-inspired ergonomics with zero configuration. Smooth scrollback, instant tab switching, search filtering, and interactive PTY shell sessions.",
+      desc: "Tmux-inspired ergonomics with zero configuration. Instant tab switching, collapsible sidebar with minimize/maximize (m/M), and interactive PTY shell sessions.",
+    },
+    {
+      badge: "ZERO-ZOMBIE SUPERVISOR",
+      kbd: "waitpid",
+      title: "Zero-Orphan Process Supervisor",
+      desc: "No more <defunct> zombie processes in ps. Devpane intercepts child exits, reaps zombies with non-blocking waitpid, and isolates process groups cleanly.",
     },
     {
       badge: "PORT CONFLICT RESOLVER",
@@ -450,22 +491,28 @@ function FeaturesGrid() {
       desc: "Built-in JSON-RPC MCP server. Cursor, Claude Desktop, and Windsurf can read logs, check health, and restart services without human intervention.",
     },
     {
-      badge: "ORCHESTRATION & HEALTH",
-      kbd: "depends_on",
-      title: "Dependency Chains & Health Checks",
-      desc: "Define dependency graphs in devpane.yaml. Dependent services wait for TCP port or HTTP endpoint readiness before launching.",
-    },
-    {
       badge: "TEAM ENVIRONMENT SYNC",
       kbd: "devpane sync",
       title: "Automatic .env & Dependency Sync",
       desc: "Compares .env with .env.example, flags missing keys, auto-installs missing dependencies, and hashes configurations into devpane.lock.",
     },
     {
+      badge: "VIRTUALIZED LOG ENGINE",
+      kbd: "sub-ms",
+      title: "High-Performance Log Viewer",
+      desc: "Stream tens of thousands of lines without lag. Viewport-windowed slice rendering and fast-path file checks maintain a buttery 60 FPS.",
+    },
+    {
+      badge: "ORCHESTRATION & HEALTH",
+      kbd: "depends_on",
+      title: "Dependency Chains & Health Checks",
+      desc: "Define dependency graphs in devpane.yaml. Dependent services wait for TCP port or HTTP endpoint readiness before launching.",
+    },
+    {
       badge: "STANDALONE GUI",
       kbd: "Tauri v2",
       title: "Zero-Click Standalone Desktop",
-      desc: "Prefer a graphical UI? Run the native Tauri desktop app with an embedded supervisor. Real-time CPU%, RAM metrics, and live log tailing.",
+      desc: "Prefer a graphical UI? Run the native Tauri desktop app with an embedded supervisor. Real-time CPU%, RAM metrics, service badges, and live log tailing.",
     },
   ];
 

@@ -82,6 +82,7 @@ export function SessionsPage() {
 
       <SessionStats
         count={sessions.length}
+        runningCount={sessions.filter((s) => s.status === "running").length}
         loading={loading}
         connected={!error}
         lastUpdated={lastUpdated}
@@ -150,7 +151,7 @@ export function SessionsPage() {
 
       <footer className="page-footer">
         <span>
-          Devpane Desktop <span className="footer-version">v0.1.0</span>
+          Devpane Desktop <span className="footer-version">v0.4.0</span>
         </span>
         <span>
           <span className="footer-status-dot" /> Local-first process management

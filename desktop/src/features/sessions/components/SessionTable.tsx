@@ -30,6 +30,76 @@ function formatCpu(cpu: number | null | undefined): string {
   return `${cpu.toFixed(1)}%`;
 }
 
+function getServiceType(name: string): {
+  icon: "globe" | "settings" | "hexagon" | "terminal";
+  type: string;
+  color: string;
+  bg: string;
+} {
+  const lower = name.toLowerCase();
+  if (lower.includes("web") || lower.includes("front") || lower.includes("ui")) {
+    return {
+      icon: "globe",
+      type: "Frontend",
+      color: "#8b9cff",
+      bg: "rgba(139, 156, 255, 0.12)",
+    };
+  }
+  if (
+    lower.includes("worker") ||
+    lower.includes("job") ||
+    lower.includes("queue") ||
+    lower.includes("cron")
+  ) {
+    return {
+      icon: "settings",
+      type: "Worker",
+      color: "#f0bf69",
+      bg: "rgba(240, 191, 105, 0.12)",
+    };
+  }
+  if (
+    lower.includes("api") ||
+    lower.includes("server") ||
+    lower.includes("backend")
+  ) {
+    return {
+      icon: "hexagon",
+      type: "API",
+      color: "#a78bfa",
+      bg: "rgba(167, 139, 250, 0.12)",
+    };
+  }
+  return {
+    icon: "terminal",
+    type: "Service",
+    color: "#55d6a2",
+    bg: "rgba(85, 214, 162, 0.12)",
+  };
+}
+
+function detectServicePort(command: string): number | null {
+  const urls = extractLocalhostUrls(command);
+  for (const url of urls) {
+    const match = url.match(/:(\d+)/);
+    if (match) {
+      const p = parseInt(match[1], 10);
+      if (p > 0 && p < 65536) return p;
+    }
+  }
+  const portMatch = command.match(
+    /(?:--port[=\s]+|-p\s+|PORT=(\d+)|\b(?:localhost|127\.0\.0\.1):)(\d+)/i,
+  );
+  if (portMatch) {
+    const val = portMatch[1] || portMatch[2];
+    if (val) {
+      const p = parseInt(val, 10);
+      if (p > 0 && p < 65536) return p;
+    }
+  }
+  return null;
+}
+
 export function SessionTable({
   sessions,
   onStop,
@@ -261,128 +331,167 @@ export function SessionTable({
                 </tr>
               </thead>
               <tbody>
-                {group.sessions.map((session) => (
-                  <tr key={session.id}>
-                    <td>
-                      <div className="process-cell">
-                        <div className="process-icon">
-                          <Icon name="terminal" size={17} />
+                {group.sessions.map((session) => {
+                  const svcType = getServiceType(session.name || "");
+                  const port = detectServicePort(session.command);
+                  const detectedUrls = extractLocalhostUrls(session.command);
+                  const primaryUrl =
+                    detectedUrls[0] || (port ? `http://localhost:${port}` : null);
+
+                  return (
+                    <tr key={session.id}>
+                      <td>
+                        <div className="process-cell">
+                          <div
+                            className="process-icon"
+                            style={{
+                              color: svcType.color,
+                              borderColor: `${svcType.color}33`,
+                              background: svcType.bg,
+                            }}
+                            title={`${svcType.type} service`}
+                          >
+                            <Icon name={svcType.icon} size={16} />
+                          </div>
+                          <div className="process-copy">
+                            <div className="process-name-wrap">
+                              <strong>{session.name || "Unnamed process"}</strong>
+                              {port && (
+                                <button
+                                  className="service-port-badge"
+                                  onClick={() =>
+                                    void openInBrowser(
+                                      primaryUrl || `http://localhost:${port}`,
+                                    )
+                                  }
+                                  title={`Open http://localhost:${port} in browser`}
+                                  type="button"
+                                >
+                                  :{port}
+                                </button>
+                              )}
+                            </div>
+                            <span title={session.id}>
+                              PID {session.pid} · {session.id.slice(0, 8)}…
+                            </span>
+                          </div>
                         </div>
-                        <div className="process-copy">
-                          <strong>{session.name || "Unnamed process"}</strong>
-                          <span title={session.id}>
-                            {session.id.slice(0, 8)}…
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <code className="command-cell" title={session.command}>
-                        {session.command}
-                      </code>
-                    </td>
-                    <td>
-                      <span className="pid-cell">{session.pid}</span>
-                    </td>
-                    <td>
-                      <span className="resource-cell">
-                        {session.status === "running" ? formatCpu(session.cpu_percent) : "-"}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="resource-cell">
-                        {session.status === "running" ? formatMemory(session.memory_bytes) : "-"}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="started-cell">
-                        <Icon name="clock" size={14} />
-                        {formatStarted(session)}
-                      </span>
-                    </td>
-                    <td>
-                      <ProcessStatusBadge session={session} />
-                    </td>
-                    <td>
-                      <div className="row-actions">
-                        {extractLocalhostUrls(session.command).length > 0 && (
+                      </td>
+                      <td>
+                        <code className="command-cell" title={session.command}>
+                          {session.command}
+                        </code>
+                      </td>
+                      <td>
+                        <span className="pid-cell">#{session.pid}</span>
+                      </td>
+                      <td>
+                        <span className="resource-cell resource-cpu">
+                          {session.status === "running"
+                            ? formatCpu(session.cpu_percent)
+                            : "-"}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="resource-cell resource-mem">
+                          {session.status === "running"
+                            ? formatMemory(session.memory_bytes)
+                            : "-"}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="started-cell">
+                          <Icon name="clock" size={14} />
+                          {formatStarted(session)}
+                        </span>
+                      </td>
+                      <td>
+                        <ProcessStatusBadge session={session} />
+                      </td>
+                      <td>
+                        <div className="row-actions">
+                          {primaryUrl && session.status === "running" && (
+                            <button
+                              className="row-action row-action-url"
+                              aria-label={`Open ${primaryUrl} in browser`}
+                              onClick={() => void openInBrowser(primaryUrl)}
+                              title={`Open ${primaryUrl} in browser`}
+                            >
+                              <Icon name="external" size={15} />
+                            </button>
+                          )}
                           <button
                             className="row-action"
-                            aria-label={`Open ${extractLocalhostUrls(session.command)[0]} in browser`}
+                            aria-label={`View logs for ${session.name}`}
+                            onClick={() => onViewLogs(session)}
+                            title="View logs"
+                          >
+                            <Icon name="terminal" size={15} />
+                          </button>
+                          <button
+                            className="row-action"
+                            aria-label={`Copy session ID for ${session.name}`}
                             onClick={() =>
-                              void openInBrowser(
-                                extractLocalhostUrls(session.command)[0]
-                              )
+                              void navigator.clipboard?.writeText(session.id)
                             }
-                            title={`Open ${extractLocalhostUrls(session.command)[0]} in browser`}
-                            style={{ color: "#38ef7d" }}
+                            title="Copy session ID"
                           >
-                            <Icon name="globe" size={16} />
+                            <Icon name="copy" size={15} />
                           </button>
-                        )}
-                        <button
-                          className="row-action"
-                          aria-label={`View logs for ${session.name}`}
-                          onClick={() => onViewLogs(session)}
-                          title="View logs"
-                        >
-                          <Icon name="terminal" size={16} />
-                        </button>
-                        <button
-                          className="row-action"
-                          aria-label={`Copy session ID for ${session.name}`}
-                          onClick={() =>
-                            void navigator.clipboard?.writeText(session.id)
-                          }
-                          title="Copy session ID"
-                        >
-                          <Icon name="copy" size={16} />
-                        </button>
-                        {onRestart && (
-                          <button
-                            className="row-action"
-                            onClick={() => void handleRestart(session.id)}
-                            title="Restart service"
-                            aria-label={`Restart ${session.name}`}
-                            disabled={restartingId === session.id}
-                          >
-                            <Icon
-                              name="refresh"
-                              size={15}
-                              className={restartingId === session.id ? "refresh-spinning" : ""}
-                            />
-                          </button>
-                        )}
-                        {onRebuild && session.name && (
-                          <button
-                            className="row-action"
-                            onClick={() => void handleRebuild(session.name!)}
-                            title="Rebuild and restart service"
-                            aria-label={`Rebuild ${session.name}`}
-                            disabled={rebuildingName === session.name}
-                          >
-                            <Icon
-                              name="wrench"
-                              size={15}
-                              className={rebuildingName === session.name ? "refresh-spinning" : ""}
-                            />
-                          </button>
-                        )}
-                        {session.status === "running" && (
-                          <button
-                            className="row-action"
-                            onClick={() => void handleStop(session.id)}
-                            title="Stop session"
-                            aria-label={`Stop ${session.name}`}
-                            disabled={stoppingId === session.id}
-                          >
-                            <Icon name="square" size={16} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          {onRestart && (
+                            <button
+                              className="row-action"
+                              onClick={() => void handleRestart(session.id)}
+                              title="Restart service"
+                              aria-label={`Restart ${session.name}`}
+                              disabled={restartingId === session.id}
+                            >
+                              <Icon
+                                name="refresh"
+                                size={14}
+                                className={
+                                  restartingId === session.id
+                                    ? "refresh-spinning"
+                                    : ""
+                                }
+                              />
+                            </button>
+                          )}
+                          {onRebuild && session.name && (
+                            <button
+                              className="row-action"
+                              onClick={() => void handleRebuild(session.name!)}
+                              title="Rebuild and restart service"
+                              aria-label={`Rebuild ${session.name}`}
+                              disabled={rebuildingName === session.name}
+                            >
+                              <Icon
+                                name="wrench"
+                                size={14}
+                                className={
+                                  rebuildingName === session.name
+                                    ? "refresh-spinning"
+                                    : ""
+                                }
+                              />
+                            </button>
+                          )}
+                          {session.status === "running" && (
+                            <button
+                              className="row-action row-action-danger"
+                              onClick={() => void handleStop(session.id)}
+                              title="Stop session"
+                              aria-label={`Stop ${session.name}`}
+                              disabled={stoppingId === session.id}
+                            >
+                              <Icon name="square" size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -396,10 +505,14 @@ export function SessionTable({
       <div className="table-footer">
         <span>
           Showing <strong>{sessions.length}</strong> session
-          {sessions.length === 1 ? "" : "s"}
+          {sessions.length === 1 ? "" : "s"} (
+          <strong style={{ color: "var(--green)" }}>
+            {sessions.filter((s) => s.status === "running").length} running
+          </strong>{" "}
+          · {sessions.filter((s) => s.status !== "running").length} exited)
         </span>
         <span className="live-indicator">
-          <span /> Synced on refresh
+          <span /> Supervised
         </span>
       </div>
     </div>

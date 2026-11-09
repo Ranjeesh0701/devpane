@@ -421,6 +421,12 @@
   background-color: #55d6a2;
 }
 
+.tab-icon {
+  font-size: 12px;
+  line-height: 1;
+  opacity: 0.95;
+}
+
 .tab-title {
   display: inline-block;
 }

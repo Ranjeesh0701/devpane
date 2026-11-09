@@ -3,6 +3,7 @@ import { StatusDot } from "../../../components/ui/StatusDot";
 
 type Props = {
   count: number;
+  runningCount?: number;
   loading: boolean;
   connected: boolean;
   lastUpdated: Date | null;
@@ -10,6 +11,7 @@ type Props = {
 
 export function SessionStats({
   count,
+  runningCount,
   loading,
   connected,
   lastUpdated,
@@ -28,7 +30,11 @@ export function SessionStats({
         </div>
         <div className="stat-value">{loading ? "-" : count}</div>
         <div className="stat-foot">
-          <span className="stat-foot-muted">Persisted sessions</span>
+          <span className="stat-foot-muted">
+            {runningCount !== undefined
+              ? `${runningCount} running · ${Math.max(0, count - runningCount)} exited`
+              : "Persisted sessions"}
+          </span>
         </div>
       </article>
       <article className="stat-card">

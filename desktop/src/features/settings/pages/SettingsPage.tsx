@@ -116,7 +116,7 @@ export function SettingsPage({ theme, onThemeChange }: Props) {
             <span>
               {cliStatus?.installed
                 ? `Detected at ${cliStatus.path}`
-                : "Install via Homebrew: brew install Ranjeesh0701/devpane/devpane, or Cargo: cargo install devpane"}
+                : "Install via Homebrew: brew install Ranjeesh0701/tap/devpane, or Cargo: cargo install devpane"}
             </span>
           </div>
           <span className="settings-tag">
@@ -139,7 +139,7 @@ export function SettingsPage({ theme, onThemeChange }: Props) {
             <strong>Devpane Desktop</strong>
             <span>Local process and workspace management for developers.</span>
           </div>
-          <span className="settings-tag">v0.3.1</span>
+          <span className="settings-tag">v0.4.0</span>
         </div>
 
         <div className="settings-row">
