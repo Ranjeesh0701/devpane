@@ -1,5 +1,5 @@
 use std::env;
-use std::io::{self, BufRead, Write};
+use std::io::{self, BufRead, IsTerminal, Write};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -85,6 +85,11 @@ fn get_sessions() -> Result<Vec<crate::process::session::ProcessSession>, String
 pub fn run_mcp_server() -> io::Result<()> {
     let stdin = io::stdin();
     let mut stdout = io::stdout();
+
+    if stdin.is_terminal() {
+        eprintln!("[devpane] Devpane MCP server running (stdio transport).");
+        eprintln!("[devpane] Listening for JSON-RPC messages on stdin (press Ctrl+C to quit)...");
+    }
 
     for line_res in stdin.lock().lines() {
         let line = match line_res {

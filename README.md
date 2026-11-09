@@ -72,6 +72,13 @@ Download the latest release for your platform from [GitHub Releases](https://git
   - macOS: `.dmg` installer
   - Windows: `.msi` / `.exe` installer
 
+> [!NOTE]
+> **macOS Note for `.dmg` releases**:
+> Because the desktop app is currently unsigned/non-notarized with an Apple Developer certificate, macOS Gatekeeper may flag it as *"damaged and can't be opened"*. If this happens, drag `devpane.app` to `/Applications` and run:
+> ```bash
+> xattr -cr /Applications/devpane.app && codesign --force --deep --sign - /Applications/devpane.app
+> ```
+
 Extract the CLI bundle and move the binaries to any folder in your `PATH` (e.g. `/usr/local/bin` or `C:\Windows\System32`).
 
 ---
