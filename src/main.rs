@@ -39,17 +39,33 @@ fn run() -> Result<u8, DevpaneError> {
     if action == "--help" || action == "-h" {
         println!("Usage: devpane <command> [arguments...]");
         println!("Commands:");
-        println!("  init [--force] [--compose]        - Auto-detect project stack & generate devpane.yaml.");
-        println!("  sync [--no-deps]                  - Sync team environment (.env, dependencies, lockfile).");
-        println!("  up [--profile <name>] [--sync]    - Start enabled services (optionally by profile, sync first).");
+        println!(
+            "  init [--force] [--compose]        - Auto-detect project stack & generate devpane.yaml."
+        );
+        println!(
+            "  sync [--no-deps]                  - Sync team environment (.env, dependencies, lockfile)."
+        );
+        println!(
+            "  up [--profile <name>] [--sync]    - Start enabled services (optionally by profile, sync first)."
+        );
         println!("  down                              - Stop all running project services.");
-        println!("  restart [service]                 - Restart all project services or a specific service.");
+        println!(
+            "  restart [service]                 - Restart all project services or a specific service."
+        );
         println!("  rebuild <service>                 - Clean rebuild and restart a service.");
         println!("  start <name> <program> [args...] - Start a process.");
         println!("  list                              - List active sessions.");
         println!("  stop <session_id>                 - Stop a process.");
         println!("  logs <session_id>                 - Show logs for a session.");
         println!("  shutdown                          - Shutdown the daemon.");
+        println!(
+            "  mcp                               - Launch MCP (Model Context Protocol) server for AI coding agents."
+        );
+        return Ok(0);
+    }
+
+    if action == "mcp" {
+        devpane::mcp::run_mcp_server().map_err(DevpaneError::FileOperation)?;
         return Ok(0);
     }
 
@@ -61,7 +77,11 @@ fn run() -> Result<u8, DevpaneError> {
         match devpane::config::init_config_with_opts(&cwd, force, compose) {
             Ok((path, services)) => {
                 let filename = path.file_name().unwrap_or_default().to_string_lossy();
-                println!("✨ Created {} with {} service(s):\n", filename, services.len());
+                println!(
+                    "✨ Created {} with {} service(s):\n",
+                    filename,
+                    services.len()
+                );
                 for (name, cmd) in services {
                     println!("  • {:<14} -> {}", name, cmd);
                 }
@@ -82,13 +102,19 @@ fn run() -> Result<u8, DevpaneError> {
         let no_deps = args_vec.iter().any(|arg| arg == "--no-deps");
         let cwd = env::current_dir().map_err(DevpaneError::FileOperation)?;
 
-        println!("🔄 Synchronizing team environment in {}...\n", cwd.display());
+        println!(
+            "🔄 Synchronizing team environment in {}...\n",
+            cwd.display()
+        );
         match devpane::sync::sync_project(&cwd, !no_deps) {
             Ok(report) => {
                 if report.env_created {
                     println!("  ✓ Created .env from .env.example");
                 } else if !report.added_env_keys.is_empty() {
-                    println!("  ✓ Synced {} missing key(s) from .env.example to .env:", report.added_env_keys.len());
+                    println!(
+                        "  ✓ Synced {} missing key(s) from .env.example to .env:",
+                        report.added_env_keys.len()
+                    );
                     for k in &report.added_env_keys {
                         println!("    • {}", k);
                     }
@@ -97,7 +123,10 @@ fn run() -> Result<u8, DevpaneError> {
                 }
 
                 if !report.dependencies_installed.is_empty() {
-                    println!("\n  ✓ Installed dependencies for {} service(s):", report.dependencies_installed.len());
+                    println!(
+                        "\n  ✓ Installed dependencies for {} service(s):",
+                        report.dependencies_installed.len()
+                    );
                     for dep in &report.dependencies_installed {
                         println!("    • {}", dep);
                     }
@@ -116,7 +145,9 @@ fn run() -> Result<u8, DevpaneError> {
                     }
                 }
 
-                println!("\n✨ Team environment is fully synchronized! Run 'devpane up' to start.\n");
+                println!(
+                    "\n✨ Team environment is fully synchronized! Run 'devpane up' to start.\n"
+                );
                 return Ok(0);
             }
             Err(e) => {
@@ -213,7 +244,8 @@ fn run() -> Result<u8, DevpaneError> {
                         profile = args.next();
                         if profile.is_none() {
                             return Err(DevpaneError::InvalidArguments(
-                                "Missing profile name. Usage: up [--profile <name>] [--sync]".to_string(),
+                                "Missing profile name. Usage: up [--profile <name>] [--sync]"
+                                    .to_string(),
                             ));
                         }
                     }
@@ -250,7 +282,10 @@ fn run() -> Result<u8, DevpaneError> {
                             println!("  ✓ Created .env from .env.example");
                         }
                         if !rep.added_env_keys.is_empty() {
-                            println!("  ✓ Added {} missing key(s) to .env", rep.added_env_keys.len());
+                            println!(
+                                "  ✓ Added {} missing key(s) to .env",
+                                rep.added_env_keys.len()
+                            );
                         }
                         if rep.lockfile_updated {
                             println!("  ✓ Updated devpane.lock");
@@ -263,16 +298,23 @@ fn run() -> Result<u8, DevpaneError> {
             } else {
                 let status = devpane::sync::check_sync_status(&project_dir);
                 if !status.missing_env_keys.is_empty() {
-                    eprintln!("💡 Tip: {} variable(s) in .env.example are missing from .env. Run 'devpane sync' to update.\n", status.missing_env_keys.len());
+                    eprintln!(
+                        "💡 Tip: {} variable(s) in .env.example are missing from .env. Run 'devpane sync' to update.\n",
+                        status.missing_env_keys.len()
+                    );
                 } else if !status.lockfile_in_sync && status.lockfile_exists {
-                    eprintln!("💡 Tip: devpane.yaml has changed since last sync. Run 'devpane sync' to update team lockfile.\n");
+                    eprintln!(
+                        "💡 Tip: devpane.yaml has changed since last sync. Run 'devpane sync' to update team lockfile.\n"
+                    );
                 }
             }
 
             let target_services = config.services_for_profile(profile.as_deref());
             if target_services.is_empty() {
                 if let Some(ref p) = profile {
-                    eprintln!("No enabled services matched profile '{p}'. Check your devpane.yaml profiles.");
+                    eprintln!(
+                        "No enabled services matched profile '{p}'. Check your devpane.yaml profiles."
+                    );
                 } else {
                     eprintln!("No enabled services found in devpane.yaml.");
                 }
@@ -568,7 +610,10 @@ fn run() -> Result<u8, DevpaneError> {
                     println!("✓ Created .env from .env.example");
                 }
                 if !report.added_env_keys.is_empty() {
-                    println!("✓ Added {} missing key(s) to .env", report.added_env_keys.len());
+                    println!(
+                        "✓ Added {} missing key(s) to .env",
+                        report.added_env_keys.len()
+                    );
                 }
                 if report.lockfile_updated {
                     println!("✓ Updated devpane.lock");
@@ -607,12 +652,10 @@ fn connect_or_start(retries: u32, delay_ms: u64) -> Result<Connection, DevpaneEr
             let daemon_path = get_daemon_path().map_err(DevpaneError::FileOperation)?;
 
             if !daemon_path.exists() {
-                return Err(DevpaneError::InvalidArguments(
-                    format!(
-                        "Daemon binary not found at: {}\n\nTry:\n  1. Build the project: cargo build\n  2. Ensure the daemon binary is in the same directory as devpane",
-                        daemon_path.display()
-                    )
-                ));
+                return Err(DevpaneError::InvalidArguments(format!(
+                    "Daemon binary not found at: {}\n\nTry:\n  1. Build the project: cargo build\n  2. Ensure the daemon binary is in the same directory as devpane",
+                    daemon_path.display()
+                )));
             }
 
             Command::new(&daemon_path)

@@ -17,13 +17,21 @@ export function LogViewer({ session, onClose }: Props) {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [copied, setCopied] = useState(false);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterOnly, setFilterOnly] = useState(false);
   const outputRef = useRef<HTMLPreElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const { displayLogs, matchCount } = useMemo(() => {
     if (!logs) return { displayLogs: "", matchCount: 0 };
-    const query = search.trim().toLowerCase();
+    const query = debouncedSearch.trim().toLowerCase();
     if (!query) return { displayLogs: logs, matchCount: 0 };
 
     let count = 0;
@@ -43,11 +51,16 @@ export function LogViewer({ session, onClose }: Props) {
     }
 
     return { displayLogs: logs, matchCount: count };
-  }, [logs, search, filterOnly]);
+  }, [logs, debouncedSearch, filterOnly]);
 
   const renderedContent = useMemo(() => {
-    const query = search.trim();
+    const query = debouncedSearch.trim();
     if (!query || !displayLogs) return displayLogs;
+
+    // Safety guard: if logs or match count is too large, avoid blowing up the DOM
+    if (displayLogs.length > 250_000 && matchCount > 500) {
+      return displayLogs;
+    }
 
     const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const regex = new RegExp(`(${escaped})`, "gi");
@@ -62,7 +75,7 @@ export function LogViewer({ session, onClose }: Props) {
         part
       ),
     );
-  }, [displayLogs, search]);
+  }, [displayLogs, debouncedSearch, matchCount]);
 
   const detectedUrls = useMemo(() => {
     return extractLocalhostUrls(`${logs} ${session.command}`);
@@ -76,7 +89,7 @@ export function LogViewer({ session, onClose }: Props) {
       }
       try {
         const result = await api.getSessionLogs(session.id);
-        setLogs(result);
+        setLogs((prev) => (prev === result ? prev : result));
         setError(null);
       } catch (cause) {
         setError(cause instanceof Error ? cause.message : String(cause));
@@ -94,18 +107,31 @@ export function LogViewer({ session, onClose }: Props) {
     document.body.style.overflow = "hidden";
     void loadLogs(false);
 
-    // Auto-refresh logs silently every 1.5 seconds while open
-    const interval = window.setInterval(() => {
+    const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         void loadLogs(true);
       }
-    }, 1500);
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    // Auto-refresh logs silently every 2 seconds while process is running and tab is visible
+    let interval: number | undefined;
+    if (session.status === "running") {
+      interval = window.setInterval(() => {
+        if (document.visibilityState === "visible") {
+          void loadLogs(true);
+        }
+      }, 2000);
+    }
 
     return () => {
       document.body.style.overflow = previousOverflow;
-      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      if (interval !== undefined) {
+        window.clearInterval(interval);
+      }
     };
-  }, [loadLogs]);
+  }, [loadLogs, session.status]);
 
   const handleScroll = useCallback(() => {
     const output = outputRef.current;
@@ -344,8 +370,8 @@ export function LogViewer({ session, onClose }: Props) {
         )}
         <footer className="log-viewer-footer">
           <span>
-            <kbd>Cmd+F</kbd> find <span className="log-viewer-separator">·</span>{" "}
-            <kbd>Esc</kbd> close
+            <kbd>Cmd+F</kbd> find{" "}
+            <span className="log-viewer-separator">·</span> <kbd>Esc</kbd> close
           </span>
           <button className="log-viewer-done" onClick={onClose}>
             Done

@@ -16,7 +16,23 @@ export function useSessions() {
     }
     try {
       const result = await api.listSessions();
-      setSessions(result);
+      setSessions((prev) => {
+        // Fast comparison to prevent unnecessary React renders
+        if (
+          prev.length === result.length &&
+          prev.every(
+            (p, i) =>
+              p.id === result[i]?.id &&
+              p.status === result[i]?.status &&
+              p.cpu_percent === result[i]?.cpu_percent &&
+              p.memory_bytes === result[i]?.memory_bytes &&
+              p.exit_code === result[i]?.exit_code,
+          )
+        ) {
+          return prev;
+        }
+        return result;
+      });
       setError(null);
       setLastUpdated(new Date());
     } catch (cause) {
@@ -102,13 +118,23 @@ export function useSessions() {
   useEffect(() => {
     void fetchSessions(false);
 
+    // Refresh immediately when tab becomes visible again
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void fetchSessions(true);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    // Poll every 2 seconds when active; pause when window is hidden
     const interval = window.setInterval(() => {
       if (document.visibilityState === "visible") {
         void fetchSessions(true);
       }
-    }, 1500);
+    }, 2000);
 
     return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       window.clearInterval(interval);
     };
   }, [fetchSessions]);

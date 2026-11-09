@@ -163,7 +163,36 @@ devpane down
 | `devpane start <name> <cmd> [args...]` | Start an individual background process |
 | `devpane stop <session_id>` | Stop a specific process |
 | `devpane logs <session_id> [--follow]` | View or stream logs for a process |
+| `devpane rebuild <service>` | Clean rebuild and restart a service |
+| `devpane sync` | Synchronize team environment (.env, dependencies, lockfile) |
+| `devpane mcp` | Start Model Context Protocol (MCP) server for AI coding agents |
 | `devpane shutdown` | Terminate all supervised processes and stop the daemon |
+
+---
+
+## AI Agent Integration (MCP Server)
+
+Devpane includes a native **Model Context Protocol (MCP)** server. AI coding assistants (Claude Desktop, Cursor, Windsurf, Gemini, Roo Code) can supervise processes, stream error logs, and restart services without disrupting your interactive terminal.
+
+### Configure Cursor / Claude Desktop / Windsurf
+Add Devpane to your MCP client configuration (e.g. `claude_desktop_config.json` or `.cursor/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "devpane": {
+      "command": "devpane",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+The AI agent will automatically have access to:
+- `devpane_list_services`: Monitor running/exited services, PIDs, and CPU/memory usage.
+- `devpane_get_logs`: Fetch latest logs or error-filtered stack traces to fix runtime bugs.
+- `devpane_restart_service` & `devpane_rebuild_service`: Restart services after applying code changes.
+- `devpane_sync_environment`: Keep environment variables (.env) and dependencies synchronized.
 
 ---
 

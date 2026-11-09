@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::PathBuf;
@@ -38,6 +39,14 @@ impl ServiceLogView {
             Err(e) => return Err(e),
         };
 
+        // Detect truncation or log rotation
+        if let Ok(metadata) = file.metadata() {
+            if metadata.len() < self.file_position {
+                self.file_position = 0;
+                self.log_content.clear();
+            }
+        }
+
         // Seek to where we left off
         file.seek(SeekFrom::Start(self.file_position))?;
 
@@ -48,8 +57,8 @@ impl ServiceLogView {
             self.log_content.push_str(&String::from_utf8_lossy(&buffer));
             self.file_position += bytes_read as u64;
 
-            // Keep only the last 50KB to avoid memory issues
-            const MAX_CONTENT_SIZE: usize = 50 * 1024;
+            // Keep up to 500KB (~10,000 lines) of scrollback memory buffer
+            const MAX_CONTENT_SIZE: usize = 500 * 1024;
             if self.log_content.len() > MAX_CONTENT_SIZE {
                 let raw_start = self.log_content.len() - MAX_CONTENT_SIZE;
                 let mut start = raw_start;
@@ -78,7 +87,7 @@ impl ServiceLogView {
         &self.log_content
     }
 
-    pub fn filtered_content(&self) -> String {
+    pub fn filtered_content(&self) -> Cow<'_, str> {
         match &self.search_query {
             Some(query) if !query.is_empty() => {
                 let q_lower = query.to_lowercase();
@@ -88,12 +97,12 @@ impl ServiceLogView {
                     .filter(|line| line.to_lowercase().contains(&q_lower))
                     .collect();
                 if matching_lines.is_empty() {
-                    format!("[No lines match filter: \"{}\"]", query)
+                    Cow::Owned(format!("[No lines match filter: \"{}\"]", query))
                 } else {
-                    matching_lines.join("\n")
+                    Cow::Owned(matching_lines.join("\n"))
                 }
             }
-            _ => self.log_content.clone(),
+            _ => Cow::Borrowed(&self.log_content),
         }
     }
 
@@ -137,7 +146,14 @@ impl ServiceLogView {
             {
                 let tail = &line[pos..];
                 let end = tail
-                    .find(|c: char| c.is_whitespace() || c == '"' || c == '\'' || c == ')' || c == ']' || c == '>')
+                    .find(|c: char| {
+                        c.is_whitespace()
+                            || c == '"'
+                            || c == '\''
+                            || c == ')'
+                            || c == ']'
+                            || c == '>'
+                    })
                     .unwrap_or(tail.len());
                 let url = &tail[..end];
                 let clean = url.trim_end_matches(['.', ';', ',']);
