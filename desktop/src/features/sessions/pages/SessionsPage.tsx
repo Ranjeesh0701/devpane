@@ -151,7 +151,7 @@ export function SessionsPage() {
 
       <footer className="page-footer">
         <span>
-          Devpane Desktop <span className="footer-version">v0.4.0</span>
+          Devpane Desktop <span className="footer-version">v0.4.1</span>
         </span>
         <span>
           <span className="footer-status-dot" /> Local-first process management

@@ -71,7 +71,7 @@ export function Sidebar({
           <div className="avatar-small">DP</div>
           <div className="footer-copy">
             <strong>Devpane Desktop</strong>
-            <span>v0.4.0 · Local-first</span>
+            <span>v0.4.1 · Local-first</span>
           </div>
           <button
             className="icon-button theme-button"

@@ -39,7 +39,10 @@ fn run() -> Result<u8, DevpaneError> {
     };
 
     if action == "--help" || action == "-h" {
-        println!("⬢ Devpane v0.4.0 - Terminal workspace and multi-service process manager\n");
+        println!(
+            "⬢ Devpane v{} - Terminal workspace and multi-service process manager\n",
+            env!("CARGO_PKG_VERSION")
+        );
         println!("Usage: devpane <command> [arguments...]");
         println!("\nCommands:");
         println!(

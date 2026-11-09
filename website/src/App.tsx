@@ -110,7 +110,7 @@ const TUI_SERVICES: TuiService[] = [
       {
         num: 1,
         level: "INFO",
-        text: "Compiling api v0.4.0 (/Workspace/realworld-stack/api)",
+        text: "Compiling api v0.4.1 (/Workspace/realworld-stack/api)",
       },
       {
         num: 2,
@@ -264,7 +264,7 @@ function HeroTerminal() {
         <div className="tui-brand">
           <span className="tui-diamond">◆</span>
           <strong className="tui-brand-name">Devpane</strong>
-          <span className="tui-brand-ver">v0.4.0</span>
+          <span className="tui-brand-ver">v0.4.1</span>
           <span className="tui-slash">/</span>
           <span className="tui-project-name">realworld-stack</span>
         </div>
@@ -1000,7 +1000,7 @@ function App() {
               height="28"
             />
             <span className="brand-name">devpane</span>
-            <span className="brand-badge">v0.4.0</span>
+            <span className="brand-badge">v0.4.1</span>
           </a>
 
           <nav className="nav-links">

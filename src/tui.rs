@@ -557,7 +557,7 @@ where
             let mut left_spans = vec![
                 Span::styled("◆ ", Style::default().fg(Color::Rgb(125, 140, 255)).add_modifier(Modifier::BOLD)),
                 Span::styled("Devpane ", Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
-                Span::styled("v0.4.0", Style::default().fg(Color::Rgb(120, 130, 150))),
+                Span::styled(concat!("v", env!("CARGO_PKG_VERSION")), Style::default().fg(Color::Rgb(120, 130, 150))),
                 Span::styled("   /   ", Style::default().fg(Color::Rgb(70, 80, 100))),
                 Span::styled(&workspace_name, Style::default().fg(Color::Rgb(200, 210, 230))),
             ];
