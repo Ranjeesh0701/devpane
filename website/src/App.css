@@ -289,13 +289,17 @@
 .hero-section {
   padding: 80px 0 64px;
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 56px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 @media (min-width: 1024px) {
   .hero-section {
-    grid-template-columns: 1.05fr 0.95fr;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
     align-items: center;
     gap: 48px;
   }
@@ -305,22 +309,39 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.hero-badge {
+  max-width: 100%;
 }
 
 .hero-heading {
-  font-size: clamp(36px, 4.5vw, 56px);
+  font-size: clamp(28px, 4.5vw, 56px);
   font-weight: 800;
   letter-spacing: -1.2px;
-  line-height: 1.1;
+  line-height: 1.15;
   margin: 0 0 20px;
+  width: 100%;
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
 }
 
 .hero-subheading {
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.65;
   color: var(--text-muted);
   margin: 0 0 32px;
   max-width: 580px;
+  width: 100%;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
 }
 
 .hero-subheading strong {
@@ -332,7 +353,10 @@
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
-  margin-bottom: 40px;
+  margin-bottom: 36px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .btn {
@@ -346,6 +370,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  box-sizing: border-box;
 }
 
 .btn-primary {
@@ -373,47 +398,69 @@
 .hero-metrics-strip {
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 16px 20px;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 18px;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   width: 100%;
   max-width: 540px;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .metric-item {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .metric-val {
   font-family: var(--font-mono);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text-main);
+  white-space: nowrap;
 }
 
 .metric-label {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-subtle);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .metric-sep {
   width: 1px;
   height: 28px;
   background-color: var(--border-medium);
+  flex-shrink: 0;
+  margin: 0 6px;
 }
 
 /* HIGH-CRAFT TERMINAL WINDOW */
 .hero-terminal-wrapper {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   perspective: 1400px;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .terminal-window {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   background-color: #0b0c10;
   border: 1px solid rgba(139, 156, 255, 0.22);
   border-radius: 12px;
@@ -424,25 +471,30 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transform: perspective(1400px) rotateY(-2.5deg) rotateX(1.5deg);
-  transform-origin: center right;
-  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 300ms ease;
+  box-sizing: border-box;
 }
 
-.terminal-window:hover {
-  transform: perspective(1400px) rotateY(0deg) rotateX(0deg);
-  box-shadow:
-    0 0 0 1px rgba(139, 156, 255, 0.35),
-    0 30px 85px -15px rgba(0, 0, 0, 0.85),
-    0 0 60px -8px rgba(94, 106, 210, 0.3);
+@media (min-width: 1025px) {
+  .terminal-window {
+    transform: perspective(1400px) rotateY(-2.5deg) rotateX(1.5deg);
+    transform-origin: center right;
+    transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 300ms ease;
+  }
+  .terminal-window:hover {
+    transform: perspective(1400px) rotateY(0deg) rotateX(0deg);
+    box-shadow:
+      0 0 0 1px rgba(139, 156, 255, 0.35),
+      0 30px 85px -15px rgba(0, 0, 0, 0.85),
+      0 0 60px -8px rgba(94, 106, 210, 0.3);
+  }
 }
 
 @media (max-width: 1024px) {
   .terminal-window {
-    transform: none;
+    transform: none !important;
   }
   .terminal-window:hover {
-    transform: none;
+    transform: none !important;
   }
 }
 
@@ -453,19 +505,23 @@
   height: 38px;
   background: #161922;
   border-bottom: 1px solid #232736;
-  padding: 0 16px;
+  padding: 0 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .window-dots {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   flex-shrink: 0;
-  width: 50px;
+  width: 44px;
 }
 
 .dot {
@@ -491,17 +547,18 @@
 
 .tui-window-title {
   font-family: var(--font-mono);
-  font-size: 11.5px;
+  font-size: 11px;
   color: #8b949e;
   text-align: center;
   flex: 1;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .tui-title-spacer {
-  width: 50px;
+  width: 44px;
   flex-shrink: 0;
 }
 
@@ -510,19 +567,26 @@
   min-height: 34px;
   background: #0d1117;
   border-bottom: 1px solid #1e2433;
-  padding: 6px 16px;
+  padding: 6px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   font-family: var(--font-mono);
   font-size: 12px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .tui-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .tui-diamond {
@@ -545,6 +609,9 @@
 
 .tui-project-name {
   color: #c9d1d9;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tui-filter {
@@ -552,7 +619,8 @@
   align-items: center;
   gap: 6px;
   color: #7d8590;
-  font-size: 11.5px;
+  font-size: 11px;
+  flex-shrink: 0;
 }
 
 .tui-filter-icon {
@@ -571,24 +639,29 @@
 
 /* 3. Subheader Bar */
 .tui-subheader {
-  min-height: 36px;
+  min-height: 34px;
   background: #0a0d14;
   border-bottom: 1px solid #1e2433;
-  padding: 6px 16px;
+  padding: 6px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 10px;
   font-family: var(--font-mono);
-  font-size: 11.5px;
-  flex-wrap: wrap;
+  font-size: 11px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .tui-sub-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   color: #7d8590;
+  flex-shrink: 0;
 }
 
 .tui-sub-label {
@@ -610,13 +683,18 @@
 .tui-sub-center {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .tui-active-name {
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 700;
   color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tui-active-status {
@@ -625,6 +703,7 @@
   gap: 5px;
   color: #3fb950;
   font-weight: 600;
+  flex-shrink: 0;
 }
 
 .tui-check {
@@ -634,7 +713,8 @@
 .tui-sub-right {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .tui-action {
@@ -670,24 +750,32 @@
 /* 4. Split Body: Sidebar + Main */
 .tui-body {
   display: flex;
-  min-height: 330px;
+  min-height: 320px;
   background: #0a0d14;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 /* Sidebar */
 .tui-sidebar {
-  width: 260px;
-  flex: 0 0 260px;
+  width: 250px;
+  flex: 0 0 250px;
   border-right: 1px solid #1e2433;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   background: #0d1117;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .tui-sidebar-list {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .tui-service-item {
@@ -700,6 +788,7 @@
   cursor: pointer;
   font-family: var(--font-mono);
   transition: all 0.15s ease;
+  box-sizing: border-box;
 }
 
 .tui-service-item:hover {
@@ -1052,15 +1141,24 @@
   .tui-body {
     flex-direction: column;
     min-height: auto;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
   .tui-sidebar {
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
     flex: 0 0 auto;
     border-right: none;
     border-bottom: 1px solid #1e2433;
   }
   .tui-sidebar-list {
+    display: flex;
     flex-direction: row;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     overflow-x: auto;
     flex-wrap: nowrap;
     -webkit-overflow-scrolling: touch;
@@ -1072,8 +1170,8 @@
   .tui-service-item {
     width: auto;
     flex: 0 0 auto;
-    min-width: 130px;
-    padding: 8px 12px;
+    min-width: 110px;
+    padding: 8px 10px;
     border-left: none;
     border-bottom: 2px solid transparent;
   }
@@ -1081,35 +1179,66 @@
     border-left-color: transparent;
     border-bottom-color: #58a6ff;
   }
+  .tui-service-subline {
+    font-size: 9.5px;
+    padding-left: 18px;
+  }
   .tui-sidebar-footer {
     display: none;
   }
   .tui-main {
-    padding: 10px;
+    padding: 8px 10px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
   .tui-metrics-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
   .tui-metric-card {
     padding: 6px 8px;
+    min-width: 0;
+    overflow: hidden;
   }
   .tui-metric-label {
-    font-size: 9px;
+    font-size: 8.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .tui-metric-val {
-    font-size: 11.5px;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .tui-meter-bar {
     display: none;
   }
+  .tui-active-badge {
+    font-size: 8.5px;
+    padding: 1px 4px;
+  }
   .tui-logs-box {
-    min-height: 180px;
+    min-height: 160px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .tui-logs-header {
+    padding: 0 8px;
+    font-size: 10px;
   }
   .tui-logs-stream {
     padding: 8px 10px;
-    font-size: 11px;
-    max-height: 250px;
+    font-size: 10px;
+    max-height: 220px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .tui-status-center {
     display: none;
@@ -1119,40 +1248,43 @@
 @media (max-width: 640px) {
   .tui-window-titlebar {
     height: 32px;
-    padding: 0 10px;
+    padding: 0 8px;
   }
   .window-dots {
-    width: 40px;
-    gap: 5px;
+    width: 38px;
+    gap: 4px;
   }
   .dot {
-    width: 9px;
-    height: 9px;
+    width: 8px;
+    height: 8px;
   }
   .tui-window-title {
-    font-size: 10px;
+    font-size: 9.5px;
   }
   .tui-title-spacer {
-    width: 40px;
+    display: none;
   }
   .tui-topbar {
-    padding: 6px 10px;
-    font-size: 11px;
+    padding: 4px 8px;
+    font-size: 10.5px;
   }
   .tui-filter {
     display: none;
   }
+  .tui-brand-ver {
+    display: none;
+  }
   .tui-subheader {
-    padding: 6px 10px;
-    font-size: 11px;
-    gap: 8px;
+    padding: 4px 8px;
+    font-size: 10.5px;
+    gap: 6px;
   }
   .tui-sub-right {
     display: none;
   }
   .tui-statusbar {
-    padding: 6px 10px;
-    font-size: 10px;
+    padding: 4px 8px;
+    font-size: 9.5px;
   }
 }
 
@@ -1714,7 +1846,8 @@
   .nav-container,
   .main-content,
   .footer-container {
-    width: calc(100% - 32px);
+    width: calc(100% - 28px);
+    max-width: calc(100% - 28px);
   }
 
   .nav-links,
@@ -1727,63 +1860,110 @@
   }
 
   .section-head {
-    margin-bottom: 32px;
+    margin-bottom: 28px;
   }
 
   .section-head h2 {
-    font-size: clamp(24px, 6vw, 32px);
+    font-size: clamp(22px, 6vw, 30px);
   }
 
   .section-head p {
-    font-size: 14.5px;
+    font-size: 14px;
   }
 
   .hero-section {
-    padding: 40px 0 36px;
-    gap: 32px;
+    padding: 32px 0 24px;
+    gap: 24px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .hero-content {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .hero-badge {
+    font-size: 9.5px;
+    padding: 4px 8px;
+    letter-spacing: 0.3px;
+    max-width: 100%;
+    text-align: center;
   }
 
   .hero-heading {
-    font-size: clamp(30px, 8vw, 42px);
-    letter-spacing: -0.8px;
-    margin-bottom: 16px;
+    font-size: clamp(24px, 7.5vw, 36px);
+    letter-spacing: -0.6px;
+    line-height: 1.15;
+    margin-bottom: 12px;
+    width: 100%;
+    max-width: 100%;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
 
   .hero-subheading {
-    font-size: 15px;
-    line-height: 1.6;
-    margin-bottom: 24px;
+    font-size: 14px;
+    line-height: 1.55;
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 100%;
+    word-break: break-word;
+    overflow-wrap: break-word;
   }
 
   .hero-cta-group {
+    flex-direction: column;
     width: 100%;
     gap: 10px;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
   }
 
   .hero-cta-group .btn {
     width: 100%;
     justify-content: center;
+    padding: 12px 16px;
+    font-size: 13px;
   }
 
   .hero-metrics-strip {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    padding: 12px 14px;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    gap: 4px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
-  .metric-sep {
-    display: none;
+  .metric-item {
+    flex: 1;
+    min-width: 0;
   }
 
   .metric-val {
-    font-size: 14px;
+    font-size: 13px;
+    white-space: nowrap;
   }
 
   .metric-label {
-    font-size: 9.5px;
+    font-size: 8px;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .metric-sep {
+    display: block;
+    width: 1px;
+    height: 22px;
+    margin: 0 4px;
+    flex-shrink: 0;
   }
 
   .table-scroll-hint {
