@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
 import { Icon } from "../../../components/ui/Icon";
+import { Tooltip } from "../../../components/ui/Tooltip";
 import { formatStarted } from "../utils/formatStarted";
 import { extractLocalhostUrls, openInBrowser } from "../../../lib/browser";
 import type { ProcessSession } from "../types";
 import { ProcessStatusBadge } from "../../../components/ui/ProcessStatusBadge";
+import { SessionMoreMenu } from "./SessionMoreMenu";
 
 type Props = {
   sessions: ProcessSession[];
@@ -265,65 +267,73 @@ export function SessionTable({
                 </div>
                 <div className="project-group-actions">
                   {onSyncProject && group.projectDir && (
-                    <button
-                      className="project-sync-btn"
-                      onClick={() => void handleSyncProject(group.projectDir!)}
-                      disabled={syncingProject === group.projectDir}
-                      title={`Synchronize team environment and dependencies for ${group.name}`}
-                    >
-                      <Icon
-                        name="refresh"
-                        size={12}
-                        className={
-                          syncingProject === group.projectDir
-                            ? "refresh-spinning"
-                            : ""
-                        }
-                      />
-                      <span>
-                        {syncingProject === group.projectDir
-                          ? "Syncing..."
-                          : "Sync Env"}
-                      </span>
-                    </button>
+                    <Tooltip content="Synchronize .env keys and lockfile dependencies">
+                      <button
+                        className="project-sync-btn"
+                        onClick={() => void handleSyncProject(group.projectDir!)}
+                        disabled={syncingProject === group.projectDir}
+                        aria-label={`Synchronize environment for ${group.name}`}
+                      >
+                        <Icon
+                          name="refresh"
+                          size={12}
+                          className={
+                            syncingProject === group.projectDir
+                              ? "refresh-spinning"
+                              : ""
+                          }
+                        />
+                        <span>
+                          {syncingProject === group.projectDir
+                            ? "Syncing..."
+                            : "Sync"}
+                        </span>
+                      </button>
+                    </Tooltip>
                   )}
                   {onRestartProject && group.projectDir && (
-                    <button
-                      className="project-restart-btn"
-                      onClick={() => void handleRestartProject(group.projectDir!)}
-                      disabled={restartingProject === group.projectDir}
-                      title={`Restart all services in ${group.name}`}
+                    <Tooltip
+                      content={`Restart all ${group.sessions.length} services in ${group.name}`}
                     >
-                      <Icon
-                        name="refresh"
-                        size={12}
-                        className={
-                          restartingProject === group.projectDir
-                            ? "refresh-spinning"
-                            : ""
-                        }
-                      />
-                      <span>
-                        {restartingProject === group.projectDir
-                          ? "Restarting..."
-                          : "Restart Project"}
-                      </span>
-                    </button>
+                      <button
+                        className="project-restart-btn"
+                        onClick={() => void handleRestartProject(group.projectDir!)}
+                        disabled={restartingProject === group.projectDir}
+                        aria-label={`Restart all services in ${group.name}`}
+                      >
+                        <Icon
+                          name="refresh"
+                          size={12}
+                          className={
+                            restartingProject === group.projectDir
+                              ? "refresh-spinning"
+                              : ""
+                          }
+                        />
+                        <span>
+                          {restartingProject === group.projectDir
+                            ? "Restarting..."
+                            : "Restart"}
+                        </span>
+                      </button>
+                    </Tooltip>
                   )}
                   {runningInGroup > 0 && onStopProject && group.projectDir && (
-                    <button
-                      className="project-stop-btn"
-                      onClick={() => void handleStopProject(group.projectDir!)}
-                      disabled={stoppingProject === group.projectDir}
-                      title={`Stop all services in ${group.name}`}
-                    >
-                      <Icon name="square" size={12} />
-                      <span>
-                        {stoppingProject === group.projectDir
-                          ? "Stopping..."
-                          : "Stop Project"}
-                      </span>
-                    </button>
+                    <Tooltip content={`Stop all services in ${group.name}`}>
+                      <button
+                        className="project-stop-btn"
+                        onClick={() => void handleStopProject(group.projectDir!)}
+                        disabled={stoppingProject === group.projectDir}
+                        aria-label={`Stop all services in ${group.name}`}
+                      >
+                        <Icon name="square" size={12} />
+                        <span>
+                          {stoppingProject === group.projectDir
+                            ? "Stopping..."
+                            : "Stop"}
+                        </span>
+                      </button>
+                    </Tooltip>
                   )}
                 </div>
               </div>
@@ -371,18 +381,20 @@ export function SessionTable({
                               <div className="process-name-wrap">
                                 <strong>{session.name || "Unnamed process"}</strong>
                                 {port && (
-                                  <button
-                                    className="service-port-badge"
-                                    onClick={() =>
-                                      void openInBrowser(
-                                        primaryUrl || `http://localhost:${port}`,
-                                      )
-                                    }
-                                    title={`Open http://localhost:${port} in browser`}
-                                    type="button"
-                                  >
-                                    :{port}
-                                  </button>
+                                  <Tooltip content={`Open http://localhost:${port} in browser`}>
+                                    <button
+                                      className="service-port-badge"
+                                      onClick={() =>
+                                        void openInBrowser(
+                                          primaryUrl || `http://localhost:${port}`,
+                                        )
+                                      }
+                                      aria-label={`Open http://localhost:${port} in browser`}
+                                      type="button"
+                                    >
+                                      :{port}
+                                    </button>
+                                  </Tooltip>
                                 )}
                               </div>
                               <span title={session.id}>
@@ -425,82 +437,62 @@ export function SessionTable({
                         <td className="td-actions">
                           <div className="row-actions">
                             {primaryUrl && session.status === "running" && (
-                              <button
-                                className="row-action row-action-url"
-                                aria-label={`Open ${primaryUrl} in browser`}
-                                onClick={() => void openInBrowser(primaryUrl)}
-                                title={`Open ${primaryUrl} in browser`}
-                              >
-                                <Icon name="external" size={15} />
-                              </button>
+                              <Tooltip content={`Open ${primaryUrl} in browser`}>
+                                <button
+                                  className="row-action row-action-url"
+                                  aria-label={`Open ${primaryUrl} in browser`}
+                                  onClick={() => void openInBrowser(primaryUrl)}
+                                >
+                                  <Icon name="external" size={15} />
+                                </button>
+                              </Tooltip>
                             )}
-                            <button
-                              className="row-action"
-                              aria-label={`View logs for ${session.name}`}
-                              onClick={() => onViewLogs(session)}
-                              title="View logs"
-                            >
-                              <Icon name="terminal" size={15} />
-                            </button>
-                            <button
-                              className="row-action"
-                              aria-label={`Copy session ID for ${session.name}`}
-                              onClick={() =>
-                                void navigator.clipboard?.writeText(session.id)
-                              }
-                              title="Copy session ID"
-                            >
-                              <Icon name="copy" size={15} />
-                            </button>
+                            <Tooltip content="View live logs">
+                              <button
+                                className="row-action"
+                                aria-label={`View logs for ${session.name}`}
+                                onClick={() => onViewLogs(session)}
+                              >
+                                <Icon name="terminal" size={15} />
+                              </button>
+                            </Tooltip>
                             {onRestart && (
-                              <button
-                                className="row-action"
-                                onClick={() => void handleRestart(session.id)}
-                                title="Restart service"
-                                aria-label={`Restart ${session.name}`}
-                                disabled={restartingId === session.id}
+                              <Tooltip
+                                content={
+                                  session.status === "running"
+                                    ? "Restart service"
+                                    : "Start service"
+                                }
                               >
-                                <Icon
-                                  name="refresh"
-                                  size={14}
-                                  className={
-                                    restartingId === session.id
-                                      ? "refresh-spinning"
-                                      : ""
-                                  }
-                                />
-                              </button>
+                                <button
+                                  className="row-action"
+                                  onClick={() => void handleRestart(session.id)}
+                                  aria-label={`Restart ${session.name}`}
+                                  disabled={restartingId === session.id}
+                                >
+                                  <Icon
+                                    name="refresh"
+                                    size={14}
+                                    className={
+                                      restartingId === session.id
+                                        ? "refresh-spinning"
+                                        : ""
+                                    }
+                                  />
+                                </button>
+                              </Tooltip>
                             )}
-                            {onRebuild && session.name && (
-                              <button
-                                className="row-action"
-                                onClick={() => void handleRebuild(session.name!)}
-                                title="Rebuild and restart service"
-                                aria-label={`Rebuild ${session.name}`}
-                                disabled={rebuildingName === session.name}
-                              >
-                                <Icon
-                                  name="wrench"
-                                  size={14}
-                                  className={
-                                    rebuildingName === session.name
-                                      ? "refresh-spinning"
-                                      : ""
-                                  }
-                                />
-                              </button>
-                            )}
-                            {session.status === "running" && (
-                              <button
-                                className="row-action row-action-danger"
-                                onClick={() => void handleStop(session.id)}
-                                title="Stop session"
-                                aria-label={`Stop ${session.name}`}
-                                disabled={stoppingId === session.id}
-                              >
-                                <Icon name="square" size={14} />
-                              </button>
-                            )}
+                            <SessionMoreMenu
+                              session={session}
+                              primaryUrl={primaryUrl}
+                              onViewLogs={onViewLogs}
+                              onRestart={onRestart ? handleRestart : undefined}
+                              onRebuild={onRebuild ? handleRebuild : undefined}
+                              onStop={handleStop}
+                              isRestarting={restartingId === session.id}
+                              isRebuilding={rebuildingName === session.name}
+                              isStopping={stoppingId === session.id}
+                            />
                           </div>
                         </td>
                       </tr>

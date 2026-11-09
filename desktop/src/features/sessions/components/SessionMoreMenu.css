@@ -1,0 +1,117 @@
+.more-menu-trigger {
+  display: inline-grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.more-menu-trigger:hover,
+.more-menu-trigger.is-active {
+  border-color: var(--border);
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+.more-menu-dropdown {
+  position: fixed;
+  z-index: 9999;
+  width: 210px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: more-menu-enter 0.12s ease-out;
+}
+
+@keyframes more-menu-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.more-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.more-menu-item:hover,
+.more-menu-item:focus-visible {
+  background: var(--surface-hover);
+  color: #ffffff;
+  outline: none;
+}
+
+.more-menu-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.more-menu-item svg {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.more-menu-item:hover svg,
+.more-menu-item:focus-visible svg {
+  color: var(--accent);
+}
+
+.more-menu-danger {
+  color: var(--red);
+}
+
+.more-menu-danger svg {
+  color: var(--red);
+}
+
+.more-menu-danger:hover,
+.more-menu-danger:focus-visible {
+  background: rgba(255, 119, 127, 0.15);
+  color: #ffffff;
+}
+
+.more-menu-danger:hover svg,
+.more-menu-danger:focus-visible svg {
+  color: #ff777f;
+}
+
+.more-menu-divider {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--border);
+}
+
+.more-menu-copied {
+  color: var(--green) !important;
+}
+
+.more-menu-copied svg {
+  color: var(--green) !important;
+}
