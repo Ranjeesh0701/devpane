@@ -6,11 +6,19 @@ import {
   trackGithubClick,
 } from "./lib/analytics";
 
+type LogSegment = {
+  badge?: { text: string; type: "daemon" | "server" | "health" | "db" | "hmr" | "redis" | "worker" };
+  text: string;
+  highlight?: string;
+  highlightType?: "green" | "indigo" | "amber" | "muted" | "link";
+  suffix?: string;
+};
+
 type ServiceTab = {
   id: string;
   name: string;
   port?: number;
-  logs: { text: string; color?: string }[];
+  lines: LogSegment[];
 };
 
 const DEMO_SERVICES: ServiceTab[] = [
@@ -18,121 +26,230 @@ const DEMO_SERVICES: ServiceTab[] = [
     id: "backend",
     name: "backend",
     port: 8080,
-    logs: [
-      { text: "[devpane:daemon] Service 'backend' started (PID 58120) • 0.8% CPU • 32.4 MB", color: "muted" },
-      { text: "   Compiling devpane-server v0.3.1 (/Workspace/devpane)", color: "indigo" },
-      { text: "   Finished `dev` profile in 0.74s", color: "success" },
-      { text: "[server] Listening on http://localhost:8080", color: "white" },
-      { text: "[health] Readiness check OK: HTTP 200 at /health (8ms)", color: "success" },
-      { text: "[ipc] Socket active at /tmp/devpane.sock", color: "muted" },
-      { text: "[auth] Session JWT verifier initialized from .env", color: "white" },
-      { text: "[db] Connection pool verified: 10 connections idle", color: "white" },
-      { text: "GET /api/v1/sessions 200 OK (0.6ms)", color: "success" },
-      { text: "POST /api/v1/services/sync 200 OK (1.1ms)", color: "success" },
+    lines: [
+      {
+        badge: { text: "devpane:daemon", type: "daemon" },
+        text: "Supervised 'backend' (PID 58120) • 0.8% CPU • 32.4 MB",
+      },
+      {
+        text: "   Compiling devpane-server v0.3.1 (/Workspace/devpane)",
+        highlightType: "indigo",
+      },
+      {
+        text: "   Finished dev profile in ",
+        highlight: "0.74s",
+        highlightType: "amber",
+      },
+      {
+        badge: { text: "server", type: "server" },
+        text: "Listening on ",
+        highlight: "http://localhost:8080",
+        highlightType: "link",
+      },
+      {
+        badge: { text: "health", type: "health" },
+        text: "✓ Readiness check OK: HTTP 200 at /health ",
+        highlight: "(8ms)",
+        highlightType: "amber",
+      },
+      {
+        badge: { text: "db", type: "db" },
+        text: "Connection pool verified: 10 connections idle",
+      },
+      {
+        text: "GET /api/v1/sessions ",
+        highlight: "200 OK",
+        highlightType: "green",
+        suffix: " (0.6ms)",
+      },
+      {
+        text: "POST /api/v1/services/sync ",
+        highlight: "200 OK",
+        highlightType: "green",
+        suffix: " (1.1ms)",
+      },
     ],
   },
   {
     id: "frontend",
     name: "frontend",
     port: 5173,
-    logs: [
-      { text: "[devpane:daemon] Service 'frontend' started (PID 58124) • 1.1% CPU • 49.2 MB", color: "muted" },
-      { text: "VITE v6.0.4 ready in 128 ms", color: "white" },
-      { text: "  ➜  Local:   http://localhost:5173/", color: "accent" },
-      { text: "  ➜  Network: use --host to expose", color: "muted" },
-      { text: "  ➜  press h + enter to show help", color: "muted" },
-      { text: "[hmr] devpane watcher synchronized (2 watched paths)", color: "success" },
-      { text: "[vite] page reload /src/App.tsx (22ms)", color: "indigo" },
+    lines: [
+      {
+        badge: { text: "devpane:daemon", type: "daemon" },
+        text: "Supervised 'frontend' (PID 58124) • 1.1% CPU • 49.2 MB",
+      },
+      {
+        text: "VITE v6.0.4  ready in ",
+        highlight: "128 ms",
+        highlightType: "amber",
+      },
+      {
+        text: "  ➜  Local:   ",
+        highlight: "http://localhost:5173/",
+        highlightType: "link",
+      },
+      {
+        text: "  ➜  Network: use --host to expose",
+        highlightType: "muted",
+      },
+      {
+        badge: { text: "hmr", type: "hmr" },
+        text: "Watcher active: 2 paths synchronized",
+        highlightType: "green",
+      },
+      {
+        text: "  [vite] hot update /src/App.tsx ",
+        highlight: "(18ms)",
+        highlightType: "amber",
+      },
     ],
   },
   {
     id: "worker",
     name: "worker",
-    logs: [
-      { text: "[devpane:daemon] Service 'worker' started (PID 58130) • 0.4% CPU • 26.1 MB", color: "muted" },
-      { text: "[queue:redis] Connected to redis://localhost:6379/0", color: "white" },
-      { text: "[worker:1] Subscribed to topic 'event-stream' (0 pending)", color: "white" },
-      { text: "[worker:1] Heartbeat ACK • worker pool healthy", color: "success" },
-      { text: "[worker:1] Job #4089 processed in 14ms (status: success)", color: "success" },
-      { text: "[worker:1] Waiting for incoming event payloads...", color: "muted" },
+    lines: [
+      {
+        badge: { text: "devpane:daemon", type: "daemon" },
+        text: "Supervised 'worker' (PID 58130) • 0.4% CPU • 26.1 MB",
+      },
+      {
+        badge: { text: "redis", type: "redis" },
+        text: "Connected to redis://127.0.0.1:6379/0",
+      },
+      {
+        badge: { text: "worker:1", type: "worker" },
+        text: "Subscribed to stream 'events' (0 pending)",
+      },
+      {
+        badge: { text: "worker:1", type: "worker" },
+        text: "✓ Heartbeat ACK • pool healthy",
+        highlightType: "green",
+      },
+      {
+        badge: { text: "worker:1", type: "worker" },
+        text: "Job #4089 processed in ",
+        highlight: "14ms (success)",
+        highlightType: "green",
+      },
+      {
+        badge: { text: "worker:1", type: "worker" },
+        text: "Waiting for incoming event payloads...",
+        highlightType: "muted",
+      },
     ],
   },
   {
     id: "shell",
-    name: "🐚 shell",
-    logs: [
-      { text: "devpane-workspace % devpane list", color: "white" },
-      { text: "  ● backend   PID 58120   RUNNING   :8080    32.4 MB", color: "success" },
-      { text: "  ● frontend  PID 58124   RUNNING   :5173    49.2 MB", color: "success" },
-      { text: "  ● worker    PID 58130   RUNNING            26.1 MB", color: "success" },
-      { text: "", color: "white" },
-      { text: "devpane-workspace % devpane mcp --status", color: "white" },
-      { text: "  ✓ Model Context Protocol (MCP) server ready for Cursor & Claude", color: "accent" },
-      { text: "  ✓ IPC socket active • 3 services supervised", color: "muted" },
-      { text: "", color: "white" },
-      { text: "devpane-workspace % _", color: "accent" },
+    name: "shell (pty)",
+    lines: [
+      {
+        text: "devpane-workspace % ",
+        highlight: "devpane list",
+        highlightType: "indigo",
+      },
+      {
+        text: "  ● backend   PID 58120   RUNNING   :8080    32.4 MB",
+        highlightType: "green",
+      },
+      {
+        text: "  ● frontend  PID 58124   RUNNING   :5173    49.2 MB",
+        highlightType: "green",
+      },
+      {
+        text: "  ● worker    PID 58130   RUNNING            26.1 MB",
+        highlightType: "green",
+      },
+      {
+        text: "devpane-workspace % ",
+        highlight: "devpane mcp --status",
+        highlightType: "indigo",
+      },
+      {
+        text: "  ✓ Model Context Protocol (MCP) server ready for AI agents",
+        highlightType: "indigo",
+      },
+      {
+        text: "  ✓ IPC daemon socket connected",
+        highlightType: "green",
+      },
+      {
+        text: "devpane-workspace % ",
+        highlight: "▋",
+        highlightType: "amber",
+      },
     ],
   },
 ];
 
-function SimplifiedTerminal() {
+function HeroTerminal() {
   const [activeIdx, setActiveIdx] = useState(0);
   const activeService = DEMO_SERVICES[activeIdx];
 
   return (
-    <div className="terminal-card">
-      <div className="terminal-header">
-        <div className="terminal-dots" aria-hidden="true">
-          <span className="dot dot-red" />
-          <span className="dot dot-yellow" />
-          <span className="dot dot-green" />
+    <div className="terminal-window">
+      <div className="terminal-window-topbar">
+        <div className="window-dots" aria-hidden="true">
+          <span className="dot dot-close" />
+          <span className="dot dot-minimize" />
+          <span className="dot dot-expand" />
         </div>
-        <div className="terminal-title">
-          <span className="title-cmd">devpane up</span>
+
+        <div className="terminal-window-tabs">
+          {DEMO_SERVICES.map((svc, i) => (
+            <button
+              key={svc.id}
+              className={`window-tab ${i === activeIdx ? "active" : ""}`}
+              onClick={() => setActiveIdx(i)}
+              type="button"
+            >
+              <span className="tab-indicator" />
+              <span className="tab-title">{svc.name}</span>
+              {svc.port && <span className="tab-port-pill">:{svc.port}</span>}
+            </button>
+          ))}
         </div>
-        <div className="terminal-live-tag">
-          <span className="pulse-dot" /> LIVE DAEMON
+
+        <div className="window-status-badge">
+          <span className="pulse-beacon" />
+          <span>DAEMON LIVE</span>
         </div>
       </div>
 
-      <div className="terminal-tabs-bar">
-        {DEMO_SERVICES.map((svc, i) => (
-          <button
-            key={svc.id}
-            className={`terminal-tab ${i === activeIdx ? "active" : ""}`}
-            onClick={() => setActiveIdx(i)}
-            type="button"
-          >
-            <span className="tab-dot" />
-            <span className="tab-name">{svc.name}</span>
-            {svc.port && <span className="tab-port">:{svc.port}</span>}
-          </button>
-        ))}
-      </div>
-
-      <div className="terminal-viewport">
-        <div className="terminal-lines">
-          {activeService.logs.map((line, idx) => (
-            <div key={idx} className={`terminal-line line-${line.color || "white"}`}>
-              {line.text}
+      <div className="terminal-canvas">
+        <div className="terminal-stream">
+          {activeService.lines.map((item, idx) => (
+            <div key={idx} className="stream-line">
+              {item.badge && (
+                <span className={`line-badge badge-${item.badge.type}`}>
+                  [{item.badge.text}]
+                </span>
+              )}
+              <span className="line-content">{item.text}</span>
+              {item.highlight && (
+                <span className={`line-highlight highlight-${item.highlightType || "white"}`}>
+                  {item.highlight}
+                </span>
+              )}
+              {item.suffix && <span className="line-suffix">{item.suffix}</span>}
             </div>
           ))}
         </div>
       </div>
 
-      <div className="terminal-footer">
-        <div className="shortcut-hints">
-          <span>Tab: Switch</span>
-          <span>•</span>
-          <span>Ctrl+T: Shell</span>
-          <span>•</span>
-          <span>r: Restart</span>
-          <span>•</span>
-          <span>/: Search</span>
-          <span>•</span>
-          <span>q: Quit</span>
+      <div className="terminal-statusbar">
+        <div className="statusbar-shortcuts">
+          <span><kbd>Tab</kbd> Switch</span>
+          <span><kbd>Ctrl+T</kbd> Shell</span>
+          <span><kbd>r</kbd> Restart</span>
+          <span><kbd>/</kbd> Search</span>
+          <span><kbd>q</kbd> Quit</span>
         </div>
-        <span className="terminal-status">● 3 running</span>
+        <div className="statusbar-meta">
+          <span className="meta-green">● 3 running</span>
+          <span className="meta-sep">/</span>
+          <span className="meta-muted">devpane v0.3.1</span>
+        </div>
       </div>
     </div>
   );
@@ -708,7 +825,7 @@ function App() {
           </div>
 
           <div className="hero-terminal-wrapper" id="demo">
-            <SimplifiedTerminal />
+            <HeroTerminal />
           </div>
         </section>
 
