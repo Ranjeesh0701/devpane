@@ -6,273 +6,487 @@ import {
   trackGithubClick,
 } from "./lib/analytics";
 
-type LogSegment = {
-  badge?: { text: string; type: "daemon" | "server" | "health" | "db" | "hmr" | "redis" | "worker" };
+type TuiLogLine = {
+  num: number;
+  level: "INFO" | "WARN" | "ERROR";
   text: string;
-  highlight?: string;
-  highlightType?: "green" | "indigo" | "amber" | "muted" | "link";
-  suffix?: string;
+  url?: string;
+  prefix?: string;
 };
 
-type ServiceTab = {
+type TuiService = {
   id: string;
+  key: string;
   name: string;
-  icon?: string;
+  icon: string;
+  statusText: string;
+  subline: string;
   port?: number;
-  lines: LogSegment[];
+  url?: string;
+  memory: string;
+  memoryBar: string;
+  cpu: string;
+  cpuBar: string;
+  uptime: string;
+  logs: TuiLogLine[];
 };
 
-const DEMO_SERVICES: ServiceTab[] = [
+const TUI_SERVICES: TuiService[] = [
   {
-    id: "backend",
-    name: "backend",
-    icon: "⬡",
-    port: 8080,
-    lines: [
+    id: "all",
+    key: "0",
+    name: "All services",
+    icon: "=",
+    statusText: "3/3 Running",
+    subline: "Combined log stream",
+    memory: "86.2 MB",
+    memoryBar: "████████░░░░",
+    cpu: "0.8%",
+    cpuBar: "────────────",
+    uptime: "8m 51s",
+    logs: [
       {
-        badge: { text: "devpane:daemon", type: "daemon" },
-        text: "Supervised 'backend' (PID 58120) • 0.8% CPU • 32.4 MB • Zero-orphan active",
+        num: 1,
+        level: "INFO",
+        prefix: "[api]",
+        text: "Listening on http://localhost:8080",
+        url: "http://localhost:8080",
       },
       {
-        text: "   Compiling devpane-server v0.4.0 (/Workspace/devpane)",
-        highlightType: "indigo",
+        num: 2,
+        level: "INFO",
+        prefix: "[web]",
+        text: "Frontend UI server listening on http://localhost:5173",
+        url: "http://localhost:5173",
       },
       {
-        text: "   Finished dev profile in ",
-        highlight: "0.74s",
-        highlightType: "amber",
+        num: 3,
+        level: "INFO",
+        prefix: "[web]",
+        text: "Linked to API backend at http://localhost:8080",
+        url: "http://localhost:8080",
       },
       {
-        badge: { text: "server", type: "server" },
-        text: "Listening on ",
-        highlight: "http://localhost:8080",
-        highlightType: "link",
+        num: 4,
+        level: "INFO",
+        prefix: "[worker]",
+        text: "Connected to redis://127.0.0.1:6379/0",
       },
       {
-        badge: { text: "health", type: "health" },
-        text: "✓ Readiness check OK: HTTP 200 at /health ",
-        highlight: "(8ms)",
-        highlightType: "amber",
+        num: 5,
+        level: "INFO",
+        prefix: "[web]",
+        text: "Ready to accept user browser connections",
       },
       {
-        badge: { text: "db", type: "db" },
-        text: "Connection pool verified: 10 connections idle",
+        num: 6,
+        level: "INFO",
+        prefix: "[worker]",
+        text: "Subscribed to stream 'events' (0 pending)",
       },
       {
-        text: "GET /api/v1/sessions ",
-        highlight: "200 OK",
-        highlightType: "green",
-        suffix: " (0.6ms)",
-      },
-      {
-        text: "POST /api/v1/services/sync ",
-        highlight: "200 OK",
-        highlightType: "green",
-        suffix: " (1.1ms)",
+        num: 7,
+        level: "INFO",
+        prefix: "[api]",
+        text: "GET /api/v1/sessions 200 OK (0.6ms)",
       },
     ],
   },
   {
-    id: "frontend",
-    name: "frontend",
+    id: "api",
+    key: "1",
+    name: "api",
+    icon: "⬡",
+    statusText: "Running",
+    subline: ":8080 · PID 34470",
+    port: 8080,
+    url: "localhost:8080",
+    memory: "32.4 MB",
+    memoryBar: "████░░░░░░░░",
+    cpu: "0.8%",
+    cpuBar: "────────────",
+    uptime: "8m 51s",
+    logs: [
+      {
+        num: 1,
+        level: "INFO",
+        text: "Compiling api v0.4.0 (/Workspace/realworld-stack/api)",
+      },
+      {
+        num: 2,
+        level: "INFO",
+        text: "Finished dev [unoptimized + debuginfo] profile in 0.74s",
+      },
+      {
+        num: 3,
+        level: "INFO",
+        text: "Listening on http://localhost:8080",
+        url: "http://localhost:8080",
+      },
+      {
+        num: 4,
+        level: "INFO",
+        text: "Readiness check OK: HTTP 200 at /health (8ms)",
+      },
+      {
+        num: 5,
+        level: "INFO",
+        text: "Database connection pool verified: 10 connections idle",
+      },
+      {
+        num: 6,
+        level: "INFO",
+        text: "GET /api/v1/sessions 200 OK (0.6ms)",
+      },
+      {
+        num: 7,
+        level: "INFO",
+        text: "POST /api/v1/services/sync 200 OK (1.1ms)",
+      },
+    ],
+  },
+  {
+    id: "web",
+    key: "2",
+    name: "web",
     icon: "🌐",
+    statusText: "Running",
+    subline: ":5173 · shared with api",
     port: 5173,
-    lines: [
+    url: "localhost:8080",
+    memory: "45.6 MB",
+    memoryBar: "█████░░░░░░░",
+    cpu: "0.0%",
+    cpuBar: "────────────",
+    uptime: "8m 51s",
+    logs: [
       {
-        badge: { text: "devpane:daemon", type: "daemon" },
-        text: "Supervised 'frontend' (PID 58124) • 1.1% CPU • 49.2 MB",
+        num: 1,
+        level: "INFO",
+        text: "Frontend UI server listening on http://localhost:5173",
+        url: "http://localhost:5173",
       },
       {
-        text: "VITE v6.0.4  ready in ",
-        highlight: "128 ms",
-        highlightType: "amber",
+        num: 2,
+        level: "INFO",
+        text: "Linked to API backend at http://localhost:8080",
+        url: "http://localhost:8080",
       },
       {
-        text: "  ➜  Local:   ",
-        highlight: "http://localhost:5173/",
-        highlightType: "link",
+        num: 3,
+        level: "INFO",
+        text: "Ready to accept user browser connections",
       },
       {
-        text: "  ➜  Network: use --host to expose",
-        highlightType: "muted",
+        num: 4,
+        level: "INFO",
+        text: "Vite v6.0.4 hot module replacement (HMR) active",
       },
       {
-        badge: { text: "hmr", type: "hmr" },
-        text: "Watcher active: 2 paths synchronized",
-        highlightType: "green",
+        num: 5,
+        level: "INFO",
+        text: "Watcher ready: 24 modules synchronized in 18ms",
       },
       {
-        text: "  [vite] hot update /src/App.tsx ",
-        highlight: "(18ms)",
-        highlightType: "amber",
+        num: 6,
+        level: "INFO",
+        text: "GET /src/App.tsx 200 OK",
       },
     ],
   },
   {
     id: "worker",
+    key: "3",
     name: "worker",
     icon: "⚙",
-    lines: [
+    statusText: "Running",
+    subline: "Background process",
+    memory: "8.2 MB",
+    memoryBar: "█░░░░░░░░░░░",
+    cpu: "0.0%",
+    cpuBar: "────────────",
+    uptime: "8m 51s",
+    logs: [
       {
-        badge: { text: "devpane:daemon", type: "daemon" },
-        text: "Supervised 'worker' (PID 58130) • 0.4% CPU • 26.1 MB",
+        num: 1,
+        level: "INFO",
+        text: "Supervised 'worker' (PID 34482) • Zero-zombie active",
       },
       {
-        badge: { text: "redis", type: "redis" },
+        num: 2,
+        level: "INFO",
         text: "Connected to redis://127.0.0.1:6379/0",
       },
       {
-        badge: { text: "worker:1", type: "worker" },
+        num: 3,
+        level: "INFO",
         text: "Subscribed to stream 'events' (0 pending)",
       },
       {
-        badge: { text: "worker:1", type: "worker" },
-        text: "✓ Heartbeat ACK • pool healthy",
-        highlightType: "green",
+        num: 4,
+        level: "INFO",
+        text: "✓ Heartbeat ACK • worker pool healthy",
       },
       {
-        badge: { text: "worker:1", type: "worker" },
-        text: "Job #4089 processed in ",
-        highlight: "14ms (success)",
-        highlightType: "green",
+        num: 5,
+        level: "INFO",
+        text: "Job #4089 processed in 14ms (success)",
       },
       {
-        badge: { text: "worker:1", type: "worker" },
+        num: 6,
+        level: "INFO",
         text: "Waiting for incoming event payloads...",
-        highlightType: "muted",
-      },
-    ],
-  },
-  {
-    id: "shell",
-    name: "shell (pty)",
-    icon: "🐚",
-    lines: [
-      {
-        text: "devpane-workspace % ",
-        highlight: "devpane list",
-        highlightType: "indigo",
-      },
-      {
-        text: "  ⬡ backend   PID 58120   RUNNING   :8080    32.4 MB",
-        highlightType: "green",
-      },
-      {
-        text: "  🌐 frontend  PID 58124   RUNNING   :5173    49.2 MB",
-        highlightType: "green",
-      },
-      {
-        text: "  ⚙ worker    PID 58130   RUNNING            26.1 MB",
-        highlightType: "green",
-      },
-      {
-        text: "devpane-workspace % ",
-        highlight: "devpane sync",
-        highlightType: "indigo",
-      },
-      {
-        text: "  ✓ .env verified against .env.example (0 missing keys)",
-        highlightType: "green",
-      },
-      {
-        text: "  ✓ Configuration hash synchronized in devpane.lock",
-        highlightType: "green",
-      },
-      {
-        text: "devpane-workspace % ",
-        highlight: "devpane mcp --status",
-        highlightType: "indigo",
-      },
-      {
-        text: "  ✓ Model Context Protocol (MCP) server ready for AI agents",
-        highlightType: "indigo",
-      },
-      {
-        text: "  ✓ Zero-zombie supervisor socket active",
-        highlightType: "green",
-      },
-      {
-        text: "devpane-workspace % ",
-        highlight: "▋",
-        highlightType: "amber",
       },
     ],
   },
 ];
 
 function HeroTerminal() {
-  const [activeIdx, setActiveIdx] = useState(0);
-  const activeService = DEMO_SERVICES[activeIdx];
+  const [activeId, setActiveId] = useState<string>("web");
+  const activeService =
+    TUI_SERVICES.find((s) => s.id === activeId) || TUI_SERVICES[2];
 
   return (
     <div className="terminal-window">
-      <div className="terminal-window-topbar">
+      {/* 1. Window Title Bar */}
+      <div className="tui-window-titlebar">
         <div className="window-dots" aria-hidden="true">
           <span className="dot dot-close" />
           <span className="dot dot-minimize" />
           <span className="dot dot-expand" />
         </div>
+        <div className="tui-window-title">
+          realworld-stack — devpane up — 136×30
+        </div>
+        <div className="tui-title-spacer" aria-hidden="true" />
+      </div>
 
-        <div className="terminal-window-tabs">
-          {DEMO_SERVICES.map((svc, i) => (
-            <button
-              key={svc.id}
-              className={`window-tab ${i === activeIdx ? "active" : ""}`}
-              onClick={() => setActiveIdx(i)}
-              type="button"
+      {/* 2. Top TUI Bar */}
+      <div className="tui-topbar">
+        <div className="tui-brand">
+          <span className="tui-diamond">◆</span>
+          <strong className="tui-brand-name">Devpane</strong>
+          <span className="tui-brand-ver">v0.4.0</span>
+          <span className="tui-slash">/</span>
+          <span className="tui-project-name">realworld-stack</span>
+        </div>
+        <div className="tui-filter">
+          <span className="tui-filter-icon">🔍</span>
+          <span>Filter logs</span>
+          <kbd className="tui-key">/</kbd>
+        </div>
+      </div>
+
+      {/* 3. Subheader */}
+      <div className="tui-subheader">
+        <div className="tui-sub-left">
+          <span className="tui-sub-label">SERVICES</span>
+          <span className="tui-sub-count">3</span>
+          <span className="tui-sub-buttons">[-] [⤢]</span>
+        </div>
+        <div className="tui-sub-center">
+          <strong className="tui-active-name">{activeService.name}</strong>
+          <span className="tui-active-status">
+            <span className="tui-check">✓</span> {activeService.statusText}
+          </span>
+        </div>
+        <div className="tui-sub-right">
+          <span className="tui-action">
+            <span className="tui-action-icon">↺</span> Restart{" "}
+            <kbd className="tui-key">R</kbd>
+          </span>
+          <span className="tui-action">
+            <span className="tui-action-icon">■</span> Stop{" "}
+            <kbd className="tui-key">S</kbd>
+          </span>
+          {activeService.url && (
+            <a
+              href={`http://${activeService.url}`}
+              target="_blank"
+              rel="noreferrer"
+              className="tui-port-link"
             >
-              <span className="tab-indicator" />
-              {svc.icon && <span className="tab-icon">{svc.icon}</span>}
-              <span className="tab-title">{svc.name}</span>
-              {svc.port && <span className="tab-port-pill">:{svc.port}</span>}
-            </button>
-          ))}
-        </div>
-
-        <div className="window-status-badge">
-          <span className="pulse-beacon" />
-          <span>DAEMON LIVE</span>
+              {activeService.url} <span className="tui-arrow">↗</span>
+            </a>
+          )}
         </div>
       </div>
 
-      <div className="terminal-canvas">
-        <div className="terminal-stream">
-          {activeService.lines.map((item, idx) => (
-            <div key={idx} className="stream-line">
-              {item.badge && (
-                <span className={`line-badge badge-${item.badge.type}`}>
-                  [{item.badge.text}]
-                </span>
-              )}
-              <span className="line-content">{item.text}</span>
-              {item.highlight && (
-                <span className={`line-highlight highlight-${item.highlightType || "white"}`}>
-                  {item.highlight}
-                </span>
-              )}
-              {item.suffix && <span className="line-suffix">{item.suffix}</span>}
+      {/* 4. Main Split View: Sidebar + Workspace */}
+      <div className="tui-body">
+        {/* Sidebar */}
+        <aside className="tui-sidebar">
+          <div className="tui-sidebar-list" role="tablist" aria-label="Services">
+            {TUI_SERVICES.map((svc) => {
+              const isActive = svc.id === activeId;
+              return (
+                <button
+                  key={svc.id}
+                  className={`tui-service-item ${isActive ? "active" : ""}`}
+                  onClick={() => setActiveId(svc.id)}
+                  role="tab"
+                  aria-selected={isActive}
+                  type="button"
+                >
+                  <div className="tui-service-line1">
+                    <div className="tui-service-left">
+                      <span className="tui-service-icon">{svc.icon}</span>
+                      <strong className="tui-service-name">{svc.name}</strong>
+                      {svc.id !== "all" && <span className="tui-service-dot" />}
+                    </div>
+                    <span className="tui-service-key">{svc.key}</span>
+                  </div>
+                  <div className="tui-service-subline">{svc.subline}</div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="tui-sidebar-footer">
+            <div className="tui-meta-row">
+              <span className="tui-meta-muted">Environment</span>
+              <span className="tui-meta-val">development</span>
             </div>
-          ))}
-        </div>
+            <div className="tui-meta-row">
+              <span className="tui-meta-muted">Services</span>
+              <span className="tui-meta-green">
+                3 running <span className="tui-meta-muted">· 0 exited</span>
+              </span>
+            </div>
+          </div>
+        </aside>
+
+        {/* Workspace */}
+        <main className="tui-main">
+          {/* Telemetry Cards */}
+          <div className="tui-metrics-grid">
+            <div className="tui-metric-card">
+              <div className="tui-metric-header">
+                <span className="tui-metric-label">Memory</span>
+              </div>
+              <div className="tui-metric-value-row">
+                <strong className="tui-metric-val">{activeService.memory}</strong>
+                <span
+                  className="tui-meter-bar tui-meter-green"
+                  aria-hidden="true"
+                >
+                  [{activeService.memoryBar}]
+                </span>
+              </div>
+            </div>
+
+            <div className="tui-metric-card">
+              <div className="tui-metric-header">
+                <span className="tui-metric-label">CPU</span>
+              </div>
+              <div className="tui-metric-value-row">
+                <strong className="tui-metric-val">{activeService.cpu}</strong>
+                <span
+                  className="tui-meter-bar tui-meter-blue"
+                  aria-hidden="true"
+                >
+                  [{activeService.cpuBar}]
+                </span>
+              </div>
+            </div>
+
+            <div className="tui-metric-card">
+              <div className="tui-metric-header">
+                <span className="tui-metric-label">Uptime</span>
+              </div>
+              <div className="tui-metric-value-row">
+                <strong className="tui-metric-val">{activeService.uptime}</strong>
+                <span className="tui-active-badge">
+                  <span className="tui-beacon" /> Active
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Logs Box */}
+          <div className="tui-logs-box">
+            <div className="tui-logs-header">
+              <div className="tui-logs-tabs">
+                <span className="tui-log-tab active">Logs</span>
+                <span className="tui-log-tab tab-info">Info</span>
+                <span className="tui-log-tab tab-warn">Warn</span>
+                <span className="tui-log-tab tab-error">Error</span>
+              </div>
+              <div className="tui-wrap-badge">[Wrap: ON • W]</div>
+            </div>
+
+            <div className="tui-logs-stream">
+              {activeService.logs.map((log) => (
+                <div key={log.num} className="tui-log-line">
+                  <span className="tui-log-num">{log.num}</span>
+                  <span
+                    className={`tui-log-level level-${log.level.toLowerCase()}`}
+                  >
+                    {log.level}
+                  </span>
+                  {log.prefix && (
+                    <span className="tui-log-prefix">{log.prefix}</span>
+                  )}
+                  <span className="tui-log-text">
+                    {log.url ? (
+                      log.text.split(log.url).map((part, i, arr) => (
+                        <span key={i}>
+                          {part}
+                          {i < arr.length - 1 && (
+                            <span className="tui-log-url">{log.url}</span>
+                          )}
+                        </span>
+                      ))
+                    ) : (
+                      log.text
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="tui-logs-footer">
+              <span className="tui-following-pill">↓ Following latest</span>
+            </div>
+          </div>
+        </main>
       </div>
 
-      <div className="terminal-statusbar">
-        <div className="statusbar-shortcuts">
-          <span><kbd>Tab</kbd> Switch</span>
-          <span><kbd>Ctrl+T</kbd> Shell</span>
-          <span><kbd>m</kbd> Min/Max</span>
-          <span><kbd>r</kbd> Restart</span>
-          <span><kbd>/</kbd> Search</span>
-          <span><kbd>q</kbd> Quit</span>
+      {/* 5. Bottom Status Bar */}
+      <footer className="tui-statusbar">
+        <div className="tui-status-left">
+          <span className="tui-status-green">✓ 3/3 running</span>
         </div>
-        <div className="statusbar-meta">
-          <span className="meta-green">● 3 running</span>
-          <span className="meta-sep">/</span>
-          <span className="meta-muted">0 exited</span>
-          <span className="meta-sep">/</span>
-          <span className="meta-muted">devpane v0.4.0</span>
+        <div className="tui-status-center">
+          <span>
+            <kbd>Tab</kbd> Switch
+          </span>
+          <span>
+            <kbd>R</kbd> Restart
+          </span>
+          <span>
+            <kbd>S</kbd> Stop
+          </span>
+          <span>
+            <kbd>W</kbd> Unwrap
+          </span>
+          <span>
+            <kbd>/</kbd> Filter
+          </span>
+          <span>
+            <kbd>M</kbd> Min/Max
+          </span>
+          <span>
+            <kbd>^T</kbd> Shell
+          </span>
+          <span>
+            <kbd>Q</kbd>
+          </span>
         </div>
-      </div>
+        <div className="tui-status-right">
+          <span className="tui-status-green">✓ Daemon connected</span>
+        </div>
+      </footer>
     </div>
   );
 }

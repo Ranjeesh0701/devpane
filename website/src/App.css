@@ -338,9 +338,12 @@
   }
 }
 
-.terminal-window-topbar {
-  height: 44px;
-  background: linear-gradient(180deg, #181a24 0%, #13151e 100%);
+/* ==========================================================================
+   AUTHENTIC DEVPANE TUI TERMINAL WINDOW (devpane up)
+   ========================================================================== */
+.tui-window-titlebar {
+  height: 38px;
+  background: #161922;
   border-bottom: 1px solid #232736;
   padding: 0 16px;
   display: flex;
@@ -354,6 +357,7 @@
   align-items: center;
   gap: 7px;
   flex-shrink: 0;
+  width: 50px;
 }
 
 .dot {
@@ -377,240 +381,600 @@
   box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35);
 }
 
-.terminal-window-tabs {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  overflow-x: auto;
-}
-
-.window-tab {
+.tui-window-title {
   font-family: var(--font-mono);
   font-size: 11.5px;
-  font-weight: 500;
-  padding: 5px 12px;
-  border-radius: 6px;
-  background: transparent;
-  border: 1px solid transparent;
-  color: #8b92a5;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 150ms ease;
+  color: #8b949e;
+  text-align: center;
+  flex: 1;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.window-tab:hover {
-  color: #eeeff4;
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.window-tab.active {
-  background: #1e2230;
-  border-color: rgba(139, 156, 255, 0.35);
-  color: #8b9cff;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-.tab-indicator {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: #55d6a2;
-}
-
-.tab-icon {
-  font-size: 12px;
-  line-height: 1;
-  opacity: 0.95;
-}
-
-.tab-title {
-  display: inline-block;
-}
-
-.tab-port-pill {
-  font-size: 10px;
-  color: #aab5ff;
-  opacity: 0.85;
-}
-
-.window-status-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: #55d6a2;
-  background: rgba(85, 214, 162, 0.08);
-  border: 1px solid rgba(85, 214, 162, 0.22);
-  padding: 3px 8px;
-  border-radius: 9999px;
-  white-space: nowrap;
+.tui-title-spacer {
+  width: 50px;
   flex-shrink: 0;
 }
 
-.pulse-beacon {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #55d6a2;
-  box-shadow: 0 0 8px #55d6a2;
-}
-
-/* TERMINAL CANVAS */
-.terminal-canvas {
-  background-color: #0b0c10;
-  padding: 18px 20px;
-  min-height: 250px;
-  overflow-x: auto;
-}
-
-.terminal-stream {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.stream-line {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 6px;
-  white-space: pre-wrap;
-  word-break: normal;
-}
-
-.line-badge {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 4px;
-  user-select: none;
-}
-
-.badge-daemon {
-  color: #8b9cff;
-  background: rgba(139, 156, 255, 0.12);
-  border: 1px solid rgba(139, 156, 255, 0.25);
-}
-
-.badge-server {
-  color: #38bdf8;
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.25);
-}
-
-.badge-health {
-  color: #55d6a2;
-  background: rgba(85, 214, 162, 0.12);
-  border: 1px solid rgba(85, 214, 162, 0.25);
-}
-
-.badge-db, .badge-redis {
-  color: #f0bf69;
-  background: rgba(240, 191, 105, 0.12);
-  border: 1px solid rgba(240, 191, 105, 0.25);
-}
-
-.badge-hmr {
-  color: #c084fc;
-  background: rgba(192, 132, 252, 0.12);
-  border: 1px solid rgba(192, 132, 252, 0.25);
-}
-
-.badge-worker {
-  color: #818cf8;
-  background: rgba(129, 140, 248, 0.12);
-  border: 1px solid rgba(129, 140, 248, 0.25);
-}
-
-.line-content {
-  color: #d8dbe6;
-}
-
-.line-highlight {
-  font-weight: 600;
-}
-
-.highlight-green {
-  color: #55d6a2;
-}
-
-.highlight-indigo {
-  color: #8b9cff;
-}
-
-.highlight-amber {
-  color: #f0bf69;
-}
-
-.highlight-muted {
-  color: #6e7282;
-}
-
-.highlight-link {
-  color: #8b9cff;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.line-suffix {
-  color: #6e7282;
-}
-
-/* TERMINAL STATUS BAR */
-.terminal-statusbar {
-  min-height: 36px;
-  background: #13151e;
-  border-top: 1px solid #1f222e;
+/* 2. Top TUI Bar */
+.tui-topbar {
+  min-height: 34px;
+  background: #0d1117;
+  border-bottom: 1px solid #1e2433;
   padding: 6px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.tui-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tui-diamond {
+  color: #a78bfa;
+  font-size: 11px;
+}
+
+.tui-brand-name {
+  font-weight: 700;
+  color: #f0f6fc;
+}
+
+.tui-brand-ver {
+  color: #7d8590;
+}
+
+.tui-slash {
+  color: #484f58;
+}
+
+.tui-project-name {
+  color: #c9d1d9;
+}
+
+.tui-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #7d8590;
+  font-size: 11.5px;
+}
+
+.tui-filter-icon {
+  font-size: 11px;
+}
+
+.tui-key {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: #c9d1d9;
+}
+
+/* 3. Subheader Bar */
+.tui-subheader {
+  min-height: 36px;
+  background: #0a0d14;
+  border-bottom: 1px solid #1e2433;
+  padding: 6px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
   flex-wrap: wrap;
+}
+
+.tui-sub-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #7d8590;
+}
+
+.tui-sub-label {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #58a6ff;
+}
+
+.tui-sub-count {
+  color: #f0f6fc;
+  font-weight: 600;
+}
+
+.tui-sub-buttons {
+  color: #7d8590;
+  font-size: 11px;
+}
+
+.tui-sub-center {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tui-active-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.tui-active-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #3fb950;
+  font-weight: 600;
+}
+
+.tui-check {
+  font-weight: 700;
+}
+
+.tui-sub-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.tui-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #8b949e;
+}
+
+.tui-action-icon {
+  font-size: 11px;
+}
+
+.tui-port-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #58a6ff;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.tui-port-link:hover {
+  color: #79c0ff;
+  text-decoration: underline;
+}
+
+.tui-arrow {
+  font-size: 11px;
+}
+
+/* 4. Split Body: Sidebar + Main */
+.tui-body {
+  display: flex;
+  min-height: 330px;
+  background: #0a0d14;
+}
+
+/* Sidebar */
+.tui-sidebar {
+  width: 260px;
+  flex: 0 0 260px;
+  border-right: 1px solid #1e2433;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #0d1117;
+}
+
+.tui-sidebar-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.tui-service-item {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-left: 3px solid transparent;
+  padding: 8px 12px;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  transition: all 0.15s ease;
+}
+
+.tui-service-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.tui-service-item.active {
+  background: #162238;
+  border-left-color: #58a6ff;
+}
+
+.tui-service-line1 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tui-service-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tui-service-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.tui-service-name {
+  font-size: 12.5px;
+  font-weight: 650;
+  color: #c9d1d9;
+}
+
+.tui-service-item.active .tui-service-name {
+  color: #ffffff;
+}
+
+.tui-service-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3fb950;
+  box-shadow: 0 0 6px rgba(63, 185, 80, 0.7);
+}
+
+.tui-service-key {
+  font-size: 11px;
+  color: #7d8590;
+}
+
+.tui-service-subline {
+  font-size: 10.5px;
+  color: #7d8590;
+  margin-top: 3px;
+  padding-left: 21px;
+}
+
+.tui-sidebar-footer {
+  padding: 12px 14px;
+  border-top: 1px solid #1e2433;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tui-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tui-meta-muted {
+  color: #7d8590;
+}
+
+.tui-meta-val {
+  color: #e6edf3;
+}
+
+.tui-meta-green {
+  color: #3fb950;
+  font-weight: 600;
+}
+
+/* Main Content */
+.tui-main {
+  flex: 1;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #0a0d14;
+  min-width: 0;
+}
+
+/* Metrics Cards */
+.tui-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.tui-metric-card {
+  background: #0e131d;
+  border: 1px solid #1e2433;
+  border-radius: 6px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tui-metric-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #7d8590;
+}
+
+.tui-metric-value-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tui-metric-val {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: #f0f6fc;
+}
+
+.tui-meter-bar {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: -0.5px;
+}
+
+.tui-meter-green {
+  color: #3fb950;
+}
+
+.tui-meter-blue {
+  color: #58a6ff;
+}
+
+.tui-active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: #3fb950;
+  background: rgba(63, 185, 80, 0.12);
+  border: 1px solid rgba(63, 185, 80, 0.3);
+  padding: 1px 7px;
+  border-radius: 9999px;
+}
+
+.tui-beacon {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #3fb950;
+  box-shadow: 0 0 6px #3fb950;
+}
+
+/* Logs Box */
+.tui-logs-box {
+  flex: 1;
+  min-height: 220px;
+  background: #0d1117;
+  border: 1px solid #1e2433;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tui-logs-header {
+  height: 30px;
+  background: #121620;
+  border-bottom: 1px solid #1e2433;
+  padding: 0 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   font-family: var(--font-mono);
   font-size: 11px;
 }
 
-.statusbar-shortcuts {
+.tui-logs-tabs {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  color: #7b8196;
+  gap: 12px;
 }
 
-.statusbar-shortcuts kbd {
+.tui-log-tab {
+  color: #7d8590;
+  cursor: default;
+}
+
+.tui-log-tab.active {
+  color: #f0f6fc;
+  font-weight: 600;
+}
+
+.tui-log-tab.tab-info {
+  color: #58a6ff;
+}
+
+.tui-log-tab.tab-warn {
+  color: #d29922;
+}
+
+.tui-log-tab.tab-error {
+  color: #f85149;
+}
+
+.tui-wrap-badge {
+  color: #3fb950;
+  font-size: 10px;
+  font-family: var(--font-mono);
+}
+
+.tui-logs-stream {
+  padding: 10px 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+
+.tui-log-line {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.tui-log-num {
+  color: #484f58;
+  font-size: 10.5px;
+  min-width: 14px;
+  text-align: right;
+  user-select: none;
+}
+
+.tui-log-level {
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.tui-log-level.level-info {
+  color: #58a6ff;
+}
+
+.tui-log-level.level-warn {
+  color: #d29922;
+}
+
+.tui-log-level.level-error {
+  color: #f85149;
+}
+
+.tui-log-prefix {
+  color: #a78bfa;
+  font-weight: 600;
+}
+
+.tui-log-text {
+  color: #c9d1d9;
+}
+
+.tui-log-url {
+  color: #58a6ff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.tui-logs-footer {
+  padding: 6px 12px;
+  background: #0d1117;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.tui-following-pill {
   font-family: var(--font-mono);
   font-size: 10px;
-  color: #8b9cff;
-  background: rgba(139, 156, 255, 0.1);
-  border: 1px solid rgba(139, 156, 255, 0.25);
-  padding: 1px 5px;
-  border-radius: 3px;
+  font-weight: 600;
+  color: #3fb950;
+  background: rgba(63, 185, 80, 0.12);
+  border: 1px solid rgba(63, 185, 80, 0.3);
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
-.statusbar-meta {
+/* 5. Bottom Status Bar */
+.tui-statusbar {
+  min-height: 34px;
+  background: #090c12;
+  border-top: 1px solid #1e2433;
+  padding: 6px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tui-status-green {
+  color: #3fb950;
+  font-weight: 600;
+}
+
+.tui-status-center {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 10.5px;
-  white-space: nowrap;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: #7d8590;
 }
 
-.meta-green {
-  color: #55d6a2;
-  font-weight: 600;
+.tui-status-center kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: #c9d1d9;
+}
+
+/* Responsive adjustments */
+@media (max-width: 860px) {
+  .tui-body {
+    flex-direction: column;
+  }
+  .tui-sidebar {
+    width: 100%;
+    flex: 0 0 auto;
+    border-right: none;
+    border-bottom: 1px solid #1e2433;
+  }
+  .tui-sidebar-list {
+    flex-direction: row;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+  .tui-service-item {
+    width: auto;
+    flex: 0 0 auto;
+    min-width: 160px;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+  }
+  .tui-service-item.active {
+    border-left-color: transparent;
+    border-bottom-color: #58a6ff;
+  }
+  .tui-sidebar-footer {
+    display: none;
+  }
+  .tui-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  .tui-status-center {
+    display: none;
+  }
 }
 
 .meta-sep {
