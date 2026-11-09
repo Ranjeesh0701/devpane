@@ -13,8 +13,9 @@
 .log-viewer-dialog {
   display: flex;
   flex-direction: column;
-  width: min(1040px, 100%);
-  max-height: min(780px, calc(100vh - 48px));
+  width: min(1040px, calc(100vw - 48px));
+  height: min(780px, calc(100vh - 48px));
+  max-height: calc(100vh - 48px);
   overflow: hidden;
   color: var(--text-primary, #e9edf5);
   background: var(--surface, #11151d);
@@ -26,6 +27,7 @@
 .log-viewer-header,
 .log-viewer-toolbar,
 .log-viewer-footer {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -275,8 +277,10 @@
 }
 .log-viewer-output-wrap {
   position: relative;
-  min-height: 260px;
-  flex: 1;
+  min-height: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   background: var(--terminal-bg, #0b0e13);
 }
@@ -308,8 +312,9 @@
   box-sizing: border-box;
   width: 100%;
   height: 100%;
-  max-height: min(58vh, 560px);
-  min-height: 260px;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
   margin: 0;
   padding: 20px 22px;
   overflow: auto;

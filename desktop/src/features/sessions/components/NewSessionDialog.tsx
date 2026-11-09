@@ -94,64 +94,66 @@ export function NewSessionDialog({ onClose, onSubmit }: Props) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="dialog-fields">
-            <div className="form-field">
-              <label htmlFor={nameId}>Session name</label>
-              <input
-                id={nameId}
-                autoFocus
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="api-server"
-                maxLength={80}
-                required
-                disabled={submitting}
-              />
-              <span className="field-help">
-                A label to help you identify this process.
-              </span>
+        <form onSubmit={handleSubmit} className="dialog-form">
+          <div className="dialog-body">
+            <div className="dialog-fields">
+              <div className="form-field">
+                <label htmlFor={nameId}>Session name</label>
+                <input
+                  id={nameId}
+                  autoFocus
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="api-server"
+                  maxLength={80}
+                  required
+                  disabled={submitting}
+                />
+                <span className="field-help">
+                  A label to help you identify this process.
+                </span>
+              </div>
+              <div className="form-field">
+                <label htmlFor={programId}>Executable</label>
+                <input
+                  id={programId}
+                  value={program}
+                  onChange={(event) => setProgram(event.target.value)}
+                  placeholder="npm"
+                  required
+                  disabled={submitting}
+                />
+                <span className="field-help">
+                  The executable name or path, for example{" "}
+                  <code>/usr/bin/python3</code>.
+                </span>
+              </div>
+              <div className="form-field">
+                <label htmlFor={argsId}>
+                  Arguments <span className="optional-label">OPTIONAL</span>
+                </label>
+                <textarea
+                  id={argsId}
+                  value={argsText}
+                  onChange={(event) => setArgsText(event.target.value)}
+                  placeholder={"run\ndev"}
+                  rows={3}
+                  disabled={submitting}
+                />
+                <span className="field-help">
+                  One argument per line. Example: <code>npm</code> with{" "}
+                  <code>run</code> and <code>dev</code>.
+                </span>
+              </div>
             </div>
-            <div className="form-field">
-              <label htmlFor={programId}>Executable</label>
-              <input
-                id={programId}
-                value={program}
-                onChange={(event) => setProgram(event.target.value)}
-                placeholder="npm"
-                required
-                disabled={submitting}
-              />
-              <span className="field-help">
-                The executable name or path, for example{" "}
-                <code>/usr/bin/python3</code>.
-              </span>
-            </div>
-            <div className="form-field">
-              <label htmlFor={argsId}>
-                Arguments <span className="optional-label">OPTIONAL</span>
-              </label>
-              <textarea
-                id={argsId}
-                value={argsText}
-                onChange={(event) => setArgsText(event.target.value)}
-                placeholder={"run\ndev"}
-                rows={3}
-                disabled={submitting}
-              />
-              <span className="field-help">
-                One argument per line. Example: <code>npm</code> with{" "}
-                <code>run</code> and <code>dev</code>.
-              </span>
-            </div>
-          </div>
 
-          {error && (
-            <div className="dialog-error" role="alert">
-              <Icon name="alert" size={15} />
-              <span>{error}</span>
-            </div>
-          )}
+            {error && (
+              <div className="dialog-error" role="alert">
+                <Icon name="alert" size={15} />
+                <span>{error}</span>
+              </div>
+            )}
+          </div>
 
           <div className="dialog-footer">
             <span className="dialog-footer-note">
