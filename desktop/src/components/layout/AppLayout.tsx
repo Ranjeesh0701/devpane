@@ -29,7 +29,7 @@ export function AppLayout({
       />
       <main className="main-area">
         <Topbar page={activePage} />
-        {children}
+        <div className="content-scroll-area">{children}</div>
       </main>
     </div>
   );
