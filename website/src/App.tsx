@@ -32,7 +32,7 @@ const DEMO_SERVICES: ServiceTab[] = [
         text: "Supervised 'backend' (PID 58120) • 0.8% CPU • 32.4 MB",
       },
       {
-        text: "   Compiling devpane-server v0.3.1 (/Workspace/devpane)",
+        text: "   Compiling devpane-server v0.4.0 (/Workspace/devpane)",
         highlightType: "indigo",
       },
       {
@@ -248,7 +248,7 @@ function HeroTerminal() {
         <div className="statusbar-meta">
           <span className="meta-green">● 3 running</span>
           <span className="meta-sep">/</span>
-          <span className="meta-muted">devpane v0.3.1</span>
+          <span className="meta-muted">devpane v0.4.0</span>
         </div>
       </div>
     </div>
@@ -748,7 +748,7 @@ function App() {
               height="28"
             />
             <span className="brand-name">devpane</span>
-            <span className="brand-badge">v0.3.1</span>
+            <span className="brand-badge">v0.4.0</span>
           </a>
 
           <nav className="nav-links">
