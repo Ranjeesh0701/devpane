@@ -563,13 +563,15 @@
 
 /* TERMINAL STATUS BAR */
 .terminal-statusbar {
-  height: 36px;
+  min-height: 36px;
   background: #13151e;
   border-top: 1px solid #1f222e;
-  padding: 0 16px;
+  padding: 6px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
   font-family: var(--font-mono);
   font-size: 11px;
 }
@@ -578,6 +580,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
   color: #7b8196;
 }
 
@@ -596,6 +599,7 @@
   align-items: center;
   gap: 6px;
   font-size: 10.5px;
+  white-space: nowrap;
 }
 
 .meta-green {

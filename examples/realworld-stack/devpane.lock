@@ -4,11 +4,6 @@
 version: 1
 config_hash: 87c2454b1427246d
 services:
-  web:
-    command: node web/server.js
-    working_dir: .
-    port: 5173
-    profiles: []
   api:
     command: node api/server.js
     working_dir: .
@@ -18,4 +13,9 @@ services:
     command: python3 worker/worker.py
     working_dir: .
     port: null
+    profiles: []
+  web:
+    command: node web/server.js
+    working_dir: .
+    port: 5173
     profiles: []

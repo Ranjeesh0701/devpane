@@ -12,7 +12,7 @@ use ratatui::{
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Paragraph, Tabs},
+    widgets::{Block, Borders, Paragraph, Tabs, Wrap},
 };
 
 use devpane::process::session::{ProcessSession, ProcessStatus};
@@ -174,10 +174,14 @@ where
 
         // Render UI
         terminal.draw(|frame| {
+            let term_width = frame.area().width;
+            let term_height = frame.area().height;
+            let footer_height = if term_height <= 12 { 1 } else { 2 };
+
             let areas = Layout::vertical([
                 Constraint::Length(3), // Tab bar
                 Constraint::Min(0),     // Content
-                Constraint::Length(2),  // Footer
+                Constraint::Length(footer_height),  // Footer
             ])
             .split(frame.area());
 
@@ -375,13 +379,26 @@ where
                 }
                 None => {
                     if is_searching {
-                        vec![Line::from(vec![
-                            Span::styled("Search: /", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-                            Span::styled(&search_input, Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
-                            Span::styled("█", Style::default().fg(Color::Yellow)),
-                            Span::raw("  "),
-                            Span::styled("(Enter: Confirm • Esc: Clear • Type to filter)", Style::default().fg(Color::DarkGray)),
-                        ])]
+                        if footer_height == 1 {
+                            vec![Line::from(vec![
+                                Span::styled("Search: /", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                                Span::styled(&search_input, Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
+                                Span::styled("█", Style::default().fg(Color::Yellow)),
+                                Span::raw("  "),
+                                Span::styled("(Enter: Confirm • Esc: Clear)", Style::default().fg(Color::DarkGray)),
+                            ])]
+                        } else {
+                            vec![
+                                Line::from(vec![
+                                    Span::styled("Search: /", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                                    Span::styled(&search_input, Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
+                                    Span::styled("█", Style::default().fg(Color::Yellow)),
+                                ]),
+                                Line::from(vec![
+                                    Span::styled("(Enter: Confirm • Esc: Clear • Type to filter)", Style::default().fg(Color::DarkGray)),
+                                ]),
+                            ]
+                        }
                     } else {
                         let running_count = service_views.iter().filter(|v| matches!(v.status(), ProcessStatus::Running)).count();
                         let exited_count = service_views.iter().filter(|v| matches!(v.status(), ProcessStatus::Exited)).count();
@@ -389,79 +406,150 @@ where
                         // Show scroll shortcuts if viewing a shell tab
                         let is_shell_tab = active_tab >= service_views.len();
 
-                        if is_shell_tab {
-                            vec![Line::from(vec![
-                                Span::raw("Tab: Switch • "),
-                                Span::raw("Ctrl+T: New shell • "),
-                                Span::raw("Ctrl+W: Close tab • "),
-                                Span::styled("PgUp/PgDn: Scroll • ", Style::default().fg(Color::Cyan)),
-                                Span::styled("End: Bottom • ", Style::default().fg(Color::Cyan)),
-                                Span::raw("Ctrl+Q: Quit • "),
-                                Span::styled(
-                                    format!("{} running", running_count),
-                                    Style::default().fg(Color::Green),
-                                ),
-                                Span::raw(" • "),
-                                Span::styled(
-                                    format!("{} exited", exited_count),
-                                    Style::default().fg(Color::Red),
-                                ),
-                            ])]
+                        let status_span = Span::styled(
+                            format!("● {running_count} running"),
+                            Style::default().fg(Color::Green),
+                        );
+                        let exited_span = Span::styled(
+                            format!("○ {exited_count} exited"),
+                            Style::default().fg(if exited_count > 0 { Color::Red } else { Color::DarkGray }),
+                        );
+
+                        let active_action = action_status.as_ref().and_then(|(msg, time)| {
+                            if time.elapsed() < Duration::from_secs(3) {
+                                Some(msg.as_str())
+                            } else {
+                                None
+                            }
+                        });
+
+                        if footer_height == 1 {
+                            // Single-line compact mode
+                            let mut spans = if is_shell_tab {
+                                vec![
+                                    Span::raw("Tab: Switch • "),
+                                    Span::raw("^T: Shell • "),
+                                    Span::raw("^W: Close • "),
+                                    Span::raw("^Q: Quit • "),
+                                    status_span,
+                                ]
+                            } else {
+                                vec![
+                                    Span::raw("Tab: Switch • "),
+                                    Span::styled("r: Restart • ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                                    Span::styled("s: Stop • ", Style::default().fg(Color::Magenta)),
+                                    Span::styled("/: Search • ", Style::default().fg(Color::White)),
+                                    Span::raw("q: Quit • "),
+                                    status_span,
+                                ]
+                            };
+                            if let Some(msg) = active_action {
+                                spans.push(Span::raw(" • "));
+                                spans.push(Span::styled(format!("⚡ {msg}"), Style::default().fg(Color::Yellow)));
+                            }
+                            vec![Line::from(spans)]
                         } else {
-                            let has_filter = service_views.get(active_tab).and_then(|v| v.search_query.as_ref()).is_some();
-                            let mut shortcuts = vec![
-                                Span::raw("Tab: Switch • "),
-                                Span::styled("r: Restart • ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-                                Span::styled("b: Rebuild • ", Style::default().fg(Color::Yellow)),
-                                Span::styled("s: Stop/Start • ", Style::default().fg(Color::Magenta)),
-                                Span::styled("/: Search • ", Style::default().fg(Color::White)),
-                            ];
-                            if has_filter {
-                                shortcuts.push(Span::styled("Esc: Clear filter • ", Style::default().fg(Color::Yellow)));
-                            }
-                            if let Some(view) = service_views.get(active_tab) {
-                                if view.detected_url().is_some() {
-                                    shortcuts.push(Span::styled("o: Open browser • ", Style::default().fg(Color::Green)));
+                            // Two-line responsive mode
+                            let row1_spans = if is_shell_tab {
+                                if term_width >= 105 {
+                                    vec![
+                                        Span::raw("Tab: Switch • "),
+                                        Span::raw("Ctrl+T: New shell • "),
+                                        Span::raw("Ctrl+W: Close tab • "),
+                                        Span::styled("PgUp/PgDn: Scroll • ", Style::default().fg(Color::Cyan)),
+                                        Span::styled("End: Bottom • ", Style::default().fg(Color::Cyan)),
+                                        Span::raw("Ctrl+Q: Quit"),
+                                    ]
+                                } else if term_width >= 75 {
+                                    vec![
+                                        Span::raw("Tab: Switch • "),
+                                        Span::raw("^T: Shell • "),
+                                        Span::raw("^W: Close • "),
+                                        Span::styled("PgUp/PgDn: Scroll • ", Style::default().fg(Color::Cyan)),
+                                        Span::raw("^Q: Quit"),
+                                    ]
+                                } else {
+                                    vec![
+                                        Span::raw("Tab: Switch • "),
+                                        Span::raw("^T: Shell • "),
+                                        Span::raw("^Q: Quit"),
+                                    ]
                                 }
-                            }
-                            shortcuts.extend(vec![
-                                Span::raw("Ctrl+T: Shell • "),
-                                Span::raw("Ctrl+W: Close tab • "),
-                                Span::raw("q: Quit • "),
-                                Span::styled(
-                                    format!("{} running", running_count),
-                                    Style::default().fg(Color::Green),
-                                ),
-                                Span::raw(" • "),
-                                Span::styled(
-                                    format!("{} exited", exited_count),
-                                    Style::default().fg(Color::Red),
-                                ),
-                            ]);
+                            } else {
+                                let has_filter = service_views.get(active_tab).and_then(|v| v.search_query.as_ref()).is_some();
+                                let has_url = service_views.get(active_tab).and_then(|v| v.detected_url()).is_some();
 
-                            if let Some((ref msg, time)) = action_status {
-                                if time.elapsed() < Duration::from_secs(3) {
-                                    shortcuts.push(Span::raw(" • "));
-                                    shortcuts.push(Span::styled(
-                                        format!("⚡ {msg}"),
-                                        Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
-                                    ));
+                                if term_width >= 115 {
+                                    let mut s = vec![
+                                        Span::raw("Tab: Switch • "),
+                                        Span::styled("r: Restart • ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                                        Span::styled("b: Rebuild • ", Style::default().fg(Color::Yellow)),
+                                        Span::styled("s: Stop/Start • ", Style::default().fg(Color::Magenta)),
+                                        Span::styled("/: Search • ", Style::default().fg(Color::White)),
+                                    ];
+                                    if has_filter {
+                                        s.push(Span::styled("Esc: Clear • ", Style::default().fg(Color::Yellow)));
+                                    }
+                                    if has_url {
+                                        s.push(Span::styled("o: Open • ", Style::default().fg(Color::Green)));
+                                    }
+                                    s.extend(vec![
+                                        Span::raw("Ctrl+T: Shell • "),
+                                        Span::raw("Ctrl+W: Close • "),
+                                        Span::raw("q: Quit"),
+                                    ]);
+                                    s
+                                } else if term_width >= 80 {
+                                    let mut s = vec![
+                                        Span::raw("Tab: Switch • "),
+                                        Span::styled("r: Restart • ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                                        Span::styled("s: Stop • ", Style::default().fg(Color::Magenta)),
+                                        Span::styled("/: Search • ", Style::default().fg(Color::White)),
+                                    ];
+                                    if has_filter {
+                                        s.push(Span::styled("Esc: Clear • ", Style::default().fg(Color::Yellow)));
+                                    }
+                                    s.extend(vec![
+                                        Span::raw("^T: Shell • "),
+                                        Span::raw("q: Quit"),
+                                    ]);
+                                    s
+                                } else {
+                                    vec![
+                                        Span::raw("Tab: Next • "),
+                                        Span::styled("r: Restart • ", Style::default().fg(Color::Cyan)),
+                                        Span::raw("q: Quit"),
+                                    ]
                                 }
+                            };
+
+                            let mut row2_spans = vec![status_span];
+                            if exited_count > 0 {
+                                row2_spans.push(Span::raw(" • "));
+                                row2_spans.push(exited_span);
+                            }
+                            if let Some(msg) = active_action {
+                                row2_spans.push(Span::raw("   "));
+                                row2_spans.push(Span::styled(
+                                    format!("⚡ {msg}"),
+                                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+                                ));
                             }
 
-                            vec![Line::from(shortcuts)]
+                            vec![Line::from(row1_spans), Line::from(row2_spans)]
                         }
                     }
                 }
             };
 
-            frame.render_widget(Paragraph::new(footer_lines), areas[2]);
+            frame.render_widget(Paragraph::new(footer_lines).wrap(Wrap { trim: true }), areas[2]);
         })?;
 
         // Handle input
         if event::poll(Duration::from_millis(100))? {
             match event::read()? {
                 Event::Resize(cols, rows) => {
+                    let _ = terminal.clear();
                     // Resize all shell tabs to match new terminal size
                     for shell in &mut shell_tabs {
                         if let Err(e) = shell.resize(rows.saturating_sub(6), cols) {
