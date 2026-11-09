@@ -502,6 +502,10 @@ function BenchmarkTable() {
         </p>
       </div>
 
+      <div className="table-scroll-hint">
+        <span>↔ Swipe horizontally to compare runtimes</span>
+      </div>
+
       <div className="benchmark-table-wrapper">
         <table className="benchmark-table">
           <thead>
@@ -990,11 +994,15 @@ function InstallWidget() {
 }
 
 function App() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+
   return (
     <div className="app-shell">
       <header className="navbar">
         <div className="nav-container">
-          <a className="nav-brand" href="#home">
+          <a className="nav-brand" href="#home" onClick={closeMobileMenu}>
             <img
               src="/logo-dark.svg"
               alt="Devpane logo"
@@ -1023,10 +1031,67 @@ function App() {
             </a>
           </nav>
 
-          <a className="nav-cta" href="#install">
-            Install CLI ↗
-          </a>
+          <div className="nav-actions">
+            <a className="nav-cta" href="#install">
+              Install CLI ↗
+            </a>
+            <button
+              className={`nav-mobile-toggle ${mobileMenuOpen ? "open" : ""}`}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              type="button"
+              aria-label="Toggle navigation menu"
+              aria-expanded={mobileMenuOpen}
+            >
+              <span className="hamburger-line" />
+              <span className="hamburger-line" />
+              <span className="hamburger-line" />
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Navigation Drawer */}
+        {mobileMenuOpen && (
+          <div className="nav-mobile-menu" role="dialog" aria-label="Mobile navigation">
+            <nav className="nav-mobile-links">
+              <a href="#demo" onClick={closeMobileMenu}>
+                Workspace
+              </a>
+              <a href="#benchmarks" onClick={closeMobileMenu}>
+                Benchmarks
+              </a>
+              <a href="#mcp" onClick={closeMobileMenu}>
+                AI MCP Server
+              </a>
+              <a href="#features" onClick={closeMobileMenu}>
+                Features
+              </a>
+              <a href="#install" onClick={closeMobileMenu}>
+                Installation
+              </a>
+              <a
+                href="https://github.com/Ranjeesh0701/devpane"
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => {
+                  trackGithubClick("mobile_nav");
+                  closeMobileMenu();
+                }}
+                className="nav-mobile-github"
+              >
+                GitHub Repository ↗
+              </a>
+            </nav>
+            <div className="nav-mobile-cta-wrap">
+              <a
+                className="btn btn-primary nav-mobile-cta"
+                href="#install"
+                onClick={closeMobileMenu}
+              >
+                Install Devpane Free ↗
+              </a>
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="main-content">
