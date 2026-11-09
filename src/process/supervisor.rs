@@ -26,6 +26,25 @@ struct ServiceMeta {
     next_restart_at: Option<Instant>,
 }
 
+/// Checks if two project directory paths point to the same location,
+/// handling canonicalization, symlinks, and trailing slashes.
+pub fn is_same_project_dir(p1: Option<&Path>, p2: &Path) -> bool {
+    match p1 {
+        Some(dir) => {
+            if dir == p2 {
+                return true;
+            }
+            if let (Ok(c1), Ok(c2)) = (dir.canonicalize(), p2.canonicalize()) {
+                if c1 == c2 {
+                    return true;
+                }
+            }
+            dir.components().eq(p2.components())
+        }
+        None => true,
+    }
+}
+
 pub struct ProcessSupervisor {
     processes: Vec<ManagedProcess>,
     services_meta: HashMap<String, ServiceMeta>,
@@ -62,6 +81,8 @@ impl ProcessSupervisor {
     }
 
     pub fn list(&mut self) -> Result<Vec<ProcessSession>, DevpaneError> {
+        super::platform::reap_zombies();
+
         for process in &mut self.processes {
             let child_result = match process.child.as_mut() {
                 Some(child) => Some(child.try_wait()),
@@ -83,6 +104,15 @@ impl ProcessSupervisor {
                     process.session.memory_bytes = mem;
                 }
                 Some(Err(error)) => {
+                    #[cfg(unix)]
+                    if error.raw_os_error() == Some(libc::ECHILD) {
+                        process.session.status = ProcessStatus::Exited;
+                        process.session.exit_code = None;
+                        process.session.cpu_percent = None;
+                        process.session.memory_bytes = None;
+                        process.child = None;
+                        continue;
+                    }
                     eprintln!(
                         "Failed to check child process {}: {error}",
                         process.session.pid
@@ -96,11 +126,23 @@ impl ProcessSupervisor {
                         process.session.memory_bytes = mem;
                     }
                     Ok(false) => {
-                        process.session.status = ProcessStatus::Exited;
-                        process.session.cpu_percent = None;
-                        process.session.memory_bytes = None;
+                        if super::platform::is_process_active(process.session.pid).unwrap_or(false) {
+                            process.session.status = ProcessStatus::Running;
+                            let (cpu, mem) = super::platform::get_process_metrics(process.session.pid);
+                            process.session.cpu_percent = cpu;
+                            process.session.memory_bytes = mem;
+                        } else {
+                            process.session.status = ProcessStatus::Exited;
+                            process.session.cpu_percent = None;
+                            process.session.memory_bytes = None;
+                        }
                     }
                     Err(error) => {
+                        if super::platform::is_process_active(process.session.pid).unwrap_or(false) {
+                            process.session.status = ProcessStatus::Running;
+                        } else {
+                            process.session.status = ProcessStatus::Exited;
+                        }
                         eprintln!("Failed to check process {}: {error}", process.session.pid);
                     }
                 },
@@ -195,8 +237,30 @@ impl ProcessSupervisor {
         }
 
         if let Some(mut child) = managed.child.take() {
-            let _ = child.try_wait();
+            let start = Instant::now();
+            let mut reaped = false;
+            while start.elapsed() < Duration::from_millis(1500) {
+                match child.try_wait() {
+                    Ok(Some(_)) => {
+                        reaped = true;
+                        break;
+                    }
+                    Ok(None) => {
+                        std::thread::sleep(Duration::from_millis(50));
+                    }
+                    Err(_) => {
+                        reaped = true;
+                        break;
+                    }
+                }
+            }
+            if !reaped {
+                let _ = child.kill();
+                let _ = child.wait();
+            }
         }
+
+        super::platform::reap_zombies();
 
         // Run post_stop hooks if defined
         if let Some(meta) = self.services_meta.get(&name) {
@@ -680,22 +744,32 @@ impl ProcessSupervisor {
             );
         }
 
+        super::platform::reap_zombies();
+
         // Clean up any old exited sessions for this project before starting
         self.processes.retain(|process| {
-            !(process.session.project_dir.as_deref() == Some(project_dir)
+            !(is_same_project_dir(process.session.project_dir.as_deref(), project_dir)
                 && process.session.status == ProcessStatus::Exited)
         });
         let _ = self.save_sessions();
 
-        // Index running services belonging to this project.
+        // Index running services belonging to this project (verifying process is alive in OS).
         let existing_services: HashMap<String, ProcessSession> = self
             .processes
-            .iter()
-            .filter(|process| {
-                process.session.project_dir.as_deref() == Some(project_dir)
-                    && process.session.status == ProcessStatus::Running
+            .iter_mut()
+            .filter_map(|process| {
+                if !is_same_project_dir(process.session.project_dir.as_deref(), project_dir) {
+                    return None;
+                }
+                let is_alive = process.session.status == ProcessStatus::Running
+                    || super::platform::is_process_active(process.session.pid).unwrap_or(false);
+                if is_alive {
+                    process.session.status = ProcessStatus::Running;
+                    Some((process.session.name.clone(), process.session.clone()))
+                } else {
+                    None
+                }
             })
-            .map(|process| (process.session.name.clone(), process.session.clone()))
             .collect();
 
         let execution_order = match sort_services_by_dependencies(&services) {
@@ -714,7 +788,7 @@ impl ProcessSupervisor {
         for name in execution_order {
             let service = services.get(&name).unwrap();
 
-            // Skip services that are already running.
+            // 1. Skip services that are already running in this project
             if let Some(session) = existing_services.get(&name) {
                 results.push(ServiceStartResult {
                     name,
@@ -723,6 +797,30 @@ impl ProcessSupervisor {
                 });
                 continue;
             }
+
+            // 2. Also check if any alive process with this service name already exists in supervisor
+            if let Some(pos) = self.processes.iter().position(|p| {
+                p.session.name == name
+                    && (p.session.status == ProcessStatus::Running
+                        || super::platform::is_process_active(p.session.pid).unwrap_or(false))
+            }) {
+                self.processes[pos].session.status = ProcessStatus::Running;
+                if self.processes[pos].session.project_dir.is_none() {
+                    self.processes[pos].session.project_dir = Some(project_dir.to_path_buf());
+                }
+                results.push(ServiceStartResult {
+                    name,
+                    session: Some(self.processes[pos].session.clone()),
+                    error: None,
+                });
+                continue;
+            }
+
+            // 3. Remove any stale/exited entries for this service name before launching
+            self.processes.retain(|p| {
+                !(p.session.name == name
+                    && is_same_project_dir(p.session.project_dir.as_deref(), project_dir))
+            });
 
             // Verify dependency conditions
             for (dep_name, dep_spec) in service.dependency_map() {
@@ -784,7 +882,7 @@ impl ProcessSupervisor {
 
         let filtered_sessions: Vec<_> = sessions
             .into_iter()
-            .filter(|session| session.project_dir.as_deref() == Some(project_dir))
+            .filter(|session| is_same_project_dir(session.project_dir.as_deref(), project_dir))
             .collect();
 
         let mut results = Vec::new();
@@ -802,6 +900,7 @@ impl ProcessSupervisor {
             }
         }
 
+        super::platform::reap_zombies();
         Ok(results)
     }
 
@@ -879,4 +978,95 @@ pub fn sort_services_by_dependencies(
     }
 
     Ok(order)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_start_project_does_not_duplicate_running_services() {
+        let mut supervisor = ProcessSupervisor::new().unwrap();
+        let project_dir = std::env::current_dir().unwrap();
+        let mut services = HashMap::new();
+        let cfg = ServiceConfig {
+            enabled: true,
+            command: "sleep".to_string(),
+            args: vec!["10".to_string()],
+            cwd: PathBuf::new(),
+            env: HashMap::new(),
+            depends_on: None,
+            port: None,
+            health_check: None,
+            restart: None,
+            watch: None,
+            hooks: None,
+            build: None,
+            profiles: vec![],
+        };
+        services.insert("test_sleep".to_string(), cfg);
+
+        // First call: starts service
+        let res1 = supervisor.start_project(&project_dir, services.clone());
+        assert_eq!(res1.len(), 1);
+        assert!(res1[0].error.is_none());
+        let pid1 = res1[0].session.as_ref().unwrap().pid;
+
+        // Second call: should skip service because it is already running!
+        let res2 = supervisor.start_project(&project_dir, services.clone());
+        assert_eq!(res2.len(), 1);
+        assert!(res2[0].error.is_none());
+        let pid2 = res2[0].session.as_ref().unwrap().pid;
+        assert_eq!(pid1, pid2);
+
+        // Third call from a new supervisor instance
+        let mut supervisor2 = ProcessSupervisor::new().unwrap();
+        let res3 = supervisor2.start_project(&project_dir, services.clone());
+        assert_eq!(res3.len(), 1);
+        assert!(res3[0].error.is_none());
+        let pid3 = res3[0].session.as_ref().unwrap().pid;
+
+        // Clean up
+        let _ = supervisor2.stop("test_sleep");
+
+        assert_eq!(pid1, pid3, "New supervisor instance should load existing sessions and not restart them!");
+    }
+
+    #[test]
+    fn test_is_same_project_dir() {
+        let current = std::env::current_dir().unwrap();
+        assert!(is_same_project_dir(Some(&current), &current));
+
+        let current_with_slash = current.join("");
+        assert!(is_same_project_dir(Some(&current_with_slash), &current));
+
+        assert!(is_same_project_dir(None, &current));
+    }
+
+    #[test]
+    fn test_stopped_child_is_reaped_and_not_defunct() {
+        let mut supervisor = ProcessSupervisor::new().unwrap();
+        let current = std::env::current_dir().unwrap();
+        let session = supervisor
+            .start(
+                "reap_test".to_string(),
+                "sleep".to_string(),
+                vec!["5".to_string()],
+                current,
+                HashMap::new(),
+                None,
+            )
+            .unwrap();
+        let pid = session.pid;
+        assert!(super::super::platform::is_process_active(pid).unwrap_or(false));
+
+        // Stop the service
+        supervisor.stop("reap_test").unwrap();
+
+        // The process should no longer be active (and not a zombie)
+        assert!(
+            !super::super::platform::is_process_active(pid).unwrap_or(false),
+            "Stopped process should not remain active or defunct"
+        );
+    }
 }

@@ -359,7 +359,12 @@ fn run() -> Result<u8, DevpaneError> {
                         let sessions = fetch_sessions()?;
                         Ok(sessions
                             .into_iter()
-                            .filter(|s| s.project_dir.as_deref() == Some(&proj_dir))
+                            .filter(|s| {
+                                devpane::process::supervisor::is_same_project_dir(
+                                    s.project_dir.as_deref(),
+                                    &proj_dir,
+                                )
+                            })
                             .collect())
                     });
 

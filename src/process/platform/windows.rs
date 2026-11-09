@@ -70,6 +70,10 @@ pub fn is_process_active(pid: u32) -> Result<bool, io::Error> {
     }
 }
 
+pub fn reap_zombies() {
+    // Windows processes do not become zombies like in POSIX
+}
+
 pub fn get_process_start_time(pid: u32) -> Result<(u64, u64), io::Error> {
     use windows_sys::Win32::Foundation::FILETIME;
 

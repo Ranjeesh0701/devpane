@@ -82,6 +82,45 @@ pub fn is_same_process(session: &ProcessSession) -> Result<bool, io::Error> {
     let (current_start_time_seconds, current_start_time_useconds) =
         platform::get_process_start_time(session.pid)?;
 
-    Ok(current_start_time_seconds == session.start_time_seconds
-        && current_start_time_useconds == session.start_time_useconds)
+    let sec_match = current_start_time_seconds == session.start_time_seconds;
+    let usec_diff = (current_start_time_useconds as i64 - session.start_time_useconds as i64).abs();
+    let usec_match = usec_diff < 100_000 || session.start_time_useconds == 0;
+
+    Ok(sec_match && usec_match)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_same_process() {
+        let mut child = std::process::Command::new("sleep")
+            .arg("5")
+            .spawn()
+            .unwrap();
+        let pid = child.id();
+        let (s, us) = platform::get_process_start_time(pid).unwrap();
+        let session = ProcessSession {
+            id: "test".to_string(),
+            pid,
+            name: "test".to_string(),
+            command: "sleep".to_string(),
+            start_time_seconds: s,
+            start_time_useconds: us,
+            cwd: PathBuf::new(),
+            status: ProcessStatus::Running,
+            exit_code: None,
+            project_dir: None,
+            cpu_percent: None,
+            memory_bytes: None,
+        };
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        let matches = is_same_process(&session).unwrap();
+        let _ = child.kill();
+        assert!(
+            matches,
+            "is_same_process should return true for running child"
+        );
+    }
 }

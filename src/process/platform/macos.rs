@@ -25,11 +25,32 @@ pub fn stop_process(pid: u32) -> Result<bool, io::Error> {
 }
 
 pub fn is_process_active(pid: u32) -> Result<bool, io::Error> {
-    let pid = pid_to_i32(pid)?;
+    let pid_i32 = pid_to_i32(pid)?;
 
-    let result = unsafe { libc::kill(pid, 0) };
+    let result = unsafe { libc::kill(pid_i32, 0) };
 
     if result == 0 {
+        // Check if the process is a zombie (<defunct>)
+        let mut info: libc::proc_bsdinfo = unsafe { mem::zeroed() };
+        let size = mem::size_of::<libc::proc_bsdinfo>() as i32;
+
+        let proc_res = unsafe {
+            libc::proc_pidinfo(
+                pid_i32,
+                libc::PROC_PIDTBSDINFO,
+                0,
+                &mut info as *mut _ as *mut libc::c_void,
+                size,
+            )
+        };
+
+        if proc_res == size {
+            const SZOMB: u32 = 5;
+            if info.pbi_status == SZOMB {
+                return Ok(false);
+            }
+        }
+
         return Ok(true);
     }
 
@@ -39,6 +60,16 @@ pub fn is_process_active(pid: u32) -> Result<bool, io::Error> {
         Some(libc::ESRCH) => Ok(false),
         Some(libc::EPERM) => Ok(true),
         _ => Err(err),
+    }
+}
+
+pub fn reap_zombies() {
+    let mut status: libc::c_int = 0;
+    loop {
+        let res = unsafe { libc::waitpid(-1, &mut status, libc::WNOHANG) };
+        if res <= 0 {
+            break;
+        }
     }
 }
 
