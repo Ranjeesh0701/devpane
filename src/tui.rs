@@ -1841,7 +1841,9 @@ where
                             (KeyCode::Esc, KeyModifiers::NONE)
                                 if active_tab <= service_views.len() =>
                             {
-                                let had_search = service_views.iter().any(|v| v.search_query.is_some()) || !search_input.is_empty();
+                                let had_search =
+                                    service_views.iter().any(|v| v.search_query.is_some())
+                                        || !search_input.is_empty();
                                 for v in &mut service_views {
                                     v.set_search(None);
                                 }
@@ -2421,13 +2423,16 @@ where
                                     sidebar_state = SidebarState::Normal;
                                 } else {
                                     let card_start_y = top_bar_height + 2;
-                                    let total_tabs = if service_views.is_empty() && shell_tabs.is_empty() {
-                                        0
-                                    } else {
-                                        1 + service_views.len() + shell_tabs.len()
-                                    };
+                                    let total_tabs =
+                                        if service_views.is_empty() && shell_tabs.is_empty() {
+                                            0
+                                        } else {
+                                            1 + service_views.len() + shell_tabs.len()
+                                        };
                                     if mouse_event.row >= card_start_y {
-                                        let slot = ((mouse_event.row.saturating_sub(card_start_y)) / 5) as usize;
+                                        let slot = ((mouse_event.row.saturating_sub(card_start_y))
+                                            / 5)
+                                            as usize;
                                         let card_idx = sidebar_scroll + slot;
                                         if card_idx < total_tabs {
                                             active_tab = card_idx;
@@ -2442,15 +2447,20 @@ where
                                     // Header row: check for minimize / maximize buttons
                                     if mouse_event.column >= sidebar_width.saturating_sub(4) {
                                         sidebar_state = SidebarState::Maximized;
-                                    } else if mouse_event.column >= sidebar_width.saturating_sub(8) {
+                                    } else if mouse_event.column >= sidebar_width.saturating_sub(8)
+                                    {
                                         sidebar_state = SidebarState::Minimized;
                                     }
                                 } else if mouse_event.row > top_bar_height {
-                                    let list_start_y = top_bar_height + 2 + if term_h >= 22 { 1 } else { 0 };
+                                    let list_start_y =
+                                        top_bar_height + 2 + if term_h >= 22 { 1 } else { 0 };
                                     let footer_height: u16 = 3;
                                     let bottom_space: u16 = if term_h >= 16 { 1 } else { 0 };
-                                    let footer_y = top_bar_height + (term_h.saturating_sub(top_bar_height + 1)).saturating_sub(footer_height + bottom_space);
-                                    if mouse_event.row >= list_start_y && mouse_event.row < footer_y {
+                                    let footer_y = top_bar_height
+                                        + (term_h.saturating_sub(top_bar_height + 1))
+                                            .saturating_sub(footer_height + bottom_space);
+                                    if mouse_event.row >= list_start_y && mouse_event.row < footer_y
+                                    {
                                         let total_cards =
                                             if service_views.is_empty() && shell_tabs.is_empty() {
                                                 0
@@ -2461,9 +2471,10 @@ where
                                         let item_gap: u16 = if term_h >= 20 { 1 } else { 0 };
                                         let item_step = item_height + item_gap;
                                         if item_step > 0 {
-                                            let slot = ((mouse_event.row.saturating_sub(list_start_y))
-                                                / item_step)
-                                                as usize;
+                                            let slot =
+                                                ((mouse_event.row.saturating_sub(list_start_y))
+                                                    / item_step)
+                                                    as usize;
                                             let card_idx = sidebar_scroll + slot;
                                             if card_idx < total_cards {
                                                 active_tab = card_idx;
@@ -2710,11 +2721,17 @@ mod tests {
                 let left_header = Line::from(vec![Span::raw("SERVICES")]);
                 let right_header = Line::from(vec![Span::raw("3  [–] [⤢]")]);
                 frame.render_widget(Paragraph::new(left_header), header_rect);
-                frame.render_widget(Paragraph::new(right_header).alignment(Alignment::Right), header_rect);
+                frame.render_widget(
+                    Paragraph::new(right_header).alignment(Alignment::Right),
+                    header_rect,
+                );
 
                 // Header divider
                 let header_div_rect = Rect::new(content_x, area.y + 1, content_w, 1);
-                frame.render_widget(Paragraph::new("─".repeat(content_w as usize)), header_div_rect);
+                frame.render_widget(
+                    Paragraph::new("─".repeat(content_w as usize)),
+                    header_div_rect,
+                );
 
                 // 2. Footer sticked to the bottom with 1 line breathing space beneath
                 let footer_height: u16 = 3;
@@ -2723,14 +2740,23 @@ mod tests {
                 assert_eq!(footer_y, 24);
 
                 let footer_div_rect = Rect::new(content_x, footer_y, content_w, 1);
-                frame.render_widget(Paragraph::new("─".repeat(content_w as usize)), footer_div_rect);
+                frame.render_widget(
+                    Paragraph::new("─".repeat(content_w as usize)),
+                    footer_div_rect,
+                );
 
                 let f_line1_rect = Rect::new(content_x, footer_y + 1, content_w, 1);
                 let f_line2_rect = Rect::new(content_x, footer_y + 2, content_w, 1);
                 frame.render_widget(Paragraph::new("Environment"), f_line1_rect);
-                frame.render_widget(Paragraph::new("development").alignment(Alignment::Right), f_line1_rect);
+                frame.render_widget(
+                    Paragraph::new("development").alignment(Alignment::Right),
+                    f_line1_rect,
+                );
                 frame.render_widget(Paragraph::new("Services"), f_line2_rect);
-                frame.render_widget(Paragraph::new("3 running · 0 exited").alignment(Alignment::Right), f_line2_rect);
+                frame.render_widget(
+                    Paragraph::new("3 running · 0 exited").alignment(Alignment::Right),
+                    f_line2_rect,
+                );
 
                 // 3. Render items
                 let list_start_y = area.y + 3;
