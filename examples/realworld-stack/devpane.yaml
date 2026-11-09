@@ -1,0 +1,35 @@
+version: 1
+
+services:
+  api:
+    enabled: true
+    command: node
+    args:
+      - api/server.js
+    working_dir: .
+    port: 8080
+    health_check:
+      http: "http://localhost:8080/health"
+      timeout_secs: 15
+    restart: on-failure
+
+  web:
+    enabled: true
+    command: node
+    args:
+      - web/server.js
+    working_dir: .
+    port: 5173
+    depends_on:
+      api:
+        condition: ready
+        timeout_secs: 15
+    restart: on-failure
+
+  worker:
+    enabled: true
+    command: python3
+    args:
+      - worker/worker.py
+    working_dir: .
+    restart: on-failure

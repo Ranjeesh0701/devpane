@@ -37,10 +37,35 @@ struct JsonRpcError {
     message: String,
 }
 
+fn get_daemon_path() -> io::Result<std::path::PathBuf> {
+    let mut path = env::current_exe()?;
+    path.pop();
+
+    if cfg!(windows) {
+        path.push("daemon.exe");
+    } else {
+        path.push("daemon");
+    }
+
+    Ok(path)
+}
+
 fn connect_daemon() -> Result<ipc::Connection, String> {
-    ipc::connect().or_else(|_| {
-        ipc::connect_with_retry(10, 50)
-    }).map_err(|e| {
+    if let Ok(conn) = ipc::connect() {
+        return Ok(conn);
+    }
+
+    if let Ok(daemon_path) = get_daemon_path() {
+        if daemon_path.exists() {
+            let _ = std::process::Command::new(&daemon_path)
+                .stdin(std::process::Stdio::null())
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .spawn();
+        }
+    }
+
+    ipc::connect_with_retry(30, 100).map_err(|e| {
         format!(
             "Could not connect to Devpane daemon: {e}. Please ensure Devpane is running with 'devpane up'."
         )
@@ -427,10 +452,26 @@ fn handle_tool_call(name: &str, args: Value) -> (String, bool) {
                 Err(e) => return (e, true),
             };
 
+            let (project_dir, services) = match crate::config::find_config() {
+                Ok(path) => {
+                    let p_dir = path
+                        .parent()
+                        .map(|p| p.to_path_buf())
+                        .unwrap_or_else(|| env::current_dir().unwrap_or_default());
+                    let svcs = crate::config::load_config(&path).ok().map(|cfg| {
+                        cfg.enabled_services()
+                            .map(|(n, s)| (n.clone(), s.clone()))
+                            .collect()
+                    });
+                    (Some(p_dir), svcs)
+                }
+                Err(_) => (env::current_dir().ok(), None),
+            };
+
             let req = Request::Restart {
                 name: Some(service_name.to_string()),
-                project_dir: None,
-                services: None,
+                project_dir,
+                services,
             };
 
             if let Err(e) = write_message(&mut conn, &req) {

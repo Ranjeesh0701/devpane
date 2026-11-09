@@ -435,6 +435,12 @@ impl ProcessSupervisor {
 
         if let Some(meta) = self.services_meta.get(&resolved_name).cloned() {
             self.start_service_internal(&resolved_name, &meta.config, &meta.project_dir)
+        } else if let Some(p) = self.processes.iter().find(|p| p.session.name == resolved_name) {
+            let name = p.session.name.clone();
+            let cmd = p.session.command.clone();
+            let cwd = p.session.cwd.clone();
+            let proj_dir = p.session.project_dir.clone();
+            self.start(name, cmd, vec![], cwd, HashMap::new(), proj_dir).cloned()
         } else {
             Err(DevpaneError::InvalidArguments(format!(
                 "No configuration found for service '{name_or_id}'"
