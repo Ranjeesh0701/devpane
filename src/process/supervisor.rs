@@ -53,8 +53,12 @@ impl ProcessSupervisor {
         })
     }
 
-    fn find_process(&self, id: &str) -> Option<&ManagedProcess> {
-        self.processes.iter().find(|p| p.session.id == id)
+    fn find_process(&self, id_or_name: &str) -> Option<&ManagedProcess> {
+        self.processes.iter().find(|p| {
+            p.session.id == id_or_name
+                || p.session.name == id_or_name
+                || p.session.id.starts_with(id_or_name)
+        })
     }
 
     pub fn list(&mut self) -> Result<Vec<ProcessSession>, DevpaneError> {
@@ -139,11 +143,15 @@ impl ProcessSupervisor {
         Ok(&self.processes.last().unwrap().session)
     }
 
-    pub fn stop(&mut self, id: &str) -> Result<(), DevpaneError> {
-        let Some(pos) = self.processes.iter().position(|p| p.session.id == id) else {
+    pub fn stop(&mut self, id_or_name: &str) -> Result<(), DevpaneError> {
+        let Some(pos) = self.processes.iter().position(|p| {
+            p.session.id == id_or_name
+                || p.session.name == id_or_name
+                || p.session.id.starts_with(id_or_name)
+        }) else {
             return Err(DevpaneError::ProcessNotFound(io::Error::new(
                 io::ErrorKind::NotFound,
-                "Process not found",
+                format!("Process '{id_or_name}' not found"),
             )));
         };
 
@@ -214,12 +222,15 @@ impl ProcessSupervisor {
         Ok(())
     }
 
-    pub fn is_running(&mut self, id: &str) -> Result<bool, DevpaneError> {
+    pub fn is_running(&mut self, id_or_name: &str) -> Result<bool, DevpaneError> {
         let sessions = self.list()?;
 
-        Ok(sessions
-            .iter()
-            .any(|session| session.id == id && session.status == ProcessStatus::Running))
+        Ok(sessions.iter().any(|session| {
+            (session.id == id_or_name
+                || session.name == id_or_name
+                || session.id.starts_with(id_or_name))
+                && session.status == ProcessStatus::Running
+        }))
     }
 
     pub fn start_service_internal(

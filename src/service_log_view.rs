@@ -125,16 +125,28 @@ impl ServiceLogView {
         self.scroll_offset = 0;
     }
 
-    pub fn scroll_up(&mut self, lines: usize) {
-        self.scroll_offset = self.scroll_offset.saturating_add(lines);
+    pub fn scroll_up(&mut self, lines: usize, max_scroll: usize) {
+        if max_scroll == 0 {
+            self.scroll_offset = 0;
+            return;
+        }
+        self.scroll_offset = (self.scroll_offset.saturating_add(lines)).min(max_scroll);
     }
 
     pub fn scroll_down(&mut self, lines: usize) {
         self.scroll_offset = self.scroll_offset.saturating_sub(lines);
     }
 
+    pub fn scroll_to_top(&mut self, max_scroll: usize) {
+        self.scroll_offset = max_scroll;
+    }
+
     pub fn scroll_to_bottom(&mut self) {
         self.scroll_offset = 0;
+    }
+
+    pub fn clamp_scroll(&mut self, max_scroll: usize) {
+        self.scroll_offset = self.scroll_offset.min(max_scroll);
     }
 
     pub fn detected_url(&self) -> Option<String> {
@@ -163,5 +175,76 @@ impl ServiceLogView {
             }
         }
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    fn mock_session() -> ProcessSession {
+        ProcessSession {
+            id: "test-id".to_string(),
+            pid: 1234,
+            name: "test-service".to_string(),
+            command: "echo test".to_string(),
+            start_time_seconds: 0,
+            start_time_useconds: 0,
+            cwd: PathBuf::from("."),
+            status: ProcessStatus::Running,
+            exit_code: None,
+            project_dir: None,
+            cpu_percent: None,
+            memory_bytes: None,
+        }
+    }
+
+    #[test]
+    fn test_scroll_cannot_exceed_top_when_no_content_on_top() {
+        let mut view = ServiceLogView {
+            session: mock_session(),
+            log_path: PathBuf::from("/dev/null"),
+            log_content: "line 1\nline 2\nline 3".to_string(),
+            file_position: 0,
+            scroll_offset: 0,
+            search_query: None,
+        };
+
+        // If viewport height is 10, total_lines is 3, max_scroll is 0
+        let max_scroll = 0;
+        view.scroll_up(5, max_scroll);
+        assert_eq!(view.scroll_offset, 0, "Should not scroll up when max_scroll is 0");
+
+        view.scroll_to_top(max_scroll);
+        assert_eq!(view.scroll_offset, 0);
+    }
+
+    #[test]
+    fn test_scroll_clamped_to_max_scroll() {
+        let mut view = ServiceLogView {
+            session: mock_session(),
+            log_path: PathBuf::from("/dev/null"),
+            log_content: "line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7".to_string(),
+            file_position: 0,
+            scroll_offset: 0,
+            search_query: None,
+        };
+
+        // Total 7 lines, viewport 4 lines => max_scroll is 3
+        let max_scroll = 3;
+        view.scroll_up(2, max_scroll);
+        assert_eq!(view.scroll_offset, 2);
+
+        // Try to scroll up beyond top
+        view.scroll_up(10, max_scroll);
+        assert_eq!(view.scroll_offset, 3, "Scroll offset must be clamped to max_scroll");
+
+        // Scroll back down
+        view.scroll_down(1);
+        assert_eq!(view.scroll_offset, 2);
+
+        view.scroll_to_bottom();
+        assert_eq!(view.scroll_offset, 0);
     }
 }

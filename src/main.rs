@@ -30,36 +30,39 @@ fn run() -> Result<u8, DevpaneError> {
     let action = match args.next() {
         Some(a) => a,
         None => {
-            return Err(DevpaneError::InvalidArguments(
-                "No action specified. Usage: devpane <command> [arguments...]".to_string(),
-            ));
+            if devpane::config::find_config().is_ok() {
+                "up".to_string()
+            } else {
+                "--help".to_string()
+            }
         }
     };
 
     if action == "--help" || action == "-h" {
+        println!("⬢ Devpane v0.4.0 - Terminal workspace and multi-service process manager\n");
         println!("Usage: devpane <command> [arguments...]");
-        println!("Commands:");
+        println!("\nCommands:");
         println!(
-            "  init [--force] [--compose]        - Auto-detect project stack & generate devpane.yaml."
-        );
-        println!(
-            "  sync [--no-deps]                  - Sync team environment (.env, dependencies, lockfile)."
-        );
-        println!(
-            "  up [--profile <name>] [--sync]    - Start enabled services (optionally by profile, sync first)."
+            "  up [--profile <name>] [--sync]    - Start enabled services & open interactive dashboard."
         );
         println!("  down                              - Stop all running project services.");
         println!(
             "  restart [service]                 - Restart all project services or a specific service."
         );
         println!("  rebuild <service>                 - Clean rebuild and restart a service.");
-        println!("  start <name> <program> [args...] - Start a process.");
-        println!("  list                              - List active sessions.");
-        println!("  stop <session_id>                 - Stop a process.");
-        println!("  logs <session_id>                 - Show logs for a session.");
-        println!("  shutdown                          - Shutdown the daemon.");
+        println!("  list, ps, status                  - List active sessions with CPU, memory, and ports.");
+        println!("  logs <service|session_id> [-f]    - View or tail logs for a service or session.");
+        println!("  stop <service|session_id>         - Stop a running process by name or ID.");
         println!(
-            "  mcp                               - Launch MCP (Model Context Protocol) server for AI coding agents."
+            "  init [--force] [--compose]        - Auto-detect project stack & generate devpane.yaml."
+        );
+        println!(
+            "  sync [--no-deps]                  - Sync team environment (.env, dependencies, lockfile)."
+        );
+        println!("  start <name> <program> [args...] - Start an ad-hoc process under supervision.");
+        println!("  shutdown                          - Gracefully shut down the background daemon.");
+        println!(
+            "  mcp                               - Launch MCP server for Cursor, Claude, and AI agents."
         );
         return Ok(0);
     }
@@ -179,10 +182,10 @@ fn run() -> Result<u8, DevpaneError> {
                 env: HashMap::new(),
             }
         }
-        "list" => {
+        "list" | "ps" | "status" => {
             if args.next().is_some() {
                 return Err(DevpaneError::InvalidArguments(
-                    "No arguments expected for 'list'. Usage: list".to_string(),
+                    "No arguments expected for 'list'. Usage: devpane list".to_string(),
                 ));
             }
 
@@ -191,13 +194,13 @@ fn run() -> Result<u8, DevpaneError> {
         "stop" => {
             let id = args.next().ok_or_else(|| {
                 DevpaneError::InvalidArguments(
-                    "No session ID specified. Usage: stop <session_id>".to_string(),
+                    "No service or session ID specified. Usage: devpane stop <service|session_id>".to_string(),
                 )
             })?;
 
             if args.next().is_some() {
                 return Err(DevpaneError::InvalidArguments(
-                    "Only one argument expected for 'stop'. Usage: stop <session_id>".to_string(),
+                    "Only one argument expected for 'stop'. Usage: devpane stop <service|session_id>".to_string(),
                 ));
             }
 
@@ -206,16 +209,16 @@ fn run() -> Result<u8, DevpaneError> {
         "logs" => {
             let id = args.next().ok_or_else(|| {
                 DevpaneError::InvalidArguments(
-                    "No session ID specified. Usage: logs <session_id>".to_string(),
+                    "No service or session ID specified. Usage: devpane logs <service|session_id> [-f]".to_string(),
                 )
             })?;
 
             let follow = match args.next().as_deref() {
                 None => false,
-                Some("--follow") => true,
+                Some("--follow") | Some("-f") => true,
                 Some(arg) => {
                     return Err(DevpaneError::InvalidArguments(format!(
-                        "Unexpected argument: {arg}. Usage: logs <session_id> [--follow]"
+                        "Unexpected argument: {arg}. Usage: devpane logs <service|session_id> [--follow|-f]"
                     )));
                 }
             };

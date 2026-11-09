@@ -12,7 +12,10 @@ use ratatui::{
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Paragraph, Tabs, Wrap},
+    widgets::{
+        Block, Borders, BorderType, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
+        Tabs, Wrap,
+    },
 };
 
 use devpane::process::session::{ProcessSession, ProcessStatus};
@@ -185,96 +188,128 @@ where
             ])
             .split(frame.area());
 
-            // Build tab titles with colored status indicators
+            let total_tabs = service_views.len() + shell_tabs.len();
+
+            // Build tab titles with colored status indicators & numbers
             let mut tab_titles: Vec<Line> = service_views
                 .iter()
-                .map(|view| {
+                .enumerate()
+                .map(|(idx, view)| {
                     let (status_icon, status_color) = match view.status() {
-                        ProcessStatus::Running => ("●", Color::Green),
-                        ProcessStatus::Exited => ("○", Color::Red),
+                        ProcessStatus::Running => ("●", Color::Rgb(85, 214, 162)),
+                        ProcessStatus::Exited => ("○", Color::Rgb(243, 114, 128)),
                     };
-                    Line::from(vec![
+                    let mut spans = vec![
+                        Span::styled(format!("{}:", idx + 1), Style::default().fg(Color::DarkGray)),
                         Span::styled(status_icon, Style::default().fg(status_color)),
                         Span::raw(" "),
-                        Span::raw(view.name()),
-                    ])
+                        Span::styled(view.name(), Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
+                    ];
+                    if let Some(url) = view.detected_url() {
+                        if let Some(port_str) = url.rsplit(':').next().and_then(|p| p.split('/').next()) {
+                            if port_str.chars().all(|c| c.is_ascii_digit()) {
+                                spans.push(Span::styled(format!(" :{}", port_str), Style::default().fg(Color::Rgb(139, 156, 255))));
+                            }
+                        }
+                    }
+                    Line::from(spans)
                 })
                 .collect();
 
-            // Add shell tabs with different icon
-            for shell in shell_tabs.iter() {
+            // Add shell tabs with modern shell icon & number
+            for (idx, shell) in shell_tabs.iter().enumerate() {
+                let tab_num = service_views.len() + idx + 1;
                 tab_titles.push(Line::from(vec![
-                    Span::styled("🐚", Style::default().fg(Color::Cyan)),
-                    Span::raw(" "),
-                    Span::raw(shell.name.as_str()),
+                    Span::styled(format!("{}:", tab_num), Style::default().fg(Color::DarkGray)),
+                    Span::styled("🐚 ", Style::default().fg(Color::Cyan)),
+                    Span::styled(shell.name.as_str(), Style::default().fg(Color::White)),
                 ]));
             }
 
             let tabs = Tabs::new(tab_titles)
-                .block(Block::default().title(" Devpane Workspace ").borders(Borders::ALL))
+                .block(
+                    Block::default()
+                        .title(vec![
+                            Span::styled(" ⬢ Devpane ", Style::default().fg(Color::Rgb(139, 156, 255)).add_modifier(Modifier::BOLD)),
+                            Span::styled("v0.4.0 ", Style::default().fg(Color::DarkGray)),
+                            Span::styled("• ", Style::default().fg(Color::Rgb(55, 62, 82))),
+                            Span::styled("● DAEMON ", Style::default().fg(Color::Rgb(85, 214, 162)).add_modifier(Modifier::BOLD)),
+                        ])
+                        .borders(Borders::ALL)
+                        .border_type(BorderType::Rounded)
+                        .border_style(Style::default().fg(Color::Rgb(55, 62, 82))),
+                )
                 .select(active_tab)
-                .style(Style::default().fg(Color::White))
+                .style(Style::default().fg(Color::Rgb(140, 148, 170)))
                 .highlight_style(
                     Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD)
-                        .bg(Color::DarkGray),
-                );
+                        .fg(Color::Rgb(139, 156, 255))
+                        .bg(Color::Rgb(34, 40, 60))
+                        .add_modifier(Modifier::BOLD),
+                )
+                .divider(Span::styled(" │ ", Style::default().fg(Color::Rgb(55, 62, 82))));
 
             frame.render_widget(tabs, areas[0]);
 
             // Render current tab's content
-            let total_tabs = service_views.len() + shell_tabs.len();
-
             if total_tabs == 0 {
-                // Show helpful empty state
+                // Show helpful modern empty state
                 let help_text = vec![
                     Line::from(""),
-                    Line::from(Span::styled(
-                        "Welcome to Devpane!",
-                        Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
-                    )),
-                    Line::from(""),
-                    Line::from("No services are currently running."),
-                    Line::from(""),
                     Line::from(vec![
-                        Span::raw("To get started:"),
-                    ]),
-                    Line::from(vec![
-                        Span::raw("  1. Press "),
-                        Span::styled("Ctrl+T", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-                        Span::raw(" to create an interactive shell"),
-                    ]),
-                    Line::from(vec![
-                        Span::raw("  2. Edit "),
-                        Span::styled("devpane.yaml", Style::default().fg(Color::Green)),
-                        Span::raw(" to define your services"),
-                    ]),
-                    Line::from(vec![
-                        Span::raw("  3. Run "),
-                        Span::styled("devpane up", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-                        Span::raw(" to start services"),
+                        Span::styled("⬢ ", Style::default().fg(Color::Rgb(139, 156, 255)).add_modifier(Modifier::BOLD)),
+                        Span::styled("DEVPANE WORKSPACE", Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
                     ]),
                     Line::from(""),
+                    Line::from(Span::styled("No services are currently running.", Style::default().fg(Color::Rgb(140, 148, 170)))),
+                    Line::from(""),
                     Line::from(vec![
-                        Span::raw("Press "),
-                        Span::styled("q", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
-                        Span::raw(" to quit"),
+                        Span::styled("Quick Actions:", Style::default().fg(Color::Rgb(139, 156, 255)).add_modifier(Modifier::BOLD)),
+                    ]),
+                    Line::from(vec![
+                        Span::raw("  "),
+                        Span::styled("[Ctrl+T]", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                        Span::raw("  Open an interactive terminal shell tab"),
+                    ]),
+                    Line::from(vec![
+                        Span::raw("  "),
+                        Span::styled("[r]", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                        Span::raw("       Reload & start services from devpane.yaml"),
+                    ]),
+                    Line::from(vec![
+                        Span::raw("  "),
+                        Span::styled("[q]", Style::default().fg(Color::Rgb(243, 114, 128)).add_modifier(Modifier::BOLD)),
+                        Span::raw("       Quit dashboard (daemon continues in background)"),
+                    ]),
+                    Line::from(""),
+                    Line::from(vec![
+                        Span::styled("Tip: ", Style::default().fg(Color::Rgb(85, 214, 162)).add_modifier(Modifier::BOLD)),
+                        Span::styled("Define services in devpane.yaml or run 'devpane init' to auto-detect.", Style::default().fg(Color::DarkGray)),
                     ]),
                 ];
 
                 let help_pane = Paragraph::new(help_text)
-                    .block(Block::default().title(" Getting Started ").borders(Borders::ALL))
+                    .block(
+                        Block::default()
+                            .title(" Workspace Ready ")
+                            .borders(Borders::ALL)
+                            .border_type(BorderType::Rounded)
+                            .border_style(Style::default().fg(Color::Rgb(55, 62, 82))),
+                    )
                     .alignment(ratatui::layout::Alignment::Center);
 
                 frame.render_widget(help_pane, areas[1]);
             } else if active_tab < service_views.len() {
                 // Service log view
-                let view = &service_views[active_tab];
-                let content = view.filtered_content();
-                let total_lines = content.lines().count();
+                let view = &mut service_views[active_tab];
                 let viewport_height = areas[1].height.saturating_sub(2) as usize;
+                let total_lines = view.filtered_content().lines().count();
                 let max_scroll = total_lines.saturating_sub(viewport_height);
+
+                // Strictly clamp scroll offset: can NEVER scroll above top or when content fits viewport!
+                view.clamp_scroll(max_scroll);
+
+                let content = view.filtered_content();
 
                 let scroll_y = if view.scroll_offset == 0 {
                     max_scroll
@@ -283,79 +318,104 @@ where
                 };
 
                 let (status_text, status_color) = match view.status() {
-                    ProcessStatus::Running => ("Running", Color::Green),
+                    ProcessStatus::Running => ("RUNNING", Color::Rgb(85, 214, 162)),
                     ProcessStatus::Exited => {
                         if let Some(code) = view.session.exit_code {
                             if code == 0 {
-                                ("Exited (success)", Color::Yellow)
+                                ("EXITED (0)", Color::Yellow)
                             } else {
-                                ("Exited (failed)", Color::Red)
+                                ("FAILED", Color::Rgb(243, 114, 128))
                             }
                         } else {
-                            ("Exited", Color::Red)
+                            ("EXITED", Color::Rgb(243, 114, 128))
                         }
                     }
                 };
 
-                let mut title = match view.detected_url() {
-                    Some(url) => format!(
-                        " {} - {} (PID: {}) | 🌐 {} ",
-                        view.name(),
-                        status_text,
-                        view.session.pid,
-                        url
-                    ),
-                    None => format!(
-                        " {} - {} (PID: {}) ",
-                        view.name(),
-                        status_text,
-                        view.session.pid
-                    ),
-                };
+                let mut title_spans = vec![
+                    Span::styled(" ● ", Style::default().fg(status_color)),
+                    Span::styled(view.name(), Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
+                    Span::styled(format!(" [{status_text} • PID {}]", view.session.pid), Style::default().fg(status_color)),
+                ];
+
+                if let Some(url) = view.detected_url() {
+                    title_spans.push(Span::styled(" • ", Style::default().fg(Color::DarkGray)));
+                    title_spans.push(Span::styled(format!("🌐 {url}"), Style::default().fg(Color::Rgb(139, 156, 255))));
+                }
 
                 if let Some(count) = view.match_count() {
-                    title.push_str(&format!(
-                        "[🔍 \"{}\": {} matches] ",
-                        view.search_query.as_deref().unwrap_or(""),
-                        count
+                    title_spans.push(Span::styled(
+                        format!(" • 🔍 \"{}\" ({} matches)", view.search_query.as_deref().unwrap_or(""), count),
+                        Style::default().fg(Color::Yellow),
                     ));
                 }
 
-                if view.scroll_offset > 0 {
-                    title.push_str(&format!("[↑ {} lines] ", view.scroll_offset));
+                // Scroll indicator: show LIVE TAIL, TOP, or exact offset
+                if max_scroll > 0 {
+                    title_spans.push(Span::styled(" • ", Style::default().fg(Color::DarkGray)));
+                    if view.scroll_offset == 0 {
+                        title_spans.push(Span::styled("LIVE TAIL", Style::default().fg(Color::Rgb(85, 214, 162)).add_modifier(Modifier::BOLD)));
+                    } else if view.scroll_offset >= max_scroll {
+                        title_spans.push(Span::styled("TOP", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)));
+                    } else {
+                        let pct = ((max_scroll - view.scroll_offset) * 100) / max_scroll;
+                        title_spans.push(Span::styled(
+                            format!("↑ {} lines ({}%)", view.scroll_offset, pct),
+                            Style::default().fg(Color::Cyan),
+                        ));
+                    }
                 }
 
                 let content_pane = Paragraph::new(content)
                     .scroll((scroll_y as u16, 0))
                     .block(
                         Block::default()
-                            .title(Span::styled(title, Style::default().fg(status_color)))
-                            .borders(Borders::ALL),
+                            .title(Line::from(title_spans))
+                            .borders(Borders::ALL)
+                            .border_type(BorderType::Rounded)
+                            .border_style(Style::default().fg(Color::Rgb(55, 62, 82))),
                     );
 
                 frame.render_widget(content_pane, areas[1]);
+
+                // Render modern scrollbar on right margin when content is scrollable
+                if max_scroll > 0 {
+                    let mut scrollbar_state = ScrollbarState::new(max_scroll)
+                        .position(max_scroll.saturating_sub(view.scroll_offset));
+                    frame.render_stateful_widget(
+                        Scrollbar::default()
+                            .orientation(ScrollbarOrientation::VerticalRight)
+                            .style(Style::default().fg(Color::Rgb(139, 156, 255)))
+                            .track_style(Style::default().fg(Color::Rgb(35, 40, 55)))
+                            .begin_symbol(Some("▲"))
+                            .end_symbol(Some("▼")),
+                        areas[1],
+                        &mut scrollbar_state,
+                    );
+                }
             } else if active_tab < total_tabs {
                 // Shell tab
                 let shell_index = active_tab - service_views.len();
                 if let Some(shell) = shell_tabs.get(shell_index) {
                     let terminal_text = shell.screen_contents();
 
-                    let mut title = format!(" {} ", shell.name);
+                    let mut title_spans = vec![
+                        Span::styled(" 🐚 ", Style::default().fg(Color::Cyan)),
+                        Span::styled(&shell.name, Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
+                        Span::styled(" [INTERACTIVE SHELL]", Style::default().fg(Color::Cyan)),
+                    ];
+
                     if shell.scroll_offset() > 0 {
-                        title = format!(" {} [↑ {} lines] ", shell.name, shell.scroll_offset());
+                        title_spans.push(Span::styled(" • ", Style::default().fg(Color::DarkGray)));
+                        title_spans.push(Span::styled(format!("↑ {} lines", shell.scroll_offset()), Style::default().fg(Color::Yellow)));
                     }
 
                     let terminal_pane = Paragraph::new(terminal_text).block(
                         Block::default()
-                            .title(Span::styled(
-                                title,
-                                if shell.scroll_offset() > 0 {
-                                    Style::default().fg(Color::Yellow)
-                                } else {
-                                    Style::default()
-                                }
-                            ))
-                            .borders(Borders::ALL),
+                            .title(Line::from(title_spans))
+                            .borders(Borders::ALL)
+                            .border_type(BorderType::Rounded)
+                            .border_style(Style::default().fg(Color::Rgb(55, 62, 82))),
                     );
 
                     frame.render_widget(terminal_pane, areas[1]);
@@ -381,21 +441,21 @@ where
                     if is_searching {
                         if footer_height == 1 {
                             vec![Line::from(vec![
-                                Span::styled("Search: /", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                                Span::styled("🔍 Filter: /", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
                                 Span::styled(&search_input, Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
                                 Span::styled("█", Style::default().fg(Color::Yellow)),
                                 Span::raw("  "),
-                                Span::styled("(Enter: Confirm • Esc: Clear)", Style::default().fg(Color::DarkGray)),
+                                Span::styled("(Enter: Apply • Esc: Clear)", Style::default().fg(Color::DarkGray)),
                             ])]
                         } else {
                             vec![
                                 Line::from(vec![
-                                    Span::styled("Search: /", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                                    Span::styled("🔍 Filter: /", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
                                     Span::styled(&search_input, Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
                                     Span::styled("█", Style::default().fg(Color::Yellow)),
                                 ]),
                                 Line::from(vec![
-                                    Span::styled("(Enter: Confirm • Esc: Clear • Type to filter)", Style::default().fg(Color::DarkGray)),
+                                    Span::styled("[Enter] Apply filter   [Esc] Clear filter   (live case-insensitive matching)", Style::default().fg(Color::DarkGray)),
                                 ]),
                             ]
                         }
@@ -407,12 +467,12 @@ where
                         let is_shell_tab = active_tab >= service_views.len();
 
                         let status_span = Span::styled(
-                            format!("● {running_count} running"),
-                            Style::default().fg(Color::Green),
+                            format!("● {}/{} running", running_count, service_views.len()),
+                            Style::default().fg(Color::Rgb(85, 214, 162)).add_modifier(Modifier::BOLD),
                         );
                         let exited_span = Span::styled(
-                            format!("○ {exited_count} exited"),
-                            Style::default().fg(if exited_count > 0 { Color::Red } else { Color::DarkGray }),
+                            format!("○ {} exited", exited_count),
+                            Style::default().fg(if exited_count > 0 { Color::Rgb(243, 114, 128) } else { Color::DarkGray }),
                         );
 
                         let active_action = action_status.as_ref().and_then(|(msg, time)| {
@@ -427,24 +487,33 @@ where
                             // Single-line compact mode
                             let mut spans = if is_shell_tab {
                                 vec![
-                                    Span::raw("Tab: Switch • "),
-                                    Span::raw("^T: Shell • "),
-                                    Span::raw("^W: Close • "),
-                                    Span::raw("^Q: Quit • "),
+                                    Span::styled("[Tab]", Style::default().fg(Color::Rgb(139, 156, 255)).add_modifier(Modifier::BOLD)),
+                                    Span::raw(" Switch  "),
+                                    Span::styled("[^T]", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                                    Span::raw(" Shell  "),
+                                    Span::styled("[^W]", Style::default().fg(Color::DarkGray).add_modifier(Modifier::BOLD)),
+                                    Span::raw(" Close  "),
+                                    Span::styled("[^Q]", Style::default().fg(Color::Rgb(243, 114, 128)).add_modifier(Modifier::BOLD)),
+                                    Span::raw(" Quit  "),
                                     status_span,
                                 ]
                             } else {
                                 vec![
-                                    Span::raw("Tab: Switch • "),
-                                    Span::styled("r: Restart • ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-                                    Span::styled("s: Stop • ", Style::default().fg(Color::Magenta)),
-                                    Span::styled("/: Search • ", Style::default().fg(Color::White)),
-                                    Span::raw("q: Quit • "),
+                                    Span::styled("[Tab]", Style::default().fg(Color::Rgb(139, 156, 255)).add_modifier(Modifier::BOLD)),
+                                    Span::raw(" Switch  "),
+                                    Span::styled("[r]", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                                    Span::raw(" Restart  "),
+                                    Span::styled("[s]", Style::default().fg(Color::Magenta).add_modifier(Modifier::BOLD)),
+                                    Span::raw(" Stop  "),
+                                    Span::styled("[/]", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                                    Span::raw(" Filter  "),
+                                    Span::styled("[q]", Style::default().fg(Color::Rgb(243, 114, 128)).add_modifier(Modifier::BOLD)),
+                                    Span::raw(" Quit  "),
                                     status_span,
                                 ]
                             };
                             if let Some(msg) = active_action {
-                                spans.push(Span::raw(" • "));
+                                spans.push(Span::raw("  "));
                                 spans.push(Span::styled(format!("⚡ {msg}"), Style::default().fg(Color::Yellow)));
                             }
                             vec![Line::from(spans)]
@@ -453,26 +522,27 @@ where
                             let row1_spans = if is_shell_tab {
                                 if term_width >= 105 {
                                     vec![
-                                        Span::raw("Tab: Switch • "),
-                                        Span::raw("Ctrl+T: New shell • "),
-                                        Span::raw("Ctrl+W: Close tab • "),
-                                        Span::styled("PgUp/PgDn: Scroll • ", Style::default().fg(Color::Cyan)),
-                                        Span::styled("End: Bottom • ", Style::default().fg(Color::Cyan)),
-                                        Span::raw("Ctrl+Q: Quit"),
-                                    ]
-                                } else if term_width >= 75 {
-                                    vec![
-                                        Span::raw("Tab: Switch • "),
-                                        Span::raw("^T: Shell • "),
-                                        Span::raw("^W: Close • "),
-                                        Span::styled("PgUp/PgDn: Scroll • ", Style::default().fg(Color::Cyan)),
-                                        Span::raw("^Q: Quit"),
+                                        Span::styled("[Tab]", Style::default().fg(Color::Rgb(139, 156, 255)).add_modifier(Modifier::BOLD)),
+                                        Span::raw(" Switch   "),
+                                        Span::styled("[Ctrl+T]", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                                        Span::raw(" Shell   "),
+                                        Span::styled("[Ctrl+W]", Style::default().fg(Color::DarkGray).add_modifier(Modifier::BOLD)),
+                                        Span::raw(" Close   "),
+                                        Span::styled("[PgUp/Dn]", Style::default().fg(Color::Cyan)),
+                                        Span::raw(" Scroll   "),
+                                        Span::styled("[Ctrl+Q]", Style::default().fg(Color::Rgb(243, 114, 128)).add_modifier(Modifier::BOLD)),
+                                        Span::raw(" Quit"),
                                     ]
                                 } else {
                                     vec![
-                                        Span::raw("Tab: Switch • "),
-                                        Span::raw("^T: Shell • "),
-                                        Span::raw("^Q: Quit"),
+                                        Span::styled("[Tab]", Style::default().fg(Color::Rgb(139, 156, 255)).add_modifier(Modifier::BOLD)),
+                                        Span::raw(" Switch   "),
+                                        Span::styled("[^T]", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                                        Span::raw(" Shell   "),
+                                        Span::styled("[^W]", Style::default().fg(Color::DarkGray).add_modifier(Modifier::BOLD)),
+                                        Span::raw(" Close   "),
+                                        Span::styled("[^Q]", Style::default().fg(Color::Rgb(243, 114, 128)).add_modifier(Modifier::BOLD)),
+                                        Span::raw(" Quit"),
                                     ]
                                 }
                             } else {
@@ -481,53 +551,76 @@ where
 
                                 if term_width >= 115 {
                                     let mut s = vec![
-                                        Span::raw("Tab: Switch • "),
-                                        Span::styled("r: Restart • ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-                                        Span::styled("b: Rebuild • ", Style::default().fg(Color::Yellow)),
-                                        Span::styled("s: Stop/Start • ", Style::default().fg(Color::Magenta)),
-                                        Span::styled("/: Search • ", Style::default().fg(Color::White)),
+                                        Span::styled("[Tab]", Style::default().fg(Color::Rgb(139, 156, 255)).add_modifier(Modifier::BOLD)),
+                                        Span::raw(" Switch   "),
+                                        Span::styled("[1-9]", Style::default().fg(Color::DarkGray)),
+                                        Span::raw(" Jump   "),
+                                        Span::styled("[r]", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                                        Span::raw(" Restart   "),
+                                        Span::styled("[b]", Style::default().fg(Color::Yellow)),
+                                        Span::raw(" Rebuild   "),
+                                        Span::styled("[s]", Style::default().fg(Color::Magenta)),
+                                        Span::raw(" Stop   "),
+                                        Span::styled("[/]", Style::default().fg(Color::Yellow)),
+                                        Span::raw(" Filter   "),
                                     ];
                                     if has_filter {
-                                        s.push(Span::styled("Esc: Clear • ", Style::default().fg(Color::Yellow)));
+                                        s.push(Span::styled("[Esc]", Style::default().fg(Color::Yellow)));
+                                        s.push(Span::raw(" Clear   "));
                                     }
                                     if has_url {
-                                        s.push(Span::styled("o: Open • ", Style::default().fg(Color::Green)));
+                                        s.push(Span::styled("[o]", Style::default().fg(Color::Rgb(85, 214, 162))));
+                                        s.push(Span::raw(" Open   "));
                                     }
                                     s.extend(vec![
-                                        Span::raw("Ctrl+T: Shell • "),
-                                        Span::raw("Ctrl+W: Close • "),
-                                        Span::raw("q: Quit"),
+                                        Span::styled("[^T]", Style::default().fg(Color::Green)),
+                                        Span::raw(" Shell   "),
+                                        Span::styled("[j/k]", Style::default().fg(Color::DarkGray)),
+                                        Span::raw(" Scroll   "),
+                                        Span::styled("[q]", Style::default().fg(Color::Rgb(243, 114, 128))),
+                                        Span::raw(" Quit"),
                                     ]);
                                     s
                                 } else if term_width >= 80 {
                                     let mut s = vec![
-                                        Span::raw("Tab: Switch • "),
-                                        Span::styled("r: Restart • ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-                                        Span::styled("s: Stop • ", Style::default().fg(Color::Magenta)),
-                                        Span::styled("/: Search • ", Style::default().fg(Color::White)),
+                                        Span::styled("[Tab]", Style::default().fg(Color::Rgb(139, 156, 255)).add_modifier(Modifier::BOLD)),
+                                        Span::raw(" Switch   "),
+                                        Span::styled("[r]", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                                        Span::raw(" Restart   "),
+                                        Span::styled("[s]", Style::default().fg(Color::Magenta)),
+                                        Span::raw(" Stop   "),
+                                        Span::styled("[/]", Style::default().fg(Color::Yellow)),
+                                        Span::raw(" Filter   "),
                                     ];
                                     if has_filter {
-                                        s.push(Span::styled("Esc: Clear • ", Style::default().fg(Color::Yellow)));
+                                        s.push(Span::styled("[Esc]", Style::default().fg(Color::Yellow)));
+                                        s.push(Span::raw(" Clear   "));
                                     }
                                     s.extend(vec![
-                                        Span::raw("^T: Shell • "),
-                                        Span::raw("q: Quit"),
+                                        Span::styled("[^T]", Style::default().fg(Color::Green)),
+                                        Span::raw(" Shell   "),
+                                        Span::styled("[q]", Style::default().fg(Color::Rgb(243, 114, 128))),
+                                        Span::raw(" Quit"),
                                     ]);
                                     s
                                 } else {
                                     vec![
-                                        Span::raw("Tab: Next • "),
-                                        Span::styled("r: Restart • ", Style::default().fg(Color::Cyan)),
-                                        Span::raw("q: Quit"),
+                                        Span::styled("[Tab]", Style::default().fg(Color::Rgb(139, 156, 255)).add_modifier(Modifier::BOLD)),
+                                        Span::raw(" Next   "),
+                                        Span::styled("[r]", Style::default().fg(Color::Cyan)),
+                                        Span::raw(" Restart   "),
+                                        Span::styled("[q]", Style::default().fg(Color::Rgb(243, 114, 128))),
+                                        Span::raw(" Quit"),
                                     ]
                                 }
                             };
 
-                            let mut row2_spans = vec![status_span];
-                            if exited_count > 0 {
-                                row2_spans.push(Span::raw(" • "));
-                                row2_spans.push(exited_span);
-                            }
+                            let mut row2_spans = vec![
+                                status_span,
+                                Span::raw("   "),
+                                exited_span,
+                                Span::styled("   •   devpane v0.4.0", Style::default().fg(Color::DarkGray)),
+                            ];
                             if let Some(msg) = active_action {
                                 row2_spans.push(Span::raw("   "));
                                 row2_spans.push(Span::styled(
@@ -595,6 +688,8 @@ where
                         }
 
                         let total_tabs = service_views.len() + shell_tabs.len();
+                        let (_term_w, term_h) = terminal.size().map(|s| (s.width, s.height)).unwrap_or((80, 24));
+                        let viewport_height = term_h.saturating_sub(5) as usize;
 
                         match (key.code, key.modifiers) {
                         // Search in active service tab
@@ -691,7 +786,16 @@ where
                         | (KeyCode::Char('\x11'), _) => break,
                         (KeyCode::Char('q'), KeyModifiers::NONE) if active_tab < service_views.len() => break,
 
-                        // Tab navigation
+                        // Quick Tab Switch via 1-9 keys
+                        (KeyCode::Char(c @ '1'..='9'), KeyModifiers::NONE) if active_tab < service_views.len() => {
+                            let target = (c as usize) - ('1' as usize);
+                            if target < total_tabs {
+                                active_tab = target;
+                            }
+                            continue;
+                        }
+
+                        // Tab navigation (Tab / Shift+Tab or Left/Right or h/l)
                         (KeyCode::Tab, KeyModifiers::NONE) => {
                             if total_tabs > 0 {
                                 active_tab = (active_tab + 1) % total_tabs;
@@ -705,6 +809,18 @@ where
                                 } else {
                                     active_tab - 1
                                 };
+                            }
+                            continue;
+                        }
+                        (KeyCode::Left, KeyModifiers::NONE) | (KeyCode::Char('h'), KeyModifiers::NONE) if active_tab < service_views.len() => {
+                            if total_tabs > 0 {
+                                active_tab = if active_tab == 0 { total_tabs - 1 } else { active_tab - 1 };
+                            }
+                            continue;
+                        }
+                        (KeyCode::Right, KeyModifiers::NONE) | (KeyCode::Char('l'), KeyModifiers::NONE) if active_tab < service_views.len() => {
+                            if total_tabs > 0 {
+                                active_tab = (active_tab + 1) % total_tabs;
                             }
                             continue;
                         }
@@ -784,10 +900,11 @@ where
                             continue;
                         }
 
-                        // Scroll up (Page Up, Shift+Up, or Up arrow on service view)
+                        // Scroll up (Page Up, Shift+Up, or Up arrow / 'k' on service view)
                         (KeyCode::PageUp, _) | (KeyCode::Up, KeyModifiers::SHIFT) => {
                             if active_tab < service_views.len() {
-                                service_views[active_tab].scroll_up(10);
+                                let max_scroll = service_views[active_tab].filtered_content().lines().count().saturating_sub(viewport_height);
+                                service_views[active_tab].scroll_up(10, max_scroll);
                             } else {
                                 let shell_index = active_tab - service_views.len();
                                 if let Some(shell) = shell_tabs.get_mut(shell_index) {
@@ -796,12 +913,13 @@ where
                             }
                             continue;
                         }
-                        (KeyCode::Up, KeyModifiers::NONE) if active_tab < service_views.len() => {
-                            service_views[active_tab].scroll_up(1);
+                        (KeyCode::Up, KeyModifiers::NONE) | (KeyCode::Char('k'), KeyModifiers::NONE) if active_tab < service_views.len() => {
+                            let max_scroll = service_views[active_tab].filtered_content().lines().count().saturating_sub(viewport_height);
+                            service_views[active_tab].scroll_up(1, max_scroll);
                             continue;
                         }
 
-                        // Scroll down (Page Down, Shift+Down, or Down arrow on service view)
+                        // Scroll down (Page Down, Shift+Down, or Down arrow / 'j' on service view)
                         (KeyCode::PageDown, _) | (KeyCode::Down, KeyModifiers::SHIFT) => {
                             if active_tab < service_views.len() {
                                 service_views[active_tab].scroll_down(10);
@@ -813,13 +931,20 @@ where
                             }
                             continue;
                         }
-                        (KeyCode::Down, KeyModifiers::NONE) if active_tab < service_views.len() => {
+                        (KeyCode::Down, KeyModifiers::NONE) | (KeyCode::Char('j'), KeyModifiers::NONE) if active_tab < service_views.len() => {
                             service_views[active_tab].scroll_down(1);
                             continue;
                         }
 
-                        // Scroll to bottom (End)
-                        (KeyCode::End, _) => {
+                        // Scroll to top (Home or 'g')
+                        (KeyCode::Home, _) | (KeyCode::Char('g'), KeyModifiers::NONE) if active_tab < service_views.len() => {
+                            let max_scroll = service_views[active_tab].filtered_content().lines().count().saturating_sub(viewport_height);
+                            service_views[active_tab].scroll_to_top(max_scroll);
+                            continue;
+                        }
+
+                        // Scroll to bottom (End or 'G')
+                        (KeyCode::End, _) | (KeyCode::Char('G'), KeyModifiers::NONE) | (KeyCode::Char('G'), KeyModifiers::SHIFT) => {
                             if active_tab < service_views.len() {
                                 service_views[active_tab].scroll_to_bottom();
                             } else {
@@ -862,12 +987,18 @@ where
                         }
                     }
                 }
-                }
-                Event::Mouse(mouse_event) => {
+            }
+            Event::Mouse(mouse_event) => {
+                    let viewport_height = terminal.size().map(|s| s.height.saturating_sub(5) as usize).unwrap_or(20);
                     match mouse_event.kind {
                         event::MouseEventKind::ScrollUp => {
                             if active_tab < service_views.len() {
-                                service_views[active_tab].scroll_up(3);
+                                let max_scroll = service_views[active_tab]
+                                    .filtered_content()
+                                    .lines()
+                                    .count()
+                                    .saturating_sub(viewport_height);
+                                service_views[active_tab].scroll_up(3, max_scroll);
                             } else {
                                 let shell_index = active_tab - service_views.len();
                                 if let Some(shell) = shell_tabs.get_mut(shell_index) {
