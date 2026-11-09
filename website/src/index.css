@@ -8,7 +8,7 @@
     "Segoe UI",
     sans-serif;
   color: #eeeff4;
-  background: #0b0c10;
+  background: #111216;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -18,16 +18,60 @@
   color-scheme: dark;
 
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --color-background: #0b0c10;
-  --color-surface: #12141a;
-  --color-border: #1f2330;
-  --color-border-subtle: #191c26;
+  --color-background: #111216;
+  --color-surface: #161820;
+  --color-surface-raised: #1c1e28;
+  --color-border: #282b37;
+  --color-border-subtle: #1e202b;
   --color-text: #eeeff4;
-  --color-muted: #8b90a0;
-  --color-accent: #38bdf8;
-  --color-success: #22c55e;
-  --color-danger: #f87171;
-  --color-warning: #fbbf24;
+  --color-muted: #999ba8;
+  --color-accent: #8b9cff;
+  --color-accent-strong: #5e6ad2;
+  --color-success: #55d6a2;
+  --color-danger: #ff777f;
+  --color-warning: #f0bf69;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  max-width: 100vw;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  scroll-padding-top: 24px;
+}
+
+body {
+  min-width: 320px;
+  max-width: 100vw;
+  overflow-x: hidden;
+  min-height: 100vh;
+  margin: 0;
+  background-color: var(--color-background);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 4px;
+}
+
+::selection {
+  color: #111216;
+  background: #8b9cff;
 }
 
 * {

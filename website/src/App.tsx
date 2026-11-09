@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import "./App.css";
 import {
   trackDownload,
@@ -9,117 +9,75 @@ import {
 type ServiceTab = {
   id: string;
   name: string;
-  cmd: string;
   port?: number;
-  pid: number;
-  cpu: string;
-  ram: string;
-  logs: string[];
+  logs: { text: string; color?: string }[];
 };
 
 const DEMO_SERVICES: ServiceTab[] = [
   {
     id: "backend",
     name: "backend",
-    cmd: "cargo run",
     port: 8080,
-    pid: 58120,
-    cpu: "0.8%",
-    ram: "32.4 MB",
     logs: [
-      "[devpane:daemon] Service 'backend' started (PID 58120) • 0.8% CPU • 32.4 MB",
-      "  Compiling devpane-server v0.3.1 (/Workspace/devpane)",
-      "  Finished `dev` profile in 0.74s",
-      "[server] Listening on http://localhost:8080",
-      "[health] Readiness check OK: HTTP 200 at /health (8ms)",
-      "[ipc] Named socket ready at /tmp/devpane.sock",
-      "[auth] Session JWT verifier initialized with .env secrets",
-      "[db] Connection pool verified: 10 connections idle",
-      "GET /api/v1/sessions 200 OK (0.6ms)",
-      "POST /api/v1/actions 200 OK (1.1ms)",
+      { text: "[devpane:daemon] Service 'backend' started (PID 58120) • 0.8% CPU • 32.4 MB", color: "muted" },
+      { text: "   Compiling devpane-server v0.3.1 (/Workspace/devpane)", color: "indigo" },
+      { text: "   Finished `dev` profile in 0.74s", color: "success" },
+      { text: "[server] Listening on http://localhost:8080", color: "white" },
+      { text: "[health] Readiness check OK: HTTP 200 at /health (8ms)", color: "success" },
+      { text: "[ipc] Socket active at /tmp/devpane.sock", color: "muted" },
+      { text: "[auth] Session JWT verifier initialized from .env", color: "white" },
+      { text: "[db] Connection pool verified: 10 connections idle", color: "white" },
+      { text: "GET /api/v1/sessions 200 OK (0.6ms)", color: "success" },
+      { text: "POST /api/v1/services/sync 200 OK (1.1ms)", color: "success" },
     ],
   },
   {
     id: "frontend",
     name: "frontend",
-    cmd: "bun run dev",
     port: 5173,
-    pid: 58124,
-    cpu: "1.1%",
-    ram: "49.2 MB",
     logs: [
-      "[devpane:daemon] Service 'frontend' started (PID 58124) • 1.1% CPU • 49.2 MB",
-      "VITE v6.0.4  ready in 128 ms",
-      "",
-      "  ➜  Local:   http://localhost:5173/",
-      "  ➜  Network: use --host to expose",
-      "  ➜  press h + enter to show help",
-      "",
-      "[hmr] devpane watcher synchronized (2 watched paths)",
-      "[vite] page reload /src/App.tsx (22ms)",
+      { text: "[devpane:daemon] Service 'frontend' started (PID 58124) • 1.1% CPU • 49.2 MB", color: "muted" },
+      { text: "VITE v6.0.4 ready in 128 ms", color: "white" },
+      { text: "  ➜  Local:   http://localhost:5173/", color: "accent" },
+      { text: "  ➜  Network: use --host to expose", color: "muted" },
+      { text: "  ➜  press h + enter to show help", color: "muted" },
+      { text: "[hmr] devpane watcher synchronized (2 watched paths)", color: "success" },
+      { text: "[vite] page reload /src/App.tsx (22ms)", color: "indigo" },
     ],
   },
   {
     id: "worker",
     name: "worker",
-    cmd: "python worker.py",
-    pid: 58130,
-    cpu: "0.4%",
-    ram: "26.1 MB",
     logs: [
-      "[devpane:daemon] Service 'worker' started (PID 58130) • 0.4% CPU • 26.1 MB",
-      "[queue:redis] Connected to redis://localhost:6379/0",
-      "[worker:1] Subscribed to topic 'event-stream' (0 pending jobs)",
-      "[worker:1] Heartbeat ACK • worker supervisor healthy",
-      "[worker:1] Job #4089 processed in 14ms (status: success)",
-      "[worker:1] Waiting for incoming event payloads...",
+      { text: "[devpane:daemon] Service 'worker' started (PID 58130) • 0.4% CPU • 26.1 MB", color: "muted" },
+      { text: "[queue:redis] Connected to redis://localhost:6379/0", color: "white" },
+      { text: "[worker:1] Subscribed to topic 'event-stream' (0 pending)", color: "white" },
+      { text: "[worker:1] Heartbeat ACK • worker pool healthy", color: "success" },
+      { text: "[worker:1] Job #4089 processed in 14ms (status: success)", color: "success" },
+      { text: "[worker:1] Waiting for incoming event payloads...", color: "muted" },
     ],
   },
   {
     id: "shell",
     name: "🐚 shell",
-    cmd: "zsh (pty)",
-    pid: 58138,
-    cpu: "0.1%",
-    ram: "12.8 MB",
     logs: [
-      "devpane-workspace % devpane list",
-      "  ● backend   PID 58120   RUNNING   :8080    32.4 MB",
-      "  ● frontend  PID 58124   RUNNING   :5173    49.2 MB",
-      "  ● worker    PID 58130   RUNNING            26.1 MB",
-      "",
-      "devpane-workspace % devpane mcp --status",
-      "  ✓ Model Context Protocol (MCP) server ready for Cursor & Claude",
-      "  ✓ IPC socket active • 3 services supervised",
-      "",
-      "devpane-workspace % _",
+      { text: "devpane-workspace % devpane list", color: "white" },
+      { text: "  ● backend   PID 58120   RUNNING   :8080    32.4 MB", color: "success" },
+      { text: "  ● frontend  PID 58124   RUNNING   :5173    49.2 MB", color: "success" },
+      { text: "  ● worker    PID 58130   RUNNING            26.1 MB", color: "success" },
+      { text: "", color: "white" },
+      { text: "devpane-workspace % devpane mcp --status", color: "white" },
+      { text: "  ✓ Model Context Protocol (MCP) server ready for Cursor & Claude", color: "accent" },
+      { text: "  ✓ IPC socket active • 3 services supervised", color: "muted" },
+      { text: "", color: "white" },
+      { text: "devpane-workspace % _", color: "accent" },
     ],
   },
 ];
 
-function InteractiveTerminal() {
+function SimplifiedTerminal() {
   const [activeIdx, setActiveIdx] = useState(0);
-  const [filterQuery, setFilterQuery] = useState("");
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [actionNotice, setActionNotice] = useState<string | null>(null);
-
   const activeService = DEMO_SERVICES[activeIdx];
-
-  const filteredLogs = useMemo(() => {
-    if (!filterQuery.trim()) return activeService.logs;
-    const q = filterQuery.toLowerCase();
-    return activeService.logs.filter((line) => line.toLowerCase().includes(q));
-  }, [activeService, filterQuery]);
-
-  const triggerRestart = () => {
-    setActionNotice(`⚡ Service '${activeService.name}' restarted (PID ${activeService.pid + 2})`);
-    setTimeout(() => setActionNotice(null), 3000);
-  };
-
-  const triggerRebuild = () => {
-    setActionNotice(`🛠 Rebuilding '${activeService.name}' clean... OK (0.6s)`);
-    setTimeout(() => setActionNotice(null), 3000);
-  };
 
   return (
     <div className="terminal-card">
@@ -131,12 +89,10 @@ function InteractiveTerminal() {
         </div>
         <div className="terminal-title">
           <span className="title-cmd">devpane up</span>
-          <span className="title-sep">•</span>
-          <span className="title-status">
-            <span className="pulse-dot" /> 3 services supervised
-          </span>
         </div>
-        <span className="terminal-badge">NATIVE VT100 TUI</span>
+        <div className="terminal-live-tag">
+          <span className="pulse-dot" /> LIVE DAEMON
+        </div>
       </div>
 
       <div className="terminal-tabs-bar">
@@ -155,93 +111,28 @@ function InteractiveTerminal() {
       </div>
 
       <div className="terminal-viewport">
-        <div className="terminal-viewport-head">
-          <div className="viewport-info">
-            <span className="info-tag">{activeService.cmd}</span>
-            <span className="info-stat">PID {activeService.pid}</span>
-            <span className="info-stat">CPU {activeService.cpu}</span>
-            <span className="info-stat">RAM {activeService.ram}</span>
-          </div>
-
-          <div className="viewport-actions">
-            <button
-              className="quick-action-btn"
-              onClick={triggerRestart}
-              title="Simulate service restart (press 'r' in TUI)"
-              type="button"
-            >
-              <kbd>r</kbd> Restart
-            </button>
-            <button
-              className="quick-action-btn"
-              onClick={triggerRebuild}
-              title="Simulate clean rebuild (press 'b' in TUI)"
-              type="button"
-            >
-              <kbd>b</kbd> Rebuild
-            </button>
-            <button
-              className={`quick-action-btn ${isFilterOpen ? "active" : ""}`}
-              onClick={() => setIsFilterOpen(!isFilterOpen)}
-              title="Filter logs (press '/' in TUI)"
-              type="button"
-            >
-              <kbd>/</kbd> Filter
-            </button>
-          </div>
-        </div>
-
-        {isFilterOpen && (
-          <div className="terminal-filter-input">
-            <span className="filter-prefix">/</span>
-            <input
-              type="text"
-              placeholder="Type to filter output live (e.g. server, health, ready)..."
-              value={filterQuery}
-              onChange={(e) => setFilterQuery(e.target.value)}
-              autoFocus
-            />
-            {filterQuery && (
-              <button
-                className="filter-clear"
-                onClick={() => setFilterQuery("")}
-                type="button"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-        )}
-
         <div className="terminal-lines">
-          {actionNotice && (
-            <div className="terminal-notice-line">{actionNotice}</div>
-          )}
-          {filteredLogs.length === 0 ? (
-            <div className="terminal-empty-filter">
-              [No lines matching filter &quot;{filterQuery}&quot;]
+          {activeService.logs.map((line, idx) => (
+            <div key={idx} className={`terminal-line line-${line.color || "white"}`}>
+              {line.text}
             </div>
-          ) : (
-            filteredLogs.map((line, idx) => (
-              <div key={idx} className="terminal-line">
-                <span className="line-num">{idx + 1}</span>
-                <span className="line-text">{line}</span>
-              </div>
-            ))
-          )}
+          ))}
         </div>
       </div>
 
       <div className="terminal-footer">
         <div className="shortcut-hints">
-          <span><kbd>Tab</kbd> Switch Tab</span>
-          <span><kbd>Ctrl+T</kbd> New Shell</span>
-          <span><kbd>r</kbd> Restart</span>
-          <span><kbd>b</kbd> Rebuild</span>
-          <span><kbd>/</kbd> Search</span>
-          <span><kbd>q</kbd> Exit</span>
+          <span>Tab: Switch</span>
+          <span>•</span>
+          <span>Ctrl+T: Shell</span>
+          <span>•</span>
+          <span>r: Restart</span>
+          <span>•</span>
+          <span>/: Search</span>
+          <span>•</span>
+          <span>q: Quit</span>
         </div>
-        <span className="terminal-latency">Daemon IPC: 0.12ms</span>
+        <span className="terminal-status">● 3 running</span>
       </div>
     </div>
   );
@@ -270,10 +161,10 @@ function MCPConfigSection() {
     <div className="mcp-section" id="mcp">
       <div className="section-head">
         <div className="tech-badge">MODEL CONTEXT PROTOCOL</div>
-        <h2>Native AI Agent Superpowers.</h2>
+        <h2>Native AI Agent Integration.</h2>
         <p>
           Coding agents in Cursor, Claude Desktop, and Windsurf can inspect server errors,
-          track compile status, and restart services without disrupting your interactive terminal.
+          track compile status, and restart services without hijacking your interactive terminal.
         </p>
       </div>
 
@@ -304,7 +195,7 @@ function MCPConfigSection() {
             <code>{cursorSnippet}</code>
           </pre>
           <div className="mcp-card-footer">
-            <span>Runs locally over stdio • Zero cloud telemetry • Near-instant responses</span>
+            <span>Runs locally over stdio • Zero telemetry • Sub-millisecond latency</span>
           </div>
         </div>
 
@@ -349,7 +240,7 @@ function BenchmarkTable() {
         <div className="tech-badge">PERFORMANCE BENCHMARKS</div>
         <h2>Lightweight native Rust. Real numbers.</h2>
         <p>
-          Modern web development doesn&apos;t require heavyweight VM layers or Node.js runtime bloat.
+          Local development shouldn&apos;t require heavyweight VM layers or heavy Node.js runtimes.
         </p>
       </div>
 
@@ -357,7 +248,7 @@ function BenchmarkTable() {
         <table className="benchmark-table">
           <thead>
             <tr>
-              <th>Architecture & Feature</th>
+              <th>Architecture &amp; Feature</th>
               <th className="highlight-col">Devpane</th>
               <th>Docker Compose</th>
               <th>PM2</th>
@@ -401,7 +292,7 @@ function BenchmarkTable() {
               <td>No</td>
             </tr>
             <tr>
-              <td><strong>Team .env & Lockfile Sync</strong></td>
+              <td><strong>Team .env &amp; Lockfile Sync</strong></td>
               <td className="highlight-col"><span className="metric-good">Built-in (devpane sync)</span></td>
               <td>No</td>
               <td>No</td>
@@ -736,15 +627,15 @@ function App() {
               src="/logo-dark.svg"
               alt="Devpane logo"
               className="brand-logo"
-              width="26"
-              height="26"
+              width="28"
+              height="28"
             />
             <span className="brand-name">devpane</span>
             <span className="brand-badge">v0.3.1</span>
           </a>
 
           <nav className="nav-links">
-            <a href="#demo">TUI Workspace</a>
+            <a href="#demo">Workspace</a>
             <a href="#benchmarks">Benchmarks</a>
             <a href="#mcp">AI MCP Server</a>
             <a href="#features">Features</a>
@@ -789,7 +680,7 @@ function App() {
                 Get Started in 10s ↗
               </a>
               <a className="btn btn-secondary" href="#demo">
-                Try Interactive Workspace ↓
+                View Interactive Workspace ↓
               </a>
             </div>
 
@@ -806,18 +697,18 @@ function App() {
               <div className="metric-sep" />
               <div className="metric-item">
                 <span className="metric-val">100%</span>
-                <span className="metric-label">Native Rust Core</span>
+                <span className="metric-label">Native Rust</span>
               </div>
               <div className="metric-sep" />
               <div className="metric-item">
                 <span className="metric-val">MCP</span>
-                <span className="metric-label">AI Agent Ready</span>
+                <span className="metric-label">AI Ready</span>
               </div>
             </div>
           </div>
 
           <div className="hero-terminal-wrapper" id="demo">
-            <InteractiveTerminal />
+            <SimplifiedTerminal />
           </div>
         </section>
 
